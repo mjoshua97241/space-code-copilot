@@ -32,3 +32,11 @@ Frontend patterns:
 Plan/Act:
 
 - For larger refactors, use PLAN first, then ACT to implement, to avoid uncontrolled code changes.
+
+## Reusing past lessons
+
+- internal/lessons/ may contain working examples from past bootcamp sessions.
+- When generating new code for this project:
+  - Prefer following the patterns defined in this file and in the current backend/frontend layout.
+  - Look at internal/lessons/ only to copy small, relevant patterns (e.g., a vector_store abstraction, a LangGraph agent node) and then adapt them.
+  - Do not import internal/lessons modules directly into production code.
