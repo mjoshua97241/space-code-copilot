@@ -29,6 +29,4 @@ dev = [
 ]
 
 [tool.uv]
-# Use .venv inside backend/
 python-preference = "managed"
-default-groups = ["default"]
