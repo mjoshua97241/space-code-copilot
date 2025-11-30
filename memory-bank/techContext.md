@@ -33,3 +33,12 @@ Conventions:
 - Backend code under backend/app/{api,services,models,core}.
 - Frontend components under frontend/src/components.
 - Use env vars for API keys and external URLs.
+
+## Lessons and reference code
+
+Bootcamp notes and example projects are stored under:
+
+- internal/lessons/
+
+They are used only as reference patterns (RAG pipelines, FastAPI + LangChain glue, etc.).
+They must not be cloned wholesale into backend/app or frontend/src.
