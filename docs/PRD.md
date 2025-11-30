@@ -1,13 +1,15 @@
+````markdown
 # PRD – Code-Aware Space Planning Copilot
 
 ## 1. Overview
 
 AI-assisted web app that helps architects and designers check early space planning (rooms, doors, corridors) against building codes and internal standards.
 
-- **Form factor:** Web app
+- **Form factor:** Single-page web UI served directly by FastAPI
 - **Users:** Architects, designers, technical coordinators
 - **Phase:** Early/mid design, before detailed BIM / spec submittals
 - **MVP scope:** One sample project (single floor), small set of code rules, single-user
+- **Frontend tech:** Plain HTML/CSS + minimal inline browser JavaScript, **no Node/npm, no React**
 
 ---
 
@@ -32,7 +34,7 @@ AI-assisted web app that helps architects and designers check early space planni
   - Read code PDFs and extract relevant clauses.
   - Work against structured schedule data (CSV).
   - Produce explainable issue lists with references.
-- A simple, scoped MVP can prove value without full BIM integration.
+- A simple, scoped MVP can prove value without full BIM integration or heavy frontend tooling.
 
 ---
 
@@ -53,12 +55,12 @@ AI-assisted web app that helps architects and designers check early space planni
 
 1. **Quick compliance snapshot**
 
-   - User loads a sample project (or uses preloaded data).
+   - User loads the built-in sample project.
    - System returns an issues list: which rooms/doors/corridors are non-compliant and why.
 
 2. **Explain a specific violation**
 
-   - User clicks “Room 101”.
+   - User clicks “Room 101” in the issues list.
    - System explains:
      - Which rule was violated.
      - What the requirement is.
@@ -129,7 +131,7 @@ AI-assisted web app that helps architects and designers check early space planni
     - Code citations where applicable.
 
 - **Plan highlights**
-  - When an issue or element is selected, the corresponding overlay is highlighted on the plan.
+  - When an issue is selected, the corresponding overlay is highlighted on the plan (using CSS/DOM manipulation, no framework).
 
 ---
 
@@ -137,7 +139,7 @@ AI-assisted web app that helps architects and designers check early space planni
 
 ### 5.1 Backend
 
-**Stack:** Python 3.11+, FastAPI, LangChain/LangGraph, OpenAI (primary).
+**Stack:** Python 3.11+, FastAPI, LangChain/LangGraph, OpenAI (primary), Qdrant or in-memory vector store.
 
 1. **Health endpoint**
 
@@ -196,6 +198,7 @@ AI-assisted web app that helps architects and designers check early space planni
    - Given `question`, returns `answer` based only on retrieved code snippets.
 
 8. **Chat endpoint**
+
    - `POST /api/chat`
    - Input:
      - `messages: [{role, content}]` (chat history)
@@ -209,52 +212,58 @@ AI-assisted web app that helps architects and designers check early space planni
        - Context: issues + retrieved snippets.
      - Return reply text.
 
-### 5.2 Frontend
+9. **HTML UI + static file serving**
+   - Use FastAPI `StaticFiles` for:
+     - `/static/plan.png`
+     - `/static/styles.css`
+     - Optional: `/static/overlays.json`
+   - Use FastAPI `Jinja2Templates` for:
+     - `GET /` → returns `index.html` template (no React, no bundler).
 
-**Stack:** React + TypeScript + Vite.
+### 5.2 UI (served by FastAPI, no Node/npm)
 
-1. **App layout**
+**Stack:** Plain HTML + CSS + minimal inline JS.
 
-   - Full height, 3 areas:
-     - Left: Plan viewer.
-     - Bottom of left: Issues list.
-     - Right: Chat panel.
+1. **App layout (single template)**
+
+   - Template: `app/templates/index.html`
+   - Layout:
+     - Left: plan viewer.
+     - Bottom of left: issues list.
+     - Right: chat panel.
+   - CSS in `app/static/styles.css`.
 
 2. **Plan viewer**
 
-   - Component: `PlanViewer`
-   - Props:
-     - `highlightedId?: string`
-   - Behavior:
-     - Renders `plan.png`.
-     - Renders overlays from `overlays.json` on top.
-     - Highlights overlay whose `id === highlightedId`.
+   - `<img src="/static/plan.png">` as background.
+   - Optional overlay elements:
+     - `<div>`s absolutely positioned over the image based on `overlays.json` (fetched by browser JS).
+   - When an issue is selected, matching `id` is highlighted (e.g., different border color).
 
 3. **Issues list**
 
-   - Component: `IssuesList`
-   - Props:
-     - `issues: Issue[]`
-     - `onSelectElement(elementId: string)`
-   - Behavior:
-     - Fetches `/api/issues` on mount (or parent does).
-     - Displays each issue:
-       - element type + id
-       - message
-       - code_ref
-     - On click:
-       - Calls `onSelectElement(issue.element_id)` to highlight in `PlanViewer`.
+   - Uses browser `fetch('/api/issues')` after page load.
+   - Renders each issue as a simple block:
+     - Element type + id
+     - Message
+     - Code reference
+   - On click:
+     - Saves selected `element_id` and triggers highlight in plan viewer.
 
 4. **Chat panel**
-   - Component: `ChatPanel`
-   - Local state:
-     - `messages: {role, content}[]`
-     - `input`, `loading`
-   - Behavior:
-     - On send:
-       - Append user message.
-       - POST `/api/chat` with `messages`.
-       - Append assistant reply from `reply` field.
+
+   - Simple `<textarea>` + `<button>` inside a `<form>`.
+   - On submit:
+     - Prevent default.
+     - `fetch('/api/chat')` with minimal history (for MVP: last user message only).
+   - Renders messages as a vertical list:
+     - “You: …”
+     - “AI: …”
+
+5. **No build toolchain**
+   - No `npm install`, no `package.json`, no Vite, no React.
+   - All JS is inline in `index.html` (or simple `.js` under `/static` if needed).
+   - All assets are served by FastAPI.
 
 ---
 
@@ -265,7 +274,8 @@ AI-assisted web app that helps architects and designers check early space planni
 - No authentication or multi-user accounts.
 - No persistence of user-specific projects.
 - No full code-completeness of building codes (only small subset used).
-- No visual editing of plans (just viewer + highlights).
+- No React, no SPA framework, no Node/npm-based build tooling.
+- No websocket-based live updates (simple request/response only).
 
 ---
 
@@ -273,23 +283,16 @@ AI-assisted web app that helps architects and designers check early space planni
 
 ### 7.1 Components
 
-- **Frontend**
+- **FastAPI application**
 
-  - Vite React app
-  - Components:
-    - `App.tsx` (layout)
-    - `PlanViewer.tsx`
-    - `IssuesList.tsx`
-    - `ChatPanel.tsx`
-    - `api.ts` (fetch helpers)
-
-- **Backend**
-
-  - FastAPI app:
-    - `app/main.py`
-    - `app/api/issues.py`
-    - `app/api/chat.py`
-    - `app/api/rag.py` (optional)
+  - `app/main.py`
+    - Mounts static files.
+    - Configures templates.
+    - Registers API routers.
+    - Serves `GET /` → HTML UI.
+  - `app/api/issues.py`
+  - `app/api/chat.py`
+  - `app/api/rag.py` (optional)
   - Services:
     - `design_loader.py`
     - `pdf_ingest.py`
@@ -302,32 +305,42 @@ AI-assisted web app that helps architects and designers check early space planni
     - `domain.py` (Room, Door, Rule, Issue)
 
 - **Vector DB**
+
   - Qdrant (local or cloud)
   - Collection: `code_chunks`
 
+- **Browser**
+  - Loads `index.html` from FastAPI.
+  - Uses `fetch` API to call:
+    - `/api/issues`
+    - `/api/chat`
+  - Manipulates DOM to render issues and chat messages.
+  - Optional: manipulates DOM to apply overlay highlights.
+
 ### 7.2 Data flow: compliance
 
-1. Frontend requests `/api/issues`.
-2. Backend:
+1. Browser loads `/`.
+2. Browser JS calls `/api/issues`.
+3. Backend:
    - Loads CSV → Rooms/Doors.
    - Seed rules.
    - Runs `check_compliance`.
    - Returns `Issue[]`.
-3. Frontend:
+4. Browser:
    - Renders issues list.
-   - Allows selecting an issue → highlight overlay.
+   - On click, highlights corresponding element in plan viewer.
 
 ### 7.3 Data flow: Q&A
 
-1. User types question in chat.
-2. Frontend sends full message history to `/api/chat`.
+1. User types question in chat and submits form.
+2. Browser sends POST to `/api/chat`.
 3. Backend:
    - Builds context:
      - Issue summary (if relevant).
      - RAG search over code PDFs (if question looks code-related).
-   - Calls LLM with system prompt + context + last user message.
+   - Calls LLM with system prompt + context + user message.
    - Returns reply text.
-4. Frontend displays reply.
+4. Browser displays reply.
 
 ---
 
@@ -343,6 +356,7 @@ class Room(BaseModel):
     level: Optional[str] = None
     area_m2: float
 ```
+````
 
 ### 8.2 Door
 
@@ -388,11 +402,12 @@ class Issue(BaseModel):
 - **Units:** All internal logic uses SI:
 
   - Areas in m².
-  - Widths in mm or m (consistent within rules and data).
+  - Widths in mm (or m, but consistent within rules and data).
 
 - **Data quality:** CSVs are clean and predictable for MVP.
 - **PDF content:** Contains the rules we seed; RAG is a supporting feature, not the sole source of truth for compliance.
 - **LLM:** Access to at least one hosted LLM (OpenAI, Gemini, or Claude) with enough context window for small PDFs.
+- **Frontend:** No Node/npm. Only browser-native APIs and static assets.
 
 ---
 
@@ -408,13 +423,15 @@ Backend:
 - [ ] PDF ingest + vector store indexing
 - [ ] `/api/rag/query` (optional)
 - [ ] `/api/chat` combining issues + RAG
+- [ ] Static + template setup for `GET /`
 
-Frontend:
+UI:
 
-- [ ] Basic App layout (left viewer, bottom issues, right chat)
-- [ ] PlanViewer with overlays and highlight
-- [ ] IssuesList fetching `/api/issues` and wiring highlight
-- [ ] ChatPanel calling `/api/chat`
+- [ ] Basic layout in `index.html` (left viewer, bottom issues, right chat)
+- [ ] Plan viewer with `plan.png`
+- [ ] (Optional) Overlays and highlight behavior
+- [ ] Issues list fetching `/api/issues`
+- [ ] Chat form posting to `/api/chat` and rendering replies
 
 ---
 
@@ -440,8 +457,15 @@ Frontend:
 
    - Mitigation:
 
-     - Hard prioritize Phases 0–6 (basic backend + frontend + simple chat).
+     - Hard prioritize Phases 0–6 (basic backend + HTML UI + simple chat).
      - Treat LLM-based rule extraction as stretch, not core MVP.
+
+4. **Frontend complexity creep**
+
+   - Mitigation:
+
+     - No frameworks, no bundlers.
+     - Only minimal DOM manipulation with browser `fetch` and vanilla JS.
 
 ---
 
@@ -453,8 +477,8 @@ Frontend:
 
   - The system correctly flags:
 
-    - Room with area below threshold.
-    - Door with width below threshold.
+    - A room with area below threshold.
+    - A door with width below threshold.
 
 - Chat:
 
@@ -466,16 +490,23 @@ Frontend:
 
 - Architect can:
 
+  - Open one URL (`/`) and see layout without any installation beyond Python deps.
   - See issues at a glance in the list.
-  - Click an issue and visually locate it on the plan via highlight.
+  - Click an issue and visually relate it to the plan.
   - Ask follow-up questions in chat without re-explaining the whole context.
 
 ### 12.3 Technical
 
-- Backend and frontend start with simple commands:
+- Backend and UI start with simple commands:
 
   - `uvicorn app.main:app --reload`
-  - `npm run dev`
 
-- No critical errors in logs during demo.
+- No Node/npm on the machine.
 - Vector search returns relevant code snippets for basic queries.
+- No critical errors in logs during demo.
+
+---
+
+```
+::contentReference[oaicite:0]{index=0}
+```
