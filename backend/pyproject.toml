@@ -2,7 +2,6 @@
 name = "code-aware-space-planner-backend"
 version = "0.1.0"
 description = "Backend for the Code-Aware Space Planning Copilot (FastAPI + LangChain/LangGraph)"
-readme = "README.md"
 requires-python = ">=3.11,<3.13"
 
 # Runtime deps only; keep this tight
