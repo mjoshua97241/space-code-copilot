@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+Rule name: aec-code-copilot-context
+Apply: Agent Requested (let Cursor attach when editing this repo)
+
+Content:
+
+Project: Code-Aware Space Planning Copilot for AEC.
+
+Architecture:
+
+- Backend: Python 3.11+, FastAPI, uvicorn.
+- AI stack: LangChain + LangGraph for agents and tools, OpenAI/Gemini/Claude via config.
+- Retrieval: PDF → chunks → embeddings → Qdrant (or in-memory FAISS fallback).
+- Frontend: React + TypeScript + Vite. Left: floor plan viewer with JSON overlays. Right: chat.
+
+Domain:
+
+- Vertical buildings, early design / space planning.
+- Inputs: CSV schedules (rooms, doors, corridors), overlay JSON for plan image, building code PDFs.
+- Output: structured issues list (element_id, rule_id, message, code_ref) and chat answers with citations.
+
+Constraints:
+
+- Always assume SI units: m, m², mm. Be explicit when converting.
+- Never invent building code rules. Use only: (1) seeded Rule models, or (2) text from code PDFs via RAG.
+- When returning issues from backend, use pydantic models: Room, Door, Rule, Issue.
+
+Preferences:
+
+- For new backend features, follow existing module structure: app/api/_, app/services/_, app/models/_, app/core/_.
+- For new LLM logic, put orchestration in app/services or app/core/llm.py, not inside route handlers.
+- For new frontend components, keep them in src/components/\*.tsx, App.tsx stays as layout + wiring only.
