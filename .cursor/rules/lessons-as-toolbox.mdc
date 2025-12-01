@@ -1,0 +1,28 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+Rule name: lessons-as-toolbox
+
+Content:
+
+Past bootcamp lesson notes and code live under internal/lessons in this repo.
+
+Behavior required:
+
+- Treat everything under internal/lessons/ as REFERENCE ONLY.
+- Use them as a toolbox for patterns, not as a template to clone.
+- When I ask you to implement something in this project, you MUST:
+  - Start from the current project structure:
+    - backend/app/{api,services,models,core}
+    - frontend/src/{App.tsx,components}
+  - If you reuse code from internal/lessons, only copy the minimal snippet needed (e.g., a FastAPI route pattern, a RAG pipeline pattern, an agent skeleton).
+  - Immediately rename and adapt the snippet to this domain:
+    - Use Room, Door, Rule, Issue, Code-Aware Space Planning Copilot naming.
+    - Remove unused tools, routes, or agents from the snippet.
+- You MUST NOT:
+  - Copy entire projects or modules from internal/lessons into this app.
+  - Introduce new stack choices from lessons (e.g., different frameworks) unless I explicitly ask.
+- If there is a conflict between patterns in internal/lessons and the patterns documented in .cursor/memory_bank/systemPatterns.md, follow systemPatterns.md for this project.

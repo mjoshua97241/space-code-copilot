@@ -1,0 +1,21 @@
+# Python / backend
+backend/.venv/
+backend/__pycache__/
+backend/**/*.pyc
+
+# uv
+backend/uv.lock
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS / editor
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+internal/lessons/
+
+backend/.env

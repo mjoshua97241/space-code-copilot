@@ -1,0 +1,30 @@
+[project]
+name = "code-aware-space-planner-backend"
+version = "0.1.0"
+description = "Backend for the Code-Aware Space Planning Copilot (FastAPI + LangChain/LangGraph)"
+requires-python = ">=3.11,<3.13"
+
+# Runtime deps only; keep this tight
+dependencies = [
+  "fastapi>=0.115.0,<1.0.0",
+  "uvicorn[standard]>=0.30.0,<1.0.0",
+  "pydantic>=2.7.0,<3.0.0",
+  "python-dotenv>=1.0.0,<2.0.0",
+  # RAG + vector store
+  "qdrant-client>=1.9.0,<2.0.0",
+  "pymupdf>=1.24.0,<2.0.0",
+  # LLM / orchestration
+  "openai>=1.40.0,<2.0.0",
+  "langchain>=0.2.0,<0.3.0",
+  "langgraph>=0.1.0,<0.2.0",
+  "marimo>=0.18.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0,<9.0.0",
+  "ruff>=0.5.0,<0.6.0",
+]
+
+[tool.uv]
+python-preference = "managed"
