@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Code-Aware Space Planning Copilot</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-root">
+      <div class="left-panel">
+        <div class="plan-container">
+          <img src="/static/plan.png" alt="Floor plan" />
+          <!-- Overlays drawn via absolutely-positioned divs if you want, later -->
+        </div>
+        <div class="issues-panel" id="issues-panel">
+          <!-- Issues will be rendered here -->
+        </div>
+      </div>
+      <div class="right-panel">
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input">
+          <form id="chat-form">
+            <textarea
+              id="chat-input"
+              placeholder="Ask about code or issues..."
+            ></textarea>
+            <button type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Minimal browser JS. No npm, no tooling.
+      async function fetchIssues() {
+        const panel = document.getElementById("issues-panel");
+        panel.textContent = "Loading issues...";
+        try {
+          const res = await fetch("/api/issues");
+          const issues = await res.json();
+          if (!issues.length) {
+            panel.textContent = "No issues found.";
+            return;
+          }
+          panel.innerHTML = "";
+          issues.forEach((issue) => {
+            const div = document.createElement("div");
+            div.style.padding = "6px 0";
+            div.style.borderBottom = "1px solid #eee";
+            div.textContent =
+              issue.element_type.toUpperCase() +
+              " " +
+              issue.element_id +
+              ": " +
+              issue.message;
+            panel.appendChild(div);
+          });
+        } catch (e) {
+          panel.textContent = "Failed to load issues.";
+        }
+      }
+
+      async function sendChat(message) {
+        const container = document.getElementById("chat-messages");
+        const userDiv = document.createElement("div");
+        userDiv.textContent = "You: " + message;
+        container.appendChild(userDiv);
+        container.scrollTop = container.scrollHeight;
+
+        try {
+          const res = await fetch("api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              messages: [{ role: "user", content: message }],
+            }),
+          });
+          const data = await res.json();
+          const botDiv = document.createElement("div");
+          botDiv.textContent = "AI: " + data.reply;
+          container.appendChild(botDiv);
+          container.scrollTop = container.scrollHeight;
+        } catch (e) {
+          const errDiv = document.createElement("div");
+          errDiv.textContent = "AI: [error sending request]";
+          container.appendChild(errDiv);
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchIssues();
+
+        const form = document.getElementById("chat-form");
+        const input = document.getElementById("chat-input");
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const text = input.value.trim();
+          if (!text) return;
+          input.value = "";
+          sendChat(text);
+        });
+      });
+    </script>
+  </body>
+</html>
