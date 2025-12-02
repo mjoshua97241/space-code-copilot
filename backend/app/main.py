@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.response import HTMLResponse
 
-app = FASTAPI(title="Space Planning Copilot")
+app = FASTAPI(title="Code-Aware Space Planning Copilot")
 
 app.add_middleware(
     CORSMiddleware,
