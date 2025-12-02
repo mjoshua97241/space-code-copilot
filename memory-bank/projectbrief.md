@@ -13,10 +13,13 @@ Scope:
   - Load building code PDFs, chunk, embed, and store in vector DB.
   - Seed or extract structured rules (Rule models).
   - Run compliance checks → Issue models.
-- Frontend: React + TS + Vite with:
-  - Left: static floor plan image + overlays from JSON.
-  - Bottom: issue list.
-  - Right: chat over RAG + issues.
+- Frontend: Plain HTML/CSS + minimal inline JavaScript, served directly by FastAPI:
+  - Single-page web UI (`app/templates/index.html`) with:
+    - Left: static floor plan image + overlays from JSON.
+    - Bottom: issue list.
+    - Right: chat over RAG + issues.
+  - No Node/npm, no React, no build toolchain.
+  - Static assets served via FastAPI (`/static/plan.png`, `/static/styles.css`).
 
 Non-goals (for MVP):
 

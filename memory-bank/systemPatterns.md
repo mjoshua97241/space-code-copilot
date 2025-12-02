@@ -23,11 +23,18 @@ AI patterns:
 
 Frontend patterns:
 
-- App.tsx: layout + wiring (PlanViewer, IssuesList, ChatPanel).
-- Components:
-  - PlanViewer: loads plan.png and overlays.json; supports highlight by element_id.
-  - IssuesList: fetches /api/issues and allows click to highlight element.
-  - ChatPanel: posts to /api/chat and renders messages.
+- Single HTML template (`app/templates/index.html`) served by FastAPI via Jinja2Templates.
+- Layout structure:
+  - Left: plan viewer (`<img src="/static/plan.png">` + overlay `<div>`s positioned absolutely).
+  - Bottom: issues list container.
+  - Right: chat panel with form and message container.
+- JavaScript (inline or minimal separate script):
+  - On page load: `fetch('/api/issues')` → render issues list.
+  - On issue click: save `element_id`, highlight corresponding overlay in plan viewer.
+  - On chat submit: `fetch('/api/chat', {method: 'POST', body: ...})` → render reply.
+  - DOM manipulation: create/update elements for issues and messages.
+- CSS (`app/static/styles.css`): layout (flex/grid), styling, highlight states.
+- Static assets served via FastAPI `StaticFiles` mount at `/static/`.
 
 Plan/Act:
 
@@ -37,6 +44,6 @@ Plan/Act:
 
 - internal/lessons/ may contain working examples from past bootcamp sessions.
 - When generating new code for this project:
-  - Prefer following the patterns defined in this file and in the current backend/frontend layout.
+  - Prefer following the patterns defined in this file and in the current backend layout.
   - Look at internal/lessons/ only to copy small, relevant patterns (e.g., a vector_store abstraction, a LangGraph agent node) and then adapt them.
   - Do not import internal/lessons modules directly into production code.

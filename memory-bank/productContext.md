@@ -26,10 +26,11 @@ Core features (MVP):
 - Backend endpoint /api/chat:
   - combines RAG results from code PDFs with current issues,
   - answers questions about code requirements and current design issues.
-- Frontend:
+- Frontend (single-page HTML/CSS/JS served directly by FastAPI):
   - Plan viewer with overlay highlighting when an issue is selected.
   - Issues list panel below viewer.
   - Chat panel on the right side.
+  - No separate frontend server or build process; all served from `GET /` endpoint.
 
 Success criteria:
 

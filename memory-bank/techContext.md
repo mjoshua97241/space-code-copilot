@@ -3,7 +3,7 @@
 Languages:
 
 - Python 3.11+
-- TypeScript + React (Vite)
+- HTML + CSS + JavaScript (browser-native, no build toolchain)
 
 Backend:
 
@@ -16,9 +16,12 @@ Backend:
 
 Frontend:
 
-- React + TypeScript + Vite.
+- Plain HTML + CSS + minimal inline JavaScript.
+- Single-page UI served directly by FastAPI (`app/templates/index.html`).
 - Simple layout: left viewer, bottom issues, right chat.
 - Plan viewer: <img> + absolutely positioned overlays from overlays.json.
+- Browser-native `fetch` API for API calls, vanilla DOM manipulation.
+- No Node/npm, no React, no build toolchain.
 
 Data layout:
 
@@ -26,12 +29,16 @@ Data layout:
 - backend/app/data/doors.csv
 - backend/app/data/code_sample.pdf
 - backend/app/data/overlays.json
-- frontend/src/overlays.json (mirrors backend for viewer)
+- backend/app/templates/index.html (HTML template)
+- backend/app/static/styles.css (CSS)
+- backend/app/static/plan.png (floor plan image)
+- backend/app/static/overlays.json (optional, for browser fetch)
 
 Conventions:
 
 - Backend code under backend/app/{api,services,models,core}.
-- Frontend components under frontend/src/components.
+- Frontend UI: HTML template in backend/app/templates/, CSS in backend/app/static/.
+- All frontend code served by FastAPI (no separate frontend server).
 - Use env vars for API keys and external URLs.
 
 ## Lessons and reference code
@@ -41,4 +48,4 @@ Bootcamp notes and example projects are stored under:
 - internal/lessons/
 
 They are used only as reference patterns (RAG pipelines, FastAPI + LangChain glue, etc.).
-They must not be cloned wholesale into backend/app or frontend/src.
+They must not be cloned wholesale into backend/app or frontend code.
