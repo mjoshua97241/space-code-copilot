@@ -17,5 +17,6 @@ frontend/dist/
 .vscode/
 
 internal/lessons/
+internal/
 
 backend/.env
