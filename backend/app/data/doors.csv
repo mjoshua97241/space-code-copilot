@@ -1,0 +1,5 @@
+id,location_room_id,clear_width_mm,level
+D1,R101,750,1
+D2,R102,800,1
+D3,R201,700,1
+D4,R301,900,1
