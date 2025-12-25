@@ -33,6 +33,7 @@ Foundation is working. FastAPI app is set up and running. Ready to implement dom
 - [ ] CSV loaders for rooms and doors (`app/services/design_loader.py`)
 - [ ] Domain models: Room, Door, Rule, Issue (`app/models/domain.py`)
 - [ ] Seeded rules (`app/services/rules_seed.py`)
+- [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based
 - [ ] Compliance checker (`app/services/compliance_checker.py`)
 - [ ] `/api/issues` endpoint returning `Issue[]`
 - [ ] PDF ingest (`app/services/pdf_ingest.py`)
@@ -72,7 +73,8 @@ None yet (project in early setup phase).
    - Chat panel with form
    - Basic styling
 
-3. Add RAG pipeline:
+3. Add RAG pipeline and rule extraction:
    - PDF ingest
    - Vector store indexing
+   - LLM-based rule extraction from PDFs
    - `/api/chat` with RAG context

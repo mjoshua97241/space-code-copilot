@@ -7,6 +7,7 @@ Current focus:
   - Domain models: Room, Door, Rule, Issue (`app/models/domain.py`)
   - CSV loaders (`app/services/design_loader.py`)
   - Seeded rules (`app/services/rules_seed.py`)
+  - Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based (MVP core)
   - Compliance checker (`app/services/compliance_checker.py`)
   - `/api/issues` endpoint returning `Issue[]`
 

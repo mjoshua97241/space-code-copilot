@@ -12,7 +12,7 @@ Backend patterns:
   - pdf_ingest (PDF → chunks)
   - vector_store (embedding + Qdrant search)
   - compliance_checker (rules + design → issues)
-  - rule_extractor (LLM-based rule extraction; stretch goal)
+  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature)
 - LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude.
 
 AI patterns:
@@ -20,10 +20,10 @@ AI patterns:
 - Use RAG for building-code questions:
   - user query → embed → vector search over code chunks → pass snippets + question to chat model.
 - Use deterministic Python for simple numeric compliance (area, widths).
-- Use LLM only for:
+- Use LLM for:
   - summarizing issues
-  - answering questions
-  - extracting rules from text (phase 2).
+  - answering questions via RAG
+  - extracting rules from PDFs (MVP core feature)
 
 Frontend patterns:
 
