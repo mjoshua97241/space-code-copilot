@@ -51,3 +51,22 @@ Plan/Act:
   - Prefer following the patterns defined in this file and in the current backend layout.
   - Look at internal/lessons/ only to copy small, relevant patterns (e.g., a vector_store abstraction, a LangGraph agent node) and then adapt them.
   - Do not import internal/lessons modules directly into production code.
+
+### When to use lessons
+
+**Don't use lessons for:**
+- Simple/standard patterns (CSV parsing, basic FastAPI routes, Pydantic models)
+- Standard Python libraries (csv, pathlib, etc.)
+- Basic CRUD operations
+
+**Do use lessons for:**
+- `app/services/vector_store.py` - RAG/vector DB patterns (Qdrant setup, embedding pipelines)
+- `app/core/llm.py` - Multi-provider LLM abstraction (OpenAI/Gemini/Claude switching)
+- `app/services/rule_extractor.py` - LLM-based extraction patterns (structured output, prompt engineering)
+- `app/services/pdf_ingest.py` - PDF chunking patterns (if complex chunking strategies needed)
+- LangGraph agent orchestration (if we add agent workflows)
+
+**Decision process:**
+1. If it's a standard Python/library pattern → implement directly
+2. If it's LLM/AI-specific and complex → check lessons for patterns
+3. Use `/use-lesson-pattern` command when explicitly requested
