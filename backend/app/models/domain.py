@@ -1,4 +1,3 @@
-from optparse import Option
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
 
@@ -80,7 +79,7 @@ class Rule(BaseModel):
         description="What element type this rule applies to"
     )
     # For numeric rules (area_min, width_min)
-    min_value: Option[float] = Field(
+    min_value: Optional[float] = Field(
         None,
         gt=0,
         description="Minimum value (in SI units: m² for area, mm for width)"
