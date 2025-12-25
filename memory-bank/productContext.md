@@ -39,3 +39,23 @@ Success criteria:
   - list current issues,
   - explain why a room/door is non-compliant,
   - quote relevant code text when available.
+
+## Project Intent & Learning Goals
+
+This project serves dual purposes:
+
+1. **Bootcamp demo**: Showcase a working MVP that demonstrates AI/LLM integration in an AEC domain application.
+
+2. **Learning project**: Deep understanding of the codebase, not just accepting AI-generated code.
+
+**Learning objectives:**
+- Understand architectural decisions and tradeoffs
+- Learn patterns from `internal/lessons/` as reference examples, not templates to clone
+- Build comprehension of FastAPI, LangChain/LangGraph, RAG pipelines, and vector stores
+- Develop ability to reason about code structure and make informed choices
+
+**Working style:**
+- Explanations and rationale are essential when implementing features
+- Break down complex patterns so they can be understood, not just copied
+- Encourage questions and discussion about design decisions
+- Code should be clear and well-structured to support learning
