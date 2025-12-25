@@ -6,7 +6,7 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from app.services.designer_loader import load_rooms, load_doors, load_design
+from app.services.design_loader import load_rooms, load_doors, load_design
 
 # Test individual loaders
 rooms = load_rooms()
