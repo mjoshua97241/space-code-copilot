@@ -2,6 +2,10 @@
 
 Backend patterns:
 
+- FastAPI app in `app/main.py`:
+  - Use `Path(__file__).parent` for absolute paths to static/templates directories.
+  - Mount static files: `app.mount("/static", StaticFiles(directory=...))`
+  - Setup templates: `Jinja2Templates(directory=...)`
 - API routes in app/api/\*.py, mounted in app/main.py via include_router.
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
