@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. FastAPI app is set up and running. Ready to implement domain models and business logic.
+Foundation is working. Domain models are complete. Ready to implement CSV loaders and business logic.
 
 ## What Works
 
@@ -12,6 +12,12 @@ Foundation is working. FastAPI app is set up and running. Ready to implement dom
   - Static files mount at `/static/` (using absolute paths)
   - Template setup for `GET /` → `index.html`
   - App imports and runs successfully
+- Domain models (`app/models/domain.py`):
+  - `Room` model (id, name, type, level, area_m2)
+  - `Door` model (id, location_room_id, clear_width_mm, level)
+  - `Rule` model (id, name, rule_type, element_type, min_value, rule_text, code_ref)
+  - `Issue` model (element_id, element_type, rule_id, message, code_ref, severity)
+  - All models use Pydantic with proper validation and type hints
 - Project structure:
   - Backend directories: `app/api/`, `app/services/`, `app/models/`, `app/core/`
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
@@ -31,7 +37,7 @@ Foundation is working. FastAPI app is set up and running. Ready to implement dom
   - Template setup (`GET /` → `index.html`)
   - CORS middleware
 - [ ] CSV loaders for rooms and doors (`app/services/design_loader.py`)
-- [ ] Domain models: Room, Door, Rule, Issue (`app/models/domain.py`)
+- [x] Domain models: Room, Door, Rule, Issue (`app/models/domain.py`)
 - [ ] Seeded rules (`app/services/rules_seed.py`)
 - [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based
 - [ ] Compliance checker (`app/services/compliance_checker.py`)
