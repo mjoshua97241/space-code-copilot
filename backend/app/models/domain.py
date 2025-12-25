@@ -64,7 +64,7 @@ class Rule(BaseModel):
     2. Extracted from PDFs (MVP core feature) - via LLM extraction from code PDFs
 
     The rule_type determines how the rule is checked:
-    - "area_min": Minimum are requirement (for rooms)
+    - "area_min": Minimum area requirement (for rooms)
     - "width_min": Minimum width requirement (for doors)
     - "text": Text-based rule requiring LLM interpretation
     """
@@ -98,14 +98,14 @@ class Rule(BaseModel):
         frozen = False
 
 # ==================================================================
-# Rule Model
+# Issue Model
 # ==================================================================
 
 class Issue(BaseModel):
     """
     Represents a compliance violation found by the compliance checker.
 
-    This is the output of checking Room/Door agains Rules.
+    This is the output of checking Room/Door against Rules.
     Returned by /api/issues endpoint.
 
     Fields:
