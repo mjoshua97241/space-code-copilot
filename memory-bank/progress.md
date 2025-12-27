@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models are complete. Ready to implement CSV loaders and business logic.
+Foundation is working. Domain models, CSV loaders, and seeded rules are complete. Ready to implement compliance checker and API endpoints.
 
 ## What Works
 
@@ -18,6 +18,17 @@ Foundation is working. Domain models are complete. Ready to implement CSV loader
   - `Rule` model (id, name, rule_type, element_type, min_value, rule_text, code_ref)
   - `Issue` model (element_id, element_type, rule_id, message, code_ref, severity)
   - All models use Pydantic with proper validation and type hints
+- CSV loaders (`app/services/design_loader.py`):
+  - `load_rooms()` - Loads rooms from CSV with `@lru_cache` for performance
+  - `load_doors()` - Loads doors from CSV with validation of room references
+  - `load_design()` - Combined loader with automatic validation
+  - File modification time-based cache invalidation
+  - Helper functions for filtering and lookup
+- Seeded rules (`app/services/rules_seed.py`):
+  - `get_seeded_rules()` - Returns 4 hardcoded rules (2 room area, 2 door width)
+  - `get_all_rules()` - Ready for LLM integration (combines seeded + extracted)
+  - Helper functions: `get_rules_for_element_type()`, `get_rules_by_type()`, `get_rule_by_id()`
+  - Rules include: minimum bedroom area (9.5 m²), living room area (12.0 m²), accessible door width (800 mm), standard door width (700 mm)
 - Project structure:
   - Backend directories: `app/api/`, `app/services/`, `app/models/`, `app/core/`
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
@@ -36,9 +47,9 @@ Foundation is working. Domain models are complete. Ready to implement CSV loader
   - Static files mount (`/static/`)
   - Template setup (`GET /` → `index.html`)
   - CORS middleware
-- [ ] CSV loaders for rooms and doors (`app/services/design_loader.py`)
+- [x] CSV loaders for rooms and doors (`app/services/design_loader.py`)
 - [x] Domain models: Room, Door, Rule, Issue (`app/models/domain.py`)
-- [ ] Seeded rules (`app/services/rules_seed.py`)
+- [x] Seeded rules (`app/services/rules_seed.py`)
 - [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based
 - [ ] Compliance checker (`app/services/compliance_checker.py`)
 - [ ] `/api/issues` endpoint returning `Issue[]`
@@ -64,13 +75,13 @@ None yet (project in early setup phase).
 
 ## Next Steps
 
-1. Implement backend Phase 1-3:
+1. Implement backend Phase 1-3 (in progress):
 
-   - Domain models (Room, Door, Rule, Issue) in `app/models/domain.py`
-   - CSV loaders in `app/services/design_loader.py`
-   - Seeded rules in `app/services/rules_seed.py`
-   - Compliance checker in `app/services/compliance_checker.py`
-   - `/api/issues` endpoint in `app/api/issues.py`
+   - [x] Domain models (Room, Door, Rule, Issue) in `app/models/domain.py`
+   - [x] CSV loaders in `app/services/design_loader.py`
+   - [x] Seeded rules in `app/services/rules_seed.py`
+   - [ ] Compliance checker in `app/services/compliance_checker.py`
+   - [ ] `/api/issues` endpoint in `app/api/issues.py`
 
 2. Implement frontend HTML template:
 
