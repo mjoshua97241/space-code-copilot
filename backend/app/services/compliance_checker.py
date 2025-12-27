@@ -163,3 +163,57 @@ def check_compliance(
         all_issues.extend(door_issues)
 
     return all_issues
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def check_room_by_type(room: Room, rules: List[Rule]) -> List[Issue]:
+    """
+    Check room with type-specific rule filtering.
+
+    Future enhancement: Filter rules by room.type (e.g., bedroom rules only apply to bedrooms). For now, applies all room rules.
+
+    Args:
+        room: Room object to check
+        rules: List of all rules
+    
+    Returns:
+        List of Issue objects for violations.
+    """
+    return check_room_compliance(room, rules)
+
+
+def get_compliance_summary(issues: List[Issue]) -> dict:
+    """
+    Get a summary of compliance issues.
+
+    Useful for reporting and UI display.
+
+    Args:
+        issues: List of Issue objects
+    
+    Returns:
+        Dictionary with summary statistics.
+
+    Example:
+        summary = get_compliance_summary(issues)
+        # Returns: {
+        #   "total": 2,
+        #   "by_element_type": {"room": 0, "door": 2},
+        #   "by_severity": {"error": 2, "warning": 0}
+        # }
+    """
+    summary = {
+        "total": len(issues),
+        "by_element_type": {
+            "room": len([i for i in issues if i.element_type == "room"]),
+            "door": len([i for i in issues if i.element_type == "door"])
+        },
+        "by_severity": {
+            "error": len([i for i in issues if i.severity == "error"]),
+            "warning": len([i for i in issues if i.severity == "warning"])
+        }
+    }
+
+    return summary
