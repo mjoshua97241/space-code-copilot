@@ -19,11 +19,13 @@ AI patterns:
 
 - Use RAG for building-code questions:
   - user query → embed → vector search over code chunks → pass snippets + question to chat model.
+  - Supports multiple code documents simultaneously (multi-jurisdiction support).
+  - Architects can query across different building codes without switching contexts.
 - Use deterministic Python for simple numeric compliance (area, widths).
 - Use LLM for:
   - summarizing issues
-  - answering questions via RAG
-  - extracting rules from PDFs (MVP core feature)
+  - answering questions via RAG (handles multiple code documents)
+  - extracting rules from PDFs (MVP core feature) - automatically processes multiple code PDFs
 
 Frontend patterns:
 

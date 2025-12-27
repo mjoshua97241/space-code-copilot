@@ -107,18 +107,19 @@ def load_rooms(csv_path: Path | None = None) -> List[Room]:
 # Door Loader with Validation
 # ============================================================================
 
-@lru_cache(maxsize=2)
 def load_doors(
     csv_path: Path | None = None,
-    rooms_ids: Set[str] | None = None
-    ) -> tuple[Door, ...]:
+    room_ids: Set[str] | None = None
+) -> tuple[Door, ...]:
     """
     Load doors from CSV file into Door models.
     
     Validates that each door's location_room_id references an existing Room.id.
     This ensures data integrity and catches errors early.
     
-    Uses LRU cache to avoid re-reading the same file multiple times.
+    Note: Caching is not used when room_ids is provided (for validation)
+    because sets are not hashable. For performance, call without validation
+    first, then validate separately if needed.
     
     Args:
         csv_path: Optional path to doors.csv. If None, uses default location.
@@ -137,10 +138,9 @@ def load_doors(
         room_ids = {room.id for room in rooms}
         doors = list(load_doors(room_ids=room_ids))
     """
-
     if csv_path is None:
         csv_path = DATA_DIR / "doors.csv"
-
+    
     csv_path = csv_path.resolve()
 
     doors = []
@@ -157,9 +157,9 @@ def load_doors(
                     location_room_id = row["location_room_id"].strip()
 
                     # Validate room reference if room_ids provided
-                    if rooms_ids is not None and location_room_id is not None:
+                    if room_ids is not None and location_room_id not in room_ids:
                         invalid_refs.append(
-                            f"Row {row_num}: Door '{row['id']}' references"
+                            f"Row {row_num}: Door '{row['id']}' references "
                             f"non-existent room '{location_room_id}'"
                         )
 
@@ -178,7 +178,7 @@ def load_doors(
                         f"Error parsing door at row {row_num} in {csv_path}: {e}"
                     ) from e
 
-            # Raise error if any invalid room references fond
+            # Raise error if any invalid room references found
             if invalid_refs:
                 raise ValueError(
                     f"Invalid room references in doors.csv:\n" + "\n".join(invalid_refs)
