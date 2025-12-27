@@ -1,6 +1,7 @@
 from typing import List
 
 from app.models.domain import Rule, Room, Issue, Door
+from backend.app.services.rules_seed import get_all_rules
 
 # ============================================================================
 # Room Compliance Checking
@@ -104,3 +105,61 @@ def check_door_compliance(door: Door, rules: List[Rule]) -> List[Issue]:
                 issues.append(issue)
 
     return issues
+
+# ============================================================================
+# Main Compliance Checking
+# ============================================================================
+
+def check_compliance(
+    rooms: List[Room],
+    doors: List[Door],
+    rules: List[Rule] | None = None,
+) -> List[Issue]:
+    """
+    Check all rooms and doors against building code rules.
+
+    This is the main function that orchestrates compliance checking.
+    It:
+    1. Load rules (if not provided)
+    2. Checks each room against room rules
+    3. Checks each door against door rules
+    4. Returns all violations as Issue objects
+
+    Args:
+        rooms: List of Room objects to check
+        doors: List of Door objects to check
+        rules: Optional list of rules. If None, uses get_all_rules()
+
+    Returns:
+        List of Issue objects representing all violations found.
+
+    Example:
+        from app.services.design_loader import load_design
+
+        rooms, doors = load_design()
+        issues = check_compliance(rooms, doors)
+
+        if issues:
+            print(f"Found {len(issues)} compliance issues")
+            for issue in issues:
+                print(f"- {issue.message}")
+        else:
+            print("Design is compliant!) 
+    """
+    # Load rules if not provided
+    if rules is not None:
+        rules = get_all_rules()
+
+    all_issues = []
+
+    # Check all rooms
+    for room in rooms:
+        room_issues = check_room_compliance(room, rules)
+        all_issues.extend(room_issues)
+    
+    # Check all doors
+    for door in doors:
+        door_issues = check_door_compliance(door, rules)
+        all_issues.extend(door_issues)
+
+    return all_issues
