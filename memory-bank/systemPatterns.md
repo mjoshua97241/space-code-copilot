@@ -59,6 +59,63 @@ Plan/Act:
 - Standard Python libraries (csv, pathlib, etc.)
 - Basic CRUD operations
 
+## Caching Strategy
+
+The project uses different caching strategies for different data types and operations:
+
+### CSV Data Caching (`design_loader.py`)
+- **Purpose**: Cache parsed Room/Door models from CSV files
+- **Strategy**: Python's `@lru_cache` decorator
+- **Why**: CSV files are read frequently (every `/api/issues` call), but parsing is fast
+- **Implementation**: 
+  - `load_rooms()` and `load_doors()` use `@lru_cache(maxsize=2)`
+  - Cache key includes file path + modification time (auto-invalidation)
+  - Returns tuples (hashable) for caching, converted to lists when needed
+- **File**: `app/services/design_loader.py`
+
+### PDF Processing Caching (Separate Files)
+PDFs require more sophisticated caching due to expensive operations:
+
+#### Embedding Cache (`vector_store.py`)
+- **Purpose**: Cache expensive embedding computations
+- **Strategy**: `CacheBackedEmbeddings` pattern from day_12 lesson
+- **Why**: Embedding API calls are slow and expensive
+- **Implementation**: 
+  - Uses LangChain's `CacheBackedEmbeddings` with `LocalFileStore`
+  - Caches embeddings in `./cache/embeddings/` directory
+  - Automatically checks cache before calling embedding API
+- **File**: `app/services/vector_store.py` (to be implemented)
+
+#### LLM Response Cache (`llm.py`)
+- **Purpose**: Cache LLM API responses
+- **Strategy**: `setup_llm_cache()` pattern from day_12 lesson
+- **Why**: LLM API calls are slow, expensive, and often have identical prompts
+- **Implementation**:
+  - Uses `InMemoryCache` (dev) or `SQLiteCache` (production)
+  - Configured via `setup_llm_cache(cache_type="memory"|"sqlite")`
+  - Caches at LangChain global level
+- **File**: `app/core/llm.py` (to be implemented)
+
+### Why Separate Caching Strategies?
+
+| Data Type | Operation | Caching Strategy | File |
+|-----------|-----------|------------------|------|
+| **CSV** | File I/O + parsing | `lru_cache` (simple) | `design_loader.py` |
+| **PDF embeddings** | Embedding API calls | `CacheBackedEmbeddings` (day_12) | `vector_store.py` |
+| **LLM responses** | LLM API calls | `setup_llm_cache()` (day_12) | `llm.py` |
+
+**Rationale**:
+- CSV caching is simple (built-in Python decorator)
+- PDF/LLM caching uses day_12 lesson patterns (production-ready, handles expensive operations)
+- Separation of concerns: each file handles its own caching needs
+- Reusability: `llm.py` cache is shared across multiple services
+
+### Cache Invalidation
+
+- **CSV cache**: Invalidates automatically when file modification time changes
+- **Embedding cache**: Persistent file-based cache (survives restarts)
+- **LLM cache**: Memory cache (cleared on restart) or SQLite (persistent)
+
 **Do use lessons for:**
 - `app/services/vector_store.py` - RAG/vector DB patterns (Qdrant setup, embedding pipelines)
 - `app/core/llm.py` - Multi-provider LLM abstraction (OpenAI/Gemini/Claude switching)
