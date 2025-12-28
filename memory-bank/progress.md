@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, and seeded rules are complete. Ready to implement compliance checker and API endpoints.
+Foundation is working. Domain models, CSV loaders, seeded rules, and compliance checker are complete. Ready to implement API endpoints.
 
 ## What Works
 
@@ -29,6 +29,13 @@ Foundation is working. Domain models, CSV loaders, and seeded rules are complete
   - `get_all_rules()` - Ready for LLM integration (combines seeded + extracted)
   - Helper functions: `get_rules_for_element_type()`, `get_rules_by_type()`, `get_rule_by_id()`
   - Rules include: minimum bedroom area (9.5 m²), living room area (12.0 m²), accessible door width (800 mm), standard door width (700 mm)
+- Compliance checker (`app/services/compliance_checker.py`):
+  - `check_compliance()` - Main function that checks rooms and doors against rules
+  - `check_room_compliance()` - Checks individual rooms against area_min rules
+  - `check_door_compliance()` - Checks individual doors against width_min rules
+  - `get_compliance_summary()` - Helper for issue statistics
+  - Returns Issue[] objects with detailed violation messages
+  - Tested and working (`test_compliance_checker.py` - found 2 violations as expected)
 - Project structure:
   - Backend directories: `app/api/`, `app/services/`, `app/models/`, `app/core/`
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
@@ -50,9 +57,9 @@ Foundation is working. Domain models, CSV loaders, and seeded rules are complete
 - [x] CSV loaders for rooms and doors (`app/services/design_loader.py`)
 - [x] Domain models: Room, Door, Rule, Issue (`app/models/domain.py`)
 - [x] Seeded rules (`app/services/rules_seed.py`)
-- [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based
-- [ ] Compliance checker (`app/services/compliance_checker.py`)
+- [x] Compliance checker (`app/services/compliance_checker.py`)
 - [ ] `/api/issues` endpoint returning `Issue[]`
+- [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based
 - [ ] PDF ingest (`app/services/pdf_ingest.py`)
 - [ ] Vector store setup (`app/services/vector_store.py`)
 - [ ] LLM wrapper (`app/core/llm.py`)
@@ -80,7 +87,7 @@ None yet (project in early setup phase).
    - [x] Domain models (Room, Door, Rule, Issue) in `app/models/domain.py`
    - [x] CSV loaders in `app/services/design_loader.py`
    - [x] Seeded rules in `app/services/rules_seed.py`
-   - [ ] Compliance checker in `app/services/compliance_checker.py`
+   - [x] Compliance checker in `app/services/compliance_checker.py`
    - [ ] `/api/issues` endpoint in `app/api/issues.py`
 
 2. Implement frontend HTML template:

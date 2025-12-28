@@ -6,8 +6,8 @@ Current focus:
 - Domain models complete: All Pydantic models (Room, Door, Rule, Issue) implemented in `app/models/domain.py`
 - CSV loaders complete: `design_loader.py` with caching and validation
 - Seeded rules complete: `rules_seed.py` with 4 rules ready for compliance checking
-- Next: Implement compliance checker and API endpoints:
-  - Compliance checker (`app/services/compliance_checker.py`)
+- Compliance checker complete: `compliance_checker.py` tested and working (found 2 violations as expected)
+- Next: Implement API endpoints:
   - `/api/issues` endpoint returning `Issue[]`
   - Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based (MVP core)
 
@@ -18,6 +18,12 @@ Recent changes:
   - Automatic validation of door->room references
   - File modification time-based cache invalidation
   - Helper functions for filtering and lookup
+- Completed compliance checker (`app/services/compliance_checker.py`):
+  - `check_compliance()` - Main orchestrator function
+  - `check_room_compliance()` and `check_door_compliance()` - Element-specific checkers
+  - `get_compliance_summary()` - Helper for statistics
+  - Returns Issue[] objects with detailed violation messages
+  - Tested and working (`test_compliance_checker.py` - correctly found 2 door violations)
 - Completed seeded rules (`app/services/rules_seed.py`):
   - 4 hardcoded rules: 2 room area rules, 2 door width rules
   - `get_all_rules()` function ready for LLM integration
@@ -34,12 +40,7 @@ Recent changes:
 
 Todo next:
 
-- Implement compliance checker (`app/services/compliance_checker.py`)
 - Implement `/api/issues` endpoint (`app/api/issues.py`)
-- Frontend HTML template (`app/templates/index.html`) with:
-  - Plan viewer (plan.png + overlays) with highlight on issue selection.
-  - Issues list fetching `/api/issues` and rendering via DOM manipulation.
-  - Chat panel posting to `/api/chat` and rendering replies.
 - Frontend HTML template (`app/templates/index.html`) with:
   - Plan viewer (plan.png + overlays) with highlight on issue selection.
   - Issues list fetching `/api/issues` and rendering via DOM manipulation.
