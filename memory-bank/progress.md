@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, and compliance checker are complete. Ready to implement API endpoints.
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, and `/api/issues` endpoint are complete. Ready to implement frontend or continue with LLM components.
 
 ## What Works
 
@@ -36,6 +36,12 @@ Foundation is working. Domain models, CSV loaders, seeded rules, and compliance 
   - `get_compliance_summary()` - Helper for issue statistics
   - Returns Issue[] objects with detailed violation messages
   - Tested and working (`test_compliance_checker.py` - found 2 violations as expected)
+- API endpoints (`app/api/issues.py`):
+  - `GET /api/issues` - Returns list of all compliance issues (Issue[])
+  - `GET /api/issues/summary` - Returns summary statistics (counts by type/severity)
+  - Uses `APIRouter` pattern with proper error handling (404, 400, 500)
+  - Router mounted in `main.py` via `app.include_router(issues_router)`
+  - Tested and working (returns 2 door violations as expected)
 - Project structure:
   - Backend directories: `app/api/`, `app/services/`, `app/models/`, `app/core/`
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
@@ -58,14 +64,14 @@ Foundation is working. Domain models, CSV loaders, seeded rules, and compliance 
 - [x] Domain models: Room, Door, Rule, Issue (`app/models/domain.py`)
 - [x] Seeded rules (`app/services/rules_seed.py`)
 - [x] Compliance checker (`app/services/compliance_checker.py`)
-- [ ] `/api/issues` endpoint returning `Issue[]`
+- [x] `/api/issues` endpoint returning `Issue[]` (`app/api/issues.py`)
 - [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based
 - [ ] PDF ingest (`app/services/pdf_ingest.py`)
 - [ ] Vector store setup (`app/services/vector_store.py`)
 - [ ] LLM wrapper (`app/core/llm.py`)
 - [ ] `/api/rag/query` endpoint (optional)
 - [ ] `/api/chat` endpoint combining issues + RAG
-- [ ] API routers mounted in `main.py`
+- [x] API routers mounted in `main.py` (issues router)
 
 ### UI (MVP)
 
@@ -82,13 +88,13 @@ None yet (project in early setup phase).
 
 ## Next Steps
 
-1. Implement backend Phase 1-3 (in progress):
+1. Implement backend Phase 1-3 (complete):
 
    - [x] Domain models (Room, Door, Rule, Issue) in `app/models/domain.py`
    - [x] CSV loaders in `app/services/design_loader.py`
    - [x] Seeded rules in `app/services/rules_seed.py`
    - [x] Compliance checker in `app/services/compliance_checker.py`
-   - [ ] `/api/issues` endpoint in `app/api/issues.py`
+   - [x] `/api/issues` endpoint in `app/api/issues.py`
 
 2. Implement frontend HTML template:
 

@@ -7,12 +7,19 @@ Current focus:
 - CSV loaders complete: `design_loader.py` with caching and validation
 - Seeded rules complete: `rules_seed.py` with 4 rules ready for compliance checking
 - Compliance checker complete: `compliance_checker.py` tested and working (found 2 violations as expected)
-- Next: Implement API endpoints:
-  - `/api/issues` endpoint returning `Issue[]`
-  - Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based (MVP core)
+- API endpoints complete: `/api/issues` endpoint working and tested
+- Next: Choose between frontend implementation or LLM components:
+  - Frontend: HTML template with plan viewer, issues list, and chat panel
+  - LLM: Rule extraction from PDFs (`app/services/rule_extractor.py`) - MVP core feature
 
 Recent changes:
 
+- Completed `/api/issues` endpoint (`app/api/issues.py`):
+  - `GET /api/issues` - Returns list of all compliance issues
+  - `GET /api/issues/summary` - Returns summary statistics
+  - Uses `APIRouter` pattern with proper error handling
+  - Router mounted in `main.py` via `app.include_router(issues_router)`
+  - Tested and working (returns 2 door violations as expected)
 - Completed CSV loaders (`app/services/design_loader.py`):
   - `load_rooms()` and `load_doors()` with `@lru_cache` for performance
   - Automatic validation of door->room references
@@ -40,7 +47,6 @@ Recent changes:
 
 Todo next:
 
-- Implement `/api/issues` endpoint (`app/api/issues.py`)
 - Frontend HTML template (`app/templates/index.html`) with:
   - Plan viewer (plan.png + overlays) with highlight on issue selection.
   - Issues list fetching `/api/issues` and rendering via DOM manipulation.
