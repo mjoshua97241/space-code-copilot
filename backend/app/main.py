@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
+from app.api.issues import router as issues_router
+
 app = FastAPI(title="Code-Aware Space Planning Copilot")
 
 app.add_middleware(
@@ -14,6 +16,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+app.include_router(issues_router)
 
 # Use absolute paths relative to this file
 BASE_DIR = Path(__file__).parent
