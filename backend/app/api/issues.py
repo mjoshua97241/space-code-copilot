@@ -85,3 +85,37 @@ def get_issues() -> List[Issue]:
             status_code=500,
             detail=f"Internal server error: {str(e)}"
         )
+
+# ============================================================================
+# GET /api/issues/summary Endpoint (Optional Helper)
+# ============================================================================
+
+@router.get("/summary")
+def get_issues_summary() -> dict:
+    """
+    Get a summary of compliance issues (counts by type, severity).
+
+    Useful for UI to show quick statistics without loading all issue details.
+
+    Returns:
+        Dictionary with summary statistics:
+        {
+            "total": 2,
+            "by_element_type": {"room": 0, "door": 2},
+            "by_severity": {"error": 2, "warning": 0}
+        }
+    """
+    try:
+        from app.services.compliance_checker import get_compliance_summary
+
+        rooms, doors = load_design()
+        issues = check_compliance(rooms, doors)
+        summary = get_compliance_summary(issues)
+
+        return summary
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating summary: {str(e)}"
+        )
