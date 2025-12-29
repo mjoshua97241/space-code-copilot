@@ -182,6 +182,7 @@ Reference document for preparing the bootcamp demo presentation covering Problem
 - LLM response time
 
 **Implementation:**
+```python
 # Add to FastAPI endpoints
 import time
 from fastapi import Request
@@ -193,6 +194,7 @@ async def add_process_time_header(request: Request, call_next):
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
     return response
+```
 **Cache Hit Rates:**
 - CSV cache hit rate (from `@lru_cache`)
 - Embedding cache hit rate (from `CacheBackedEmbeddings`)
@@ -204,7 +206,8 @@ async def add_process_time_header(request: Request, call_next):
 
 #### 2. LLM/RAG Metrics (LangSmith Integration)
 
-**Pattern from day_12 lesson:**n
+**Pattern from day_12 lesson:**
+```python
 # In app/core/llm.py or app/main.py
 import os
 import uuid
@@ -218,7 +221,10 @@ if os.getenv("LANGCHAIN_API_KEY"):
     print("✓ LangSmith tracing enabled")
 else:
     os.environ["LANGCHAIN_TRACING_V2"] = "false"
-    print("⚠ LangSmith tracing disabled")**Metrics to track via LangSmith:**
+    print("⚠ LangSmith tracing disabled")
+```
+
+**Metrics to track via LangSmith:**
 - LLM token usage (input/output tokens)
 - LLM latency per call
 - Embedding API calls and latency
@@ -236,7 +242,8 @@ else:
 - Use RAGAS framework to evaluate RAG system quality
 - Metrics: faithfulness, answer relevancy, context precision, context recall
 
-**Implementation (for evaluation/testing):**thon
+**Implementation (for evaluation/testing):**
+```python
 # Add to backend/pyproject.toml
 # ragas>=0.1.0
 
@@ -248,7 +255,8 @@ from ragas.metrics import faithfulness, answer_relevancy, context_precision
 results = evaluate(
     dataset=test_dataset,
     metrics=[faithfulness, answer_relevancy, context_precision]
-)**Metrics to track:**
+)
+```**Metrics to track:**
 - **Faithfulness**: How grounded is the answer in the retrieved context?
 - **Answer Relevancy**: How relevant is the answer to the question?
 - **Context Precision**: How precise is the retrieved context?
@@ -292,7 +300,8 @@ results = evaluate(
 - Or use LangSmith dashboard (if API key configured)
 - Or create simple HTML dashboard showing key metrics
 
-**Example metrics endpoint:**on
+**Example metrics endpoint:**
+```python
 # In app/api/metrics.py
 from fastapi import APIRouter
 from app.services.compliance_checker import get_compliance_summary
@@ -311,7 +320,10 @@ def get_metrics_summary():
         "issues_by_severity": summary["by_severity"],
         "cache_stats": get_cache_stats(),  # Implement this
         "llm_calls_today": get_llm_call_count(),  # Implement this
-    }### Presentation Metrics to Highlight
+    }
+```
+
+### Presentation Metrics to Highlight
 
 **For bootcamp demo, focus on:**
 1. **Speed**: Compliance check completes in <1 second (vs. hours manually)
@@ -323,48 +335,45 @@ def get_metrics_summary():
 
 ## 5. Demo Presentation
 
-### Demo Flow
+### Demo Flow (7 minutes total)
 
-**1. Setup (30 seconds)**
-- Show the deployed app (Railway URL or local)
-- Explain: "This is a working MVP that helps architects check building code compliance"
-
-**2. Problem Demonstration (1 minute)**
+**1. Problem (1 min)**
 - Show a dense building code PDF
 - "Architects must read hundreds of pages like this"
 - "Different codes for different jurisdictions"
+- "Manual checking is slow and error-prone"
 
-**3. Solution Overview (1 minute)**
+**2. Solution Overview (1 min)**
 - Show CSV input files (rooms.csv, doors.csv)
 - "We input design data as simple CSVs"
-- "The system automatically checks compliance"
+- "The system automatically checks compliance using LLM/RAG"
+- Highlight: Automated rule extraction + compliance checking
 
-**4. Compliance Checking Demo (2 minutes)**
-- Load design data
-- Show `/api/issues` endpoint response
-- Highlight violations: "Door D001 is 600mm, but code requires 800mm for accessibility"
-- Show frontend displaying issues
-
-**5. RAG/Chat Demo (2 minutes)**
-- Ask chat: "What is the minimum bedroom area requirement?"
-- Show RAG retrieving relevant code sections
-- Show LLM answer with code references
-- "This works across multiple code documents"
-
-**6. Architecture Walkthrough (1 minute)**
+**3. Architecture (1.5 min)**
 - Show system architecture diagram
 - Explain key components: CSV loaders, compliance checker, RAG pipeline
-- Highlight caching strategy
+- Highlight caching strategy and multi-code support
 
-**7. Metrics Overview (1 minute)**
-- Show LangSmith dashboard (if available)
-- Or show metrics endpoint: response times, cache hit rates
-- Highlight: "Compliance check in <1 second, 80% cache hit rate"
+**4. Metrics (1 min)**
+- Show LangSmith dashboard (if available) or metrics endpoint
+- Response times: "Compliance check in <1 second"
+- Cache hit rates: "80% cache hit rate reduces API costs"
+- Token usage and cost tracking
 
-**8. Key Takeaways (30 seconds)**
-- Automated compliance checking saves time
-- Multi-code support handles different jurisdictions
-- LLM/RAG makes code documents queryable
+**5. Live Demo (2.5 min)**
+- Show deployed app (Railway URL or local)
+- Load design data and show `/api/issues` endpoint response
+- Highlight violations: "Door D001 is 600mm, but code requires 800mm for accessibility"
+- Show frontend displaying issues (if implemented)
+- Quick RAG/Chat demo (if implemented): "What is the minimum bedroom area requirement?"
+- Key takeaway: "Automated compliance checking saves hours of manual work"
+
+**Q&A (3 minutes)**
+- Be prepared for questions on:
+  - Technical implementation details
+  - LLM accuracy and reliability
+  - Cost and scalability
+  - Future enhancements
 
 ### Demo Checklist
 
@@ -414,36 +423,38 @@ def get_metrics_summary():
 
 ## Presentation Structure Summary
 
-1. **Problem** (2-3 min)
+**Total time: 7 minutes presentation + 3 minutes Q&A = 10 minutes**
+
+1. **Problem** (1 min)
    - Multiple jurisdictions, multiple codes
    - Code complexity
    - Manual checking pain points
 
-2. **Solution** (2-3 min)
+2. **Solution** (1 min)
    - Code-Aware Space Planning Copilot overview
    - How LLM/RAG solves the problem
    - MVP features
 
-3. **Architecture** (3-4 min)
+3. **Architecture** (1.5 min)
    - Tech stack
    - System architecture diagram
    - Component breakdown
    - Key design decisions
 
-4. **Metrics** (2-3 min)
+4. **Metrics** (1 min)
    - System performance metrics
    - LLM/RAG metrics (LangSmith)
    - RAG quality metrics (RAGAS)
    - Business metrics
    - Cost metrics
 
-5. **Demo** (5-7 min)
+5. **Demo** (2.5 min)
    - Live demonstration
    - Compliance checking
-   - RAG chat
+   - RAG chat (if implemented)
    - Metrics overview
 
-**Total time: ~15-20 minutes**
+**Q&A: 3 minutes**
 
 ---
 

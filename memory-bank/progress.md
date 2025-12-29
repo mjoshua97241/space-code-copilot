@@ -108,3 +108,10 @@ None yet (project in early setup phase).
    - Vector store indexing
    - LLM-based rule extraction from PDFs
    - `/api/chat` with RAG context
+
+4. Prepare for presentation (see `memory-bank/presentation.md`):
+   - [ ] Implement metrics tracking (LangSmith setup, metrics endpoint)
+   - [ ] Prepare demo data and test results
+   - [ ] Create visual aids (architecture diagram, slides)
+   - [ ] Practice 7-minute presentation flow
+   - [ ] Prepare for Q&A (technical details, scalability, future enhancements)

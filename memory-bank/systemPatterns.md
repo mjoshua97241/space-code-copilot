@@ -129,3 +129,59 @@ PDFs require more sophisticated caching due to expensive operations:
 1. If it's a standard Python/library pattern → implement directly
 2. If it's LLM/AI-specific and complex → check lessons for patterns
 3. Use `/use-lesson-pattern` command when explicitly requested
+
+## Metrics and Observability
+
+**Metrics implementation patterns from lessons:**
+
+- **LangSmith** (day_12 lesson): Tracing and monitoring for LLM calls
+  - Setup in `app/core/llm.py` or `app/main.py`
+  - Automatic tracing of all LangChain calls
+  - Tracks: token usage, latency, cost, retrieval quality
+  - See `memory-bank/presentation.md` for implementation details
+
+- **RAGAS** (day_13 lesson): Evaluation framework for RAG systems
+  - Optional: For testing/evaluation of RAG quality
+  - Metrics: faithfulness, answer relevancy, context precision, context recall
+  - See `memory-bank/presentation.md` for implementation details
+
+- **Performance metrics**: API response times, cache hit rates
+  - FastAPI middleware for response time tracking
+  - Cache statistics in service layer
+  - See `memory-bank/presentation.md` for implementation details
+
+**Metrics endpoint:**
+- Optional `GET /api/metrics/summary` endpoint for presentation
+- Returns: issue counts, cache stats, LLM call counts
+- See `memory-bank/presentation.md` for example implementation
+
+### Where to Implement Metrics in MVP
+
+**1. LangSmith Setup** → `app/core/llm.py`
+- Add `setup_langsmith()` function at top of file
+- Sets `LANGCHAIN_PROJECT` and `LANGCHAIN_TRACING_V2` environment variables
+- Call `setup_langsmith()` in `app/main.py` at startup
+- All LangChain calls automatically traced once enabled
+
+**2. Performance Metrics Middleware** → `app/main.py`
+- Add HTTP middleware after CORS middleware
+- Tracks response time for all API endpoints
+- Adds `X-Process-Time` header to responses
+- Simple implementation: `time.time()` before/after request
+
+**3. Metrics Endpoint** → `app/api/metrics.py` (new file)
+- Create new `APIRouter` for metrics endpoints
+- `GET /api/metrics/summary` returns summary statistics
+- Uses existing `get_compliance_summary()` from compliance_checker
+- Mount router in `app/main.py` via `app.include_router(metrics_router)`
+
+**4. Cache Statistics** → Service files
+- Track in `design_loader.py` for CSV cache hits/misses
+- Track in `vector_store.py` for embedding cache (when implemented)
+- Simple counter variables or logging
+
+**Implementation Priority:**
+1. **High**: LangSmith setup (automatic tracing, no code changes needed)
+2. **Medium**: Performance middleware (simple, useful for monitoring)
+3. **Low**: Metrics endpoint (optional, for presentation/monitoring)
+4. **Low**: Cache statistics (optional, for optimization insights)
