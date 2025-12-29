@@ -50,6 +50,12 @@ Recent changes:
   - Required files and configurations
   - Environment variables documentation
   - Minimal frontend template reference
+- Created presentation guide (`memory-bank/presentation.md`):
+  - Problem, Solution, Architecture, Metrics, Demo sections
+  - Timing: 7 minutes presentation + 3 minutes Q&A
+  - Metrics implementation patterns from lessons (LangSmith, RAGAS)
+  - Demo flow and checklist
+  - Visual aids and preparation steps
 
 Todo next:
 
