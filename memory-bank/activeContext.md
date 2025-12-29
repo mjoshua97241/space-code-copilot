@@ -8,9 +8,8 @@ Current focus:
 - Seeded rules complete: `rules_seed.py` with 4 rules ready for compliance checking
 - Compliance checker complete: `compliance_checker.py` tested and working (found 2 violations as expected)
 - API endpoints complete: `/api/issues` endpoint working and tested
-- Next: Choose between frontend implementation or LLM components:
-  - Frontend: HTML template with plan viewer, issues list, and chat panel
-  - LLM: Rule extraction from PDFs (`app/services/rule_extractor.py`) - MVP core feature
+- LLM components partially implemented: Files exist but need updates for hybrid retrieval (see "Existing Files Assessment" below)
+- Next: Implement hybrid retrieval (Phase 2) - update `vector_store.py` to add BM25 + hybrid retriever
 
 Recent changes:
 
@@ -61,6 +60,18 @@ Recent changes:
   - Focus on hybrid retrieval (BM25 + Dense), citations, guardrails
   - Deferred advanced features (structured parsing, multi-hop, conflict resolution) to post-MVP
   - Risk mitigation strategies and dependencies documented
+
+**Existing Files Assessment (for Hybrid Retrieval Implementation):**
+
+- `app/core/llm.py`: ✅ **Aligned** - No changes needed. LLM wrapper is provider-agnostic and works with any retriever.
+- `app/services/pdf_ingest.py`: ⚠️ **Partially aligned** - Has basic chunking and metadata. Missing: section number extraction (regex for "Section X.X.X"), page numbers in metadata. Impact: Low priority, can add later.
+- `app/services/vector_store.py`: ❌ **Not aligned** - Currently only has dense embeddings. **Priority 1**: Needs BM25 retriever setup and HybridRetriever class (Phase 2 core work).
+- `app/services/rule_extractor.py`: ✅ **Aligned** - No changes needed. Will automatically benefit from hybrid retrieval once `vector_store.py` is updated.
+
+**Implementation Priority:**
+1. **Phase 2**: Update `vector_store.py` for hybrid retrieval (BM25 + Dense) - This is the critical path
+2. **Phase 1 enhancement**: Add section number extraction to `pdf_ingest.py` (optional, nice-to-have)
+3. **Phase 3**: Create chat endpoint (depends on Phase 2)
 
 Todo next:
 
