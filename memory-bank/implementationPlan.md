@@ -29,16 +29,24 @@ Detailed 2-week implementation plan for Code-Aware Space Planning Copilot MVP, f
 
 ### Phase 1: PDF Ingest + Basic Chunking
 
+**Current Status:**
+- ✅ `app/services/pdf_ingest.py` exists with basic functionality:
+  - PDF loading with `PyMuPDFLoader`
+  - Chunking with `RecursiveCharacterTextSplitter` (1000 chars, 100 overlap)
+  - Basic metadata: `source`, `chunk_index`
+- ⚠️ Missing enhancements:
+  - Page numbers in metadata (PyMuPDFLoader should provide this)
+  - Section number extraction (regex for "Section X.X.X" or "Chapter X")
+
 **Tasks:**
-1. Complete `app/services/pdf_ingest.py`:
-   - Load PDF using `PyMuPDFLoader`
-   - Chunk with `RecursiveCharacterTextSplitter` (1000 chars, 100 overlap)
-   - Add basic metadata: `source`, `page`, `chunk_index`
+1. Enhance `app/services/pdf_ingest.py`:
+   - Add page numbers to metadata (from PyMuPDFLoader)
    - Extract section numbers from text (simple regex: "Section X.X.X" or "Chapter X")
+   - Store in metadata as `section` field
 
-**Deliverable**: PDF → chunks with metadata
+**Deliverable**: PDF → chunks with enhanced metadata (source, page, chunk_index, section)
 
-**Estimated effort**: 1-2 days
+**Estimated effort**: 1 day (enhancement only, base functionality exists)
 
 **Dependencies**: None
 
@@ -46,11 +54,21 @@ Detailed 2-week implementation plan for Code-Aware Space Planning Copilot MVP, f
 
 ### Phase 2: Hybrid Retrieval (BM25 + Dense)
 
+**Current Status:**
+- ✅ `app/services/vector_store.py` exists with:
+  - Dense embeddings via `QdrantVectorStore`
+  - Cache-backed embeddings
+  - Basic `get_retriever()` method (returns dense-only)
+- ❌ Missing (critical for MVP):
+  - BM25 retriever setup
+  - Hybrid retriever combination logic
+  - Updated `get_retriever()` to return hybrid retriever
+
 **Tasks:**
 1. Update `app/services/vector_store.py`:
-   - Keep existing `VectorStore` class with dense embeddings
+   - Keep existing `VectorStore` class with dense embeddings (don't break existing code)
    - Add `BM25Retriever` setup (from `langchain_community.retrievers`)
-   - Create `HybridRetriever` class that combines both:
+   - Create `HybridRetriever` class or use LangChain's `EnsembleRetriever`:
      - Run BM25 search (top K results)
      - Run dense search (top K results)
      - Merge results using Reciprocal Rank Fusion (RRF) or weighted scoring
@@ -60,6 +78,7 @@ Detailed 2-week implementation plan for Code-Aware Space Planning Copilot MVP, f
 2. Update `get_retriever()` method:
    - Return hybrid retriever instead of dense-only
    - Support configurable K values for each retriever
+   - Maintain backward compatibility if possible (or clearly document breaking change)
 
 **Implementation pattern** (from day_13 lesson):
 ```python
@@ -89,11 +108,17 @@ ensemble_retriever = EnsembleRetriever(
 
 ### Phase 3: LLM Wrapper + Basic Chat Endpoint
 
+**Current Status:**
+- ✅ `app/core/llm.py` exists with:
+  - `get_llm()` function (provider abstraction)
+  - `setup_llm_cache()` function (memory/SQLite caching)
+- ⚠️ Missing:
+  - `setup_langsmith()` for metrics (optional but recommended)
+
 **Tasks:**
-1. Complete `app/core/llm.py`:
-   - `get_llm()` function (already exists, verify it works)
-   - `setup_llm_cache()` function (already exists)
-   - Add `setup_langsmith()` for metrics (optional but recommended)
+1. Enhance `app/core/llm.py`:
+   - Add `setup_langsmith()` function for tracing/metrics (optional but recommended)
+   - Verify existing functions work correctly
 
 2. Create `app/api/chat.py`:
    - `POST /api/chat` endpoint
