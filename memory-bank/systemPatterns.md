@@ -17,15 +17,20 @@ Backend patterns:
 
 AI patterns:
 
-- Use RAG for building-code questions:
-  - user query → embed → vector search over code chunks → pass snippets + question to chat model.
-  - Supports multiple code documents simultaneously (multi-jurisdiction support).
-  - Architects can query across different building codes without switching contexts.
+- Use **Hybrid RAG** for building-code questions (MVP decision):
+  - **BM25 retrieval**: Catches exact terms, section numbers, citations (e.g., "Section 5.2.3", "minimum 800mm")
+  - **Dense embeddings**: Catches paraphrases and semantic meaning (e.g., "bedroom size" → "habitable room minimum area")
+  - **Combined**: Merge results using Reciprocal Rank Fusion (RRF) or weighted scoring
+  - Why hybrid: Building codes are term-heavy with exact legal phrasing; dense-only fails on exact statutory language
+  - See `memory-bank/implementationPlan.md` for implementation details
+- Supports multiple code documents simultaneously (multi-jurisdiction support).
+- Architects can query across different building codes without switching contexts.
 - Use deterministic Python for simple numeric compliance (area, widths).
 - Use LLM for:
   - summarizing issues
   - answering questions via RAG (handles multiple code documents)
   - extracting rules from PDFs (MVP core feature) - automatically processes multiple code PDFs
+- **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing
 
 Frontend patterns:
 

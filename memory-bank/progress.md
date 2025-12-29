@@ -109,7 +109,16 @@ None yet (project in early setup phase).
    - LLM-based rule extraction from PDFs
    - `/api/chat` with RAG context
 
-4. Prepare for presentation (see `memory-bank/presentation.md`):
+4. Implement RAG pipeline (see `memory-bank/implementationPlan.md`):
+   - [ ] Phase 1: PDF ingest + basic chunking
+   - [ ] Phase 2: Hybrid retrieval (BM25 + Dense)
+   - [ ] Phase 3: LLM wrapper + chat endpoint
+   - [ ] Phase 4: Parent-child chunking (optional)
+   - [ ] Phase 5: Citations + guardrails
+   - [ ] Phase 6: Frontend implementation
+   - [ ] Phase 7: Testing + deployment + presentation prep
+
+5. Prepare for presentation (see `memory-bank/presentation.md`):
    - [ ] Implement metrics tracking (LangSmith setup, metrics endpoint)
    - [ ] Prepare demo data and test results
    - [ ] Create visual aids (architecture diagram, slides)

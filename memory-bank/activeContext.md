@@ -56,6 +56,11 @@ Recent changes:
   - Metrics implementation patterns from lessons (LangSmith, RAGAS)
   - Demo flow and checklist
   - Visual aids and preparation steps
+- Created implementation plan (`memory-bank/implementationPlan.md`):
+  - 2-week MVP implementation plan with 7 phases
+  - Focus on hybrid retrieval (BM25 + Dense), citations, guardrails
+  - Deferred advanced features (structured parsing, multi-hop, conflict resolution) to post-MVP
+  - Risk mitigation strategies and dependencies documented
 
 Todo next:
 
