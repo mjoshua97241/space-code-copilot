@@ -44,6 +44,12 @@ Recent changes:
 - Added `jinja2` dependency to `pyproject.toml`
 - Fixed static files path to use absolute paths via `Path(__file__).parent`
 - Verified app imports and runs successfully
+- Created deployment documentation (`memory-bank/deployment.md`):
+  - Deployment options (Railway.app, Docker, Local)
+  - Pre-deployment checklist
+  - Required files and configurations
+  - Environment variables documentation
+  - Minimal frontend template reference
 
 Todo next:
 
