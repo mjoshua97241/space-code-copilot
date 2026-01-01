@@ -131,6 +131,14 @@ def get_vector_store() -> VectorStore:
 # LLM Cache Setup (Optional but Recommended)
 # ============================================================================
 
+# Setup LLM cache on module import (only once)
+# This causes LLM responses to avoid redundant API calls
+_setup_cache_done = False
+
+if not _setup_cache_done:
+    setup_llm_cache(cache_type="memory")
+    _setup_cache_done = True
+
 # ============================================================================
 # POST /api/chat Endpoint
 # ============================================================================
