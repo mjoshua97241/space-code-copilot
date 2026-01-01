@@ -188,7 +188,36 @@ PDFs require more sophisticated caching due to expensive operations:
 - Simple counter variables or logging
 
 **Implementation Priority:**
-1. **High**: LangSmith setup (automatic tracing, no code changes needed)
-2. **Medium**: Performance middleware (simple, useful for monitoring)
-3. **Low**: Metrics endpoint (optional, for presentation/monitoring)
-4. **Low**: Cache statistics (optional, for optimization insights)
+1. **High**: RAG Technique Validation (NEW) - Validate hybrid retrieval choice using RAGAS
+   - Reference: `internal/lessons/day_5/1-advanced_retrievers.py`
+   - Compare hybrid vs dense-only using context_precision, context_recall, answer_relevancy
+   - Goal: Data-driven validation of core technical decision
+2. **High**: LangSmith setup (automatic tracing, no code changes needed)
+3. **Medium**: Performance middleware (simple, useful for monitoring)
+4. **Low**: Metrics endpoint (optional, for presentation/monitoring)
+5. **Low**: Cache statistics (optional, for optimization insights)
+
+### RAG Technique Validation (NEW)
+
+**Purpose**: Validate that hybrid retrieval (BM25 + Dense) is better than dense-only for building code questions.
+
+**Reference Pattern**: `internal/lessons/day_5/1-advanced_retrievers.py`
+- Shows how to evaluate retrievers with RAGAS
+- Provides `evaluate_retriever_with_ragas()` function pattern
+- Demonstrates comparison of multiple retrieval techniques
+- Uses metrics: context_precision, context_recall, answer_relevancy
+
+**Implementation approach**:
+1. Create test dataset (10-15 building code questions)
+   - Option A: Use RAGAS TestsetGenerator (from day_5)
+   - Option B: Manual test set covering exact terms, semantic queries, mixed queries
+2. Adapt evaluation function from day_5 lesson
+3. Evaluate both retrievers:
+   - Dense-only: `get_retriever(k=5, use_hybrid=False)`
+   - Hybrid: `get_retriever(k=5, use_hybrid=True)`
+4. Compare metrics and document results
+
+**Why this matters**:
+- Validates core technical assumption (hybrid is better for building codes)
+- Provides evidence for presentation
+- Identifies optimization needs before proceeding

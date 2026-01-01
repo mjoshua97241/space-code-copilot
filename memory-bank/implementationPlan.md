@@ -128,6 +128,73 @@ ensemble_retriever = EnsembleRetriever(
 
 ---
 
+## RAG Technique Validation (NEW - Before Phase 4)
+
+**Purpose**: Validate the assumption that hybrid retrieval (BM25 + Dense) is better than dense-only for building code questions.
+
+**Reference**: `internal/lessons/day_5/1-advanced_retrievers.py` - Evaluation patterns with RAGAS
+
+**Current Status:**
+- ✅ Hybrid retrieval implemented and working
+- ✅ Chat endpoint working
+- ❌ No validation that hybrid is actually better than dense-only
+
+**Tasks:**
+1. Create test dataset for building code questions:
+   - Option A: Use RAGAS TestsetGenerator (from day_5 lesson) to generate synthetic questions
+   - Option B: Create manual test set with 10-15 building code questions
+   - Questions should cover: exact term matching (section numbers), semantic queries (paraphrases), mixed queries
+
+2. Create evaluation helper function:
+   - Adapt `evaluate_retriever_with_ragas` pattern from day_5 lesson
+   - Function should:
+     - Take RAG chain and test dataset
+     - Run RAG chain for each question
+     - Format results for RAGAS evaluation
+     - Return metrics: context_precision, context_recall, answer_relevancy
+
+3. Evaluate both retrievers:
+   - Dense-only: `vector_store.get_retriever(k=5, use_hybrid=False)`
+   - Hybrid: `vector_store.get_retriever(k=5, use_hybrid=True)`
+   - Compare metrics side-by-side
+
+4. Document results:
+   - Which technique performs better on building code questions?
+   - Does hybrid retrieval validate the assumption (better for exact terms + semantic meaning)?
+   - If hybrid is better, proceed with confidence
+   - If dense-only is better, reconsider approach
+
+**Implementation pattern** (from day_5 lesson):
+```python
+from ragas import evaluate
+from ragas.metrics import context_precision, context_recall, answer_relevancy
+from datasets import Dataset
+
+# Create RAG chains for both retrievers
+dense_chain = create_rag_chain(vector_store.get_retriever(k=5, use_hybrid=False))
+hybrid_chain = create_rag_chain(vector_store.get_retriever(k=5, use_hybrid=True))
+
+# Evaluate both
+dense_results = evaluate_retriever_with_ragas(dense_chain, "Dense-Only", test_dataset)
+hybrid_results = evaluate_retriever_with_ragas(hybrid_chain, "Hybrid", test_dataset)
+
+# Compare metrics
+compare_results(dense_results, hybrid_results)
+```
+
+**Deliverable**: Validation report showing hybrid vs dense-only performance on building code questions
+
+**Estimated effort**: 1-2 days
+
+**Dependencies**: Phase 2 (hybrid retrieval), Phase 3 (chat endpoint)
+
+**Why this matters**: 
+- Validates the core technical decision (hybrid retrieval)
+- Provides data-driven evidence for presentation
+- Identifies if optimization is needed before proceeding
+
+---
+
 ## Week 2: Polish + Demo
 
 ### Phase 4: Parent-Child Chunking (Optional, if time permits)
