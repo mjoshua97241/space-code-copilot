@@ -103,32 +103,28 @@ ensemble_retriever = EnsembleRetriever(
 
 ### Phase 3: LLM Wrapper + Basic Chat Endpoint
 
-**Current Status:**
-- ✅ `app/core/llm.py` exists with:
-  - `get_llm()` function (provider abstraction)
-  - `setup_llm_cache()` function (memory/SQLite caching)
-- ⚠️ Missing:
-  - `setup_langsmith()` for metrics (optional but recommended)
+**Status: ✅ COMPLETE**
 
-**Tasks:**
-1. Enhance `app/core/llm.py`:
-   - Add `setup_langsmith()` function for tracing/metrics (optional but recommended)
-   - Verify existing functions work correctly
+**Completed:**
+- ✅ `app/api/chat.py` created with full RAG-based chat endpoint:
+  - `POST /api/chat` endpoint accepting `ChatRequest` with user query
+  - Returns `ChatResponse` with answer and citations
+  - Uses hybrid retriever (`vector_store.get_retriever()`) to get context from building code PDFs
+  - Singleton pattern for vector store initialization (indexes PDFs on first use)
+  - LLM cache setup (memory-based for MVP)
+  - Citation extraction from retrieved document metadata
+  - Pydantic models: `ChatRequest`, `ChatResponse`, `Citation`
+  - Proper error handling (ValueError, generic Exception)
+  - Environment variable loading (dotenv) for API keys
+  - Prompt template with system instructions for building code Q&A
+  - Chain: retriever → context building → prompt → LLM → response
+- ✅ Router mounted in `app/main.py` via `app.include_router(chat_router)`
+- ✅ `app/core/llm.py` verified working (no changes needed)
+- ⚠️ Optional: `setup_langsmith()` for metrics (deferred to Phase 5 or post-MVP)
 
-2. Create `app/api/chat.py`:
-   - `POST /api/chat` endpoint
-   - Accepts: `{"query": "user question"}`
-   - Uses hybrid retriever to get context
-   - Passes context + query to LLM
-   - Returns: `{"answer": "...", "citations": [...]}`
+**Deliverable**: ✅ Working chat endpoint with RAG and citations
 
-3. Mount chat router in `app/main.py`
-
-**Deliverable**: Working chat endpoint with RAG
-
-**Estimated effort**: 1 day
-
-**Dependencies**: Phase 2 (hybrid retrieval)
+**Dependencies**: ✅ Phase 2 (hybrid retrieval) - Complete
 
 ---
 

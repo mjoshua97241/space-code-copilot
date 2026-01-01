@@ -8,8 +8,10 @@ Current focus:
 - Seeded rules complete: `rules_seed.py` with 4 rules ready for compliance checking
 - Compliance checker complete: `compliance_checker.py` tested and working (found 2 violations as expected)
 - API endpoints complete: `/api/issues` endpoint working and tested
-- LLM components: Phase 2 (Hybrid Retrieval) complete - `vector_store.py` now supports BM25 + Dense hybrid retrieval
-- Next: Phase 3 - Create chat endpoint (`/api/chat`) that uses hybrid retrieval for RAG queries
+- LLM components: Phase 2 (Hybrid Retrieval) and Phase 3 (Chat Endpoint) complete
+  - `vector_store.py` supports BM25 + Dense hybrid retrieval
+  - `/api/chat` endpoint working with RAG-based Q&A and citations
+- Next: Phase 5 (Citations + Guardrails) or Phase 6 (Frontend Implementation)
 
 Recent changes:
 
@@ -67,6 +69,16 @@ Recent changes:
   - Configurable retrieval weights (default 0.5/0.5 for BM25/dense)
   - Tested and verified working (`test_vector_store.py` - successfully tested with PDF ingestion)
   - Added dependencies: `langchain-community>=0.3.0`, `rank-bm25>=0.2.2`
+- **Completed Phase 3: Chat Endpoint** (`app/api/chat.py`):
+  - `POST /api/chat` endpoint with RAG-based Q&A
+  - Uses hybrid retrieval (BM25 + Dense) to find relevant context from building code PDFs
+  - Pydantic models: `ChatRequest`, `ChatResponse`, `Citation`
+  - Singleton pattern for vector store initialization (indexes PDFs on first use)
+  - LLM cache setup (memory-based for MVP)
+  - Citation extraction from retrieved document metadata
+  - Proper error handling and environment variable loading (dotenv)
+  - Router mounted in `main.py` via `app.include_router(chat_router)`
+  - Tested and working (successfully answers questions with citations)
 
 **Recent LLM Component Updates:**
 
@@ -85,10 +97,12 @@ Recent changes:
 - `app/services/pdf_ingest.py`: ✅ Basic functionality complete - Section extraction enhancement optional
 - `app/services/vector_store.py`: ✅ **Phase 2 Complete** - Hybrid retrieval (BM25 + Dense) implemented and tested
 - `app/services/rule_extractor.py`: ✅ Ready - Will automatically use hybrid retrieval
+- `app/api/chat.py`: ✅ **Phase 3 Complete** - Chat endpoint with RAG and citations working
 
 **Next Priority:**
-1. **Phase 3**: Create `/api/chat` endpoint that uses hybrid retrieval for RAG queries
-2. **Phase 1 enhancement**: Add section number extraction to `pdf_ingest.py` (optional, nice-to-have)
+1. **Phase 5**: Enhance citations + add guardrails (optional, can skip to Phase 6)
+2. **Phase 6**: Frontend implementation (HTML template with plan viewer, issues list, chat panel)
+3. **Phase 1 enhancement**: Add section number extraction to `pdf_ingest.py` (optional, nice-to-have)
 
 Todo next:
 

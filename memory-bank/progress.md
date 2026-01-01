@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, and **Phase 2 (Hybrid Retrieval)** are complete. Ready to implement Phase 3 (chat endpoint) or continue with frontend.
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, and **Phase 3 (Chat Endpoint)** are complete. Ready to implement frontend or continue with Phase 5 (Citations + Guardrails).
 
 ## What Works
 
@@ -36,12 +36,23 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
   - `get_compliance_summary()` - Helper for issue statistics
   - Returns Issue[] objects with detailed violation messages
   - Tested and working (`test_compliance_checker.py` - found 2 violations as expected)
-- API endpoints (`app/api/issues.py`):
-  - `GET /api/issues` - Returns list of all compliance issues (Issue[])
-  - `GET /api/issues/summary` - Returns summary statistics (counts by type/severity)
-  - Uses `APIRouter` pattern with proper error handling (404, 400, 500)
-  - Router mounted in `main.py` via `app.include_router(issues_router)`
-  - Tested and working (returns 2 door violations as expected)
+- API endpoints:
+  - `app/api/issues.py`:
+    - `GET /api/issues` - Returns list of all compliance issues (Issue[])
+    - `GET /api/issues/summary` - Returns summary statistics (counts by type/severity)
+    - Uses `APIRouter` pattern with proper error handling (404, 400, 500)
+    - Tested and working (returns 2 door violations as expected)
+  - `app/api/chat.py`:
+    - `POST /api/chat` - RAG-based Q&A for building code questions
+    - Accepts `ChatRequest` with user query
+    - Returns `ChatResponse` with answer and citations
+    - Uses hybrid retrieval (BM25 + Dense) to find relevant context
+    - Extracts citations from retrieved document metadata
+    - Singleton pattern for vector store (indexes PDFs on first use)
+    - LLM cache setup for performance
+    - Environment variable loading (dotenv)
+    - Tested and working (successfully answers questions with citations)
+  - Both routers mounted in `main.py` via `app.include_router()`
 - Project structure:
   - Backend directories: `app/api/`, `app/services/`, `app/models/`, `app/core/`
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
@@ -89,9 +100,9 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - [x] Vector store setup (`app/services/vector_store.py`) - **Hybrid retrieval (BM25 + Dense) complete**
 - [x] LLM wrapper (`app/core/llm.py`) - Basic functionality complete
 - [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based (will use hybrid retrieval automatically)
+- [x] `/api/chat` endpoint with RAG and citations - **COMPLETE**
 - [ ] `/api/rag/query` endpoint (optional)
-- [ ] `/api/chat` endpoint combining issues + RAG
-- [x] API routers mounted in `main.py` (issues router)
+- [x] API routers mounted in `main.py` (issues + chat routers)
 
 ### UI (MVP)
 
@@ -132,7 +143,7 @@ None yet (project in early setup phase).
 4. Implement RAG pipeline (see `memory-bank/implementationPlan.md`):
    - [x] Phase 1: PDF ingest + basic chunking (basic functionality complete, section extraction optional)
    - [x] Phase 2: Hybrid retrieval (BM25 + Dense) - **COMPLETE**
-   - [ ] Phase 3: LLM wrapper + chat endpoint
+   - [x] Phase 3: LLM wrapper + chat endpoint - **COMPLETE**
    - [ ] Phase 4: Parent-child chunking (optional)
    - [ ] Phase 5: Citations + guardrails
    - [ ] Phase 6: Frontend implementation
