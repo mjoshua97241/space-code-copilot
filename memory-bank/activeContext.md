@@ -8,8 +8,8 @@ Current focus:
 - Seeded rules complete: `rules_seed.py` with 4 rules ready for compliance checking
 - Compliance checker complete: `compliance_checker.py` tested and working (found 2 violations as expected)
 - API endpoints complete: `/api/issues` endpoint working and tested
-- LLM components partially implemented: Files exist but need updates for hybrid retrieval (see "Existing Files Assessment" below)
-- Next: Implement hybrid retrieval (Phase 2) - update `vector_store.py` to add BM25 + hybrid retriever
+- LLM components: Phase 2 (Hybrid Retrieval) complete - `vector_store.py` now supports BM25 + Dense hybrid retrieval
+- Next: Phase 3 - Create chat endpoint (`/api/chat`) that uses hybrid retrieval for RAG queries
 
 Recent changes:
 
@@ -60,18 +60,35 @@ Recent changes:
   - Focus on hybrid retrieval (BM25 + Dense), citations, guardrails
   - Deferred advanced features (structured parsing, multi-hop, conflict resolution) to post-MVP
   - Risk mitigation strategies and dependencies documented
+- **Completed Phase 2: Hybrid Retrieval** (`app/services/vector_store.py`):
+  - Implemented BM25 retriever using `BM25Retriever` from `langchain_community`
+  - Implemented hybrid retriever using `EnsembleRetriever` (BM25 + Dense)
+  - Document storage for BM25 (stores raw documents alongside embeddings)
+  - Configurable retrieval weights (default 0.5/0.5 for BM25/dense)
+  - Tested and verified working (`test_vector_store.py` - successfully tested with PDF ingestion)
+  - Added dependencies: `langchain-community>=0.3.0`, `rank-bm25>=0.2.2`
 
-**Existing Files Assessment (for Hybrid Retrieval Implementation):**
+**Recent LLM Component Updates:**
 
-- `app/core/llm.py`: ✅ **Aligned** - No changes needed. LLM wrapper is provider-agnostic and works with any retriever.
-- `app/services/pdf_ingest.py`: ⚠️ **Partially aligned** - Has basic chunking and metadata. Missing: section number extraction (regex for "Section X.X.X"), page numbers in metadata. Impact: Low priority, can add later.
-- `app/services/vector_store.py`: ❌ **Not aligned** - Currently only has dense embeddings. **Priority 1**: Needs BM25 retriever setup and HybridRetriever class (Phase 2 core work).
-- `app/services/rule_extractor.py`: ✅ **Aligned** - No changes needed. Will automatically benefit from hybrid retrieval once `vector_store.py` is updated.
+- ✅ **Phase 2 Complete**: `app/services/vector_store.py` now implements hybrid retrieval:
+  - BM25 retriever setup using `BM25Retriever` from `langchain_community`
+  - Hybrid retriever using `EnsembleRetriever` to combine BM25 + Dense
+  - Document storage for BM25 (stores raw documents in addition to embeddings)
+  - Configurable weights for BM25/dense (default 0.5/0.5)
+  - Backward compatible: `use_hybrid=False` falls back to dense-only
+  - Tested and working (`test_vector_store.py` - successfully retrieves 9 results for test query)
+- ✅ **Dependencies added**: `langchain-community`, `rank-bm25` added to `pyproject.toml`
+- ✅ **Test file**: `app/tests/test_vector_store.py` created and working
 
-**Implementation Priority:**
-1. **Phase 2**: Update `vector_store.py` for hybrid retrieval (BM25 + Dense) - This is the critical path
+**Current Status:**
+- `app/core/llm.py`: ✅ Complete - No changes needed
+- `app/services/pdf_ingest.py`: ✅ Basic functionality complete - Section extraction enhancement optional
+- `app/services/vector_store.py`: ✅ **Phase 2 Complete** - Hybrid retrieval (BM25 + Dense) implemented and tested
+- `app/services/rule_extractor.py`: ✅ Ready - Will automatically use hybrid retrieval
+
+**Next Priority:**
+1. **Phase 3**: Create `/api/chat` endpoint that uses hybrid retrieval for RAG queries
 2. **Phase 1 enhancement**: Add section number extraction to `pdf_ingest.py` (optional, nice-to-have)
-3. **Phase 3**: Create chat endpoint (depends on Phase 2)
 
 Todo next:
 
