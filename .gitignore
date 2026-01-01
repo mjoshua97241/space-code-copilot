@@ -96,3 +96,6 @@ coverage/
 *.cover
 .hypothesis/
 
+# Cache (generated files)
+backend/cache/
+backend/**/cache/
