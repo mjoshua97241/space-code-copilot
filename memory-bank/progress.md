@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, and `/api/issues` endpoint are complete. Ready to implement frontend or continue with LLM components.
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, and **Phase 2 (Hybrid Retrieval)** are complete. Ready to implement Phase 3 (chat endpoint) or continue with frontend.
 
 ## What Works
 
@@ -47,9 +47,29 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
   - Static assets: `app/static/plan.png`, `app/static/styles.css`
   - Template: `app/templates/index.html` (empty)
+- Vector store with hybrid retrieval (`app/services/vector_store.py`):
+  - `VectorStore` class with cache-backed embeddings (OpenAI)
+  - Qdrant vector store setup (in-memory for MVP)
+  - **Hybrid retrieval (BM25 + Dense)** using `EnsembleRetriever`:
+    - BM25 retriever for exact term matching (section numbers, citations)
+    - Dense embeddings for semantic similarity
+    - Merged results using Reciprocal Rank Fusion (RRF)
+  - Document storage for both BM25 and dense retrieval
+  - Configurable retrieval weights (default 0.5/0.5)
+  - Tested and working (`test_vector_store.py` - successfully tested with PDF)
+- PDF ingest (`app/services/pdf_ingest.py`):
+  - `load_pdf()` - Loads PDF using `PyMuPDFLoader`
+  - `chunk_documents()` - Chunks documents using `RecursiveCharacterTextSplitter` (1000 chars, 100 overlap)
+  - `ingest_pdf()` - Convenience function with metadata
+  - Basic metadata: `source`, `chunk_index`, page numbers
+- LLM wrapper (`app/core/llm.py`):
+  - `get_llm()` - Provider abstraction (OpenAI, with placeholders for Gemini/Claude)
+  - `setup_llm_cache()` - In-memory or SQLite caching for LLM responses
 - Dependencies:
   - All required packages installed via `uv`
   - `jinja2` added for template rendering
+  - `langchain-community>=0.3.0` for BM25Retriever
+  - `rank-bm25>=0.2.2` for BM25 implementation
 
 ## What's Left to Build
 
@@ -65,10 +85,10 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - [x] Seeded rules (`app/services/rules_seed.py`)
 - [x] Compliance checker (`app/services/compliance_checker.py`)
 - [x] `/api/issues` endpoint returning `Issue[]` (`app/api/issues.py`)
-- [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based
-- [ ] PDF ingest (`app/services/pdf_ingest.py`)
-- [ ] Vector store setup (`app/services/vector_store.py`)
-- [ ] LLM wrapper (`app/core/llm.py`)
+- [x] PDF ingest (`app/services/pdf_ingest.py`) - Basic functionality complete
+- [x] Vector store setup (`app/services/vector_store.py`) - **Hybrid retrieval (BM25 + Dense) complete**
+- [x] LLM wrapper (`app/core/llm.py`) - Basic functionality complete
+- [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based (will use hybrid retrieval automatically)
 - [ ] `/api/rag/query` endpoint (optional)
 - [ ] `/api/chat` endpoint combining issues + RAG
 - [x] API routers mounted in `main.py` (issues router)
@@ -110,8 +130,8 @@ None yet (project in early setup phase).
    - `/api/chat` with RAG context
 
 4. Implement RAG pipeline (see `memory-bank/implementationPlan.md`):
-   - [ ] Phase 1: PDF ingest + basic chunking
-   - [ ] Phase 2: Hybrid retrieval (BM25 + Dense)
+   - [x] Phase 1: PDF ingest + basic chunking (basic functionality complete, section extraction optional)
+   - [x] Phase 2: Hybrid retrieval (BM25 + Dense) - **COMPLETE**
    - [ ] Phase 3: LLM wrapper + chat endpoint
    - [ ] Phase 4: Parent-child chunking (optional)
    - [ ] Phase 5: Citations + guardrails

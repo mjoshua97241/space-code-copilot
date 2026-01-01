@@ -54,31 +54,26 @@ Detailed 2-week implementation plan for Code-Aware Space Planning Copilot MVP, f
 
 ### Phase 2: Hybrid Retrieval (BM25 + Dense)
 
-**Current Status:**
-- ✅ `app/services/vector_store.py` exists with:
-  - Dense embeddings via `QdrantVectorStore`
-  - Cache-backed embeddings
-  - Basic `get_retriever()` method (returns dense-only)
-- ❌ Missing (critical for MVP):
-  - BM25 retriever setup
-  - Hybrid retriever combination logic
-  - Updated `get_retriever()` to return hybrid retriever
+**Status: ✅ COMPLETE**
 
-**Tasks:**
-1. Update `app/services/vector_store.py`:
-   - Keep existing `VectorStore` class with dense embeddings (don't break existing code)
-   - Add `BM25Retriever` setup (from `langchain_community.retrievers`)
-   - Create `HybridRetriever` class or use LangChain's `EnsembleRetriever`:
-     - Run BM25 search (top K results)
-     - Run dense search (top K results)
-     - Merge results using Reciprocal Rank Fusion (RRF) or weighted scoring
-     - Deduplicate by document ID
-     - Return top N final results
-
-2. Update `get_retriever()` method:
-   - Return hybrid retriever instead of dense-only
-   - Support configurable K values for each retriever
-   - Maintain backward compatibility if possible (or clearly document breaking change)
+**Completed:**
+- ✅ `app/services/vector_store.py` updated with hybrid retrieval:
+  - BM25 retriever setup using `BM25Retriever.from_documents()` from `langchain_community.retrievers`
+  - Hybrid retriever using `EnsembleRetriever` to combine BM25 + Dense
+  - Document storage: `self.documents` list stores raw documents for BM25 indexing
+  - Updated `get_retriever()` method:
+    - Returns `EnsembleRetriever` by default (hybrid)
+    - Configurable `use_hybrid` parameter (default `True`)
+    - Configurable weights: `bm25_weight` and `dense_weight` (default 0.5/0.5)
+    - Backward compatible: Falls back to dense-only if `use_hybrid=False` or no documents
+  - Merges results using Reciprocal Rank Fusion (RRF) via `EnsembleRetriever`
+- ✅ Dependencies added:
+  - `langchain-community>=0.3.0,<0.4.0` (for `BM25Retriever`)
+  - `rank-bm25>=0.2.2,<1.0.0` (required by `BM25Retriever`)
+- ✅ Tested and verified:
+  - `app/tests/test_vector_store.py` created and working
+  - Successfully tested with PDF ingestion (733 chunks from National-Building-Code.pdf)
+  - Hybrid retrieval returns merged results from both BM25 and dense retrievers
 
 **Implementation pattern** (from day_13 lesson):
 ```python

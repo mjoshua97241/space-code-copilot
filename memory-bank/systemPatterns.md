@@ -9,11 +9,11 @@ Backend patterns:
 - API routes in app/api/\*.py, mounted in app/main.py via include_router.
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
-  - pdf_ingest (PDF → chunks) - **Status**: Basic functionality exists, needs section extraction enhancement
-  - vector_store (embedding + Qdrant search) - **Status**: Dense-only, needs hybrid retrieval (BM25 + Dense) - **Priority 1**
+  - pdf_ingest (PDF → chunks) - **Status**: ✅ Basic functionality complete (section extraction optional enhancement)
+  - vector_store (embedding + Qdrant search) - **Status**: ✅ **Hybrid retrieval (BM25 + Dense) complete** - Uses `EnsembleRetriever` to combine BM25 and dense embeddings
   - compliance_checker (rules + design → issues)
-  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: Ready, will benefit from hybrid retrieval automatically
-- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: Complete, no changes needed
+  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: Ready, automatically uses hybrid retrieval
+- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, no changes needed
 
 AI patterns:
 
