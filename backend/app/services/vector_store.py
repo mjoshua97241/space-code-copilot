@@ -1,7 +1,10 @@
 """
-Vector store service: Embeddings + Qdrant for RAG retrieval.
+Vector store service: Embeddings + Qdrant for RAG retrieval with Hybrid Retrieval (BM25 + Dense).
 
-Adapted from day_12 (caching) and day_9_A2A (Qdrant) lesson patterns.
+Adapted from:
+- day_12: CacheBackedEmbeddings for embedding caching
+- day_9_A2A: QdrantVectorStore setup
+- day_13: Hybrid retrieval pattern (BM25 + Dense via EnsembleRetriever)
 """
 import hashlib
 import os
@@ -14,6 +17,10 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
+
+# Hybrid retrieval imports
+from langchain_community.retrievers import BM25Retriever
+from langchain.retrievers import EnsembleRetriever
 
 
 class CacheBackedEmbeddings:
@@ -64,11 +71,16 @@ class CacheBackedEmbeddings:
 
 class VectorStore:
     """
-    Vector store with caching for building code PDFs.
+    Vector store with caching and hybrid retrieval (BM25 + Dense) for building code PDFs.
+    
+    Hybrid retrieval combines:
+    - BM25: Exact term matching (section numbers, citations, legal phrases)
+    - Dense embeddings: Semantic similarity (paraphrases, related concepts)
     
     Pattern adapted from:
     - day_12: CacheBackedEmbeddings for embedding caching
     - day_9_A2A: QdrantVectorStore setup
+    - day_13: Hybrid retrieval via EnsembleRetriever
     """
     
     def __init__(
@@ -91,6 +103,9 @@ class VectorStore:
         self.embedding_model = embedding_model
         self.cache_dir = cache_dir
         self.use_memory = use_memory
+        
+        # Store documents for BM25 retrieval (needs raw text, not just embeddings)
+        self.documents: List[Document] = []
         
         # Setup caching (day_12 pattern)
         self._setup_embeddings()
@@ -137,30 +152,71 @@ class VectorStore:
     
     def add_documents(self, documents: List[Document]):
         """
-        Add documents to vector store.
+        Add documents to vector store and store for BM25 retrieval.
         
         Args:
             documents: List of Document objects (chunked PDFs)
         """
+        # Store documents for BM25 (needs raw text)
+        self.documents.extend(documents)
+        
+        # Add to vector store for dense embeddings
         self.vectorstore.add_documents(documents)
     
-    def get_retriever(self, k: int = 5):
+    def get_retriever(
+        self, 
+        k: int = 5, 
+        use_hybrid: bool = True,
+        bm25_weight: float = 0.5,
+        dense_weight: float = 0.5
+    ):
         """
         Get retriever for RAG queries.
         
+        By default, returns hybrid retriever (BM25 + Dense) for better building code retrieval.
+        BM25 catches exact terms (section numbers, citations), dense catches semantic meaning.
+        
         Args:
-            k: Number of documents to retrieve
+            k: Number of documents to retrieve from each retriever (before merging)
+            use_hybrid: If True, use hybrid retrieval (BM25 + Dense). If False, dense-only.
+            bm25_weight: Weight for BM25 results in ensemble (default 0.5)
+            dense_weight: Weight for dense results in ensemble (default 0.5)
         
         Returns:
-            LangChain retriever
+            LangChain retriever (EnsembleRetriever for hybrid, or dense-only retriever)
         """
-        return self.vectorstore.as_retriever(
+        # Dense retriever (always available)
+        dense_retriever = self.vectorstore.as_retriever(
             search_kwargs={"k": k}
         )
+        
+        # If hybrid and we have documents, combine BM25 + Dense
+        if use_hybrid and self.documents:
+            # Setup BM25 retriever (day_13 pattern)
+            # BM25Retriever needs documents to build its index
+            bm25_retriever = BM25Retriever.from_documents(
+                self.documents, 
+                k=k
+            )
+            
+            # Combine using EnsembleRetriever (day_13 pattern)
+            # EnsembleRetriever merges results using Reciprocal Rank Fusion (RRF)
+            hybrid_retriever = EnsembleRetriever(
+                retrievers=[bm25_retriever, dense_retriever],
+                weights=[bm25_weight, dense_weight]  # Equal weighting by default
+            )
+            
+            return hybrid_retriever
+        else:
+            # Fallback to dense-only (backward compatible)
+            return dense_retriever
     
     def similarity_search(self, query: str, k: int = 5) -> List[Document]:
         """
-        Direct similarity search (without retriever).
+        Direct similarity search (dense-only, without retriever).
+        
+        Note: This method only uses dense embeddings. For hybrid retrieval,
+        use get_retriever() and call invoke() on the retriever.
         
         Args:
             query: Search query
