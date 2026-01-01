@@ -144,6 +144,7 @@ None yet (project in early setup phase).
    - [x] Phase 1: PDF ingest + basic chunking (basic functionality complete, section extraction optional)
    - [x] Phase 2: Hybrid retrieval (BM25 + Dense) - **COMPLETE**
    - [x] Phase 3: LLM wrapper + chat endpoint - **COMPLETE**
+   - [ ] **RAG Technique Validation** - Validate hybrid retrieval choice using RAGAS metrics (NEW)
    - [ ] Phase 4: Parent-child chunking (optional)
    - [ ] Phase 5: Citations + guardrails
    - [ ] Phase 6: Frontend implementation

@@ -11,7 +11,9 @@ Current focus:
 - LLM components: Phase 2 (Hybrid Retrieval) and Phase 3 (Chat Endpoint) complete
   - `vector_store.py` supports BM25 + Dense hybrid retrieval
   - `/api/chat` endpoint working with RAG-based Q&A and citations
-- Next: Phase 5 (Citations + Guardrails) or Phase 6 (Frontend Implementation)
+- Next: **RAG Technique Validation** - Use RAGAS metrics to validate hybrid retrieval (BM25 + Dense) choice
+  - Compare hybrid vs dense-only retrieval on building code questions
+  - Reference: `internal/lessons/day_5/1-advanced_retrievers.py` for evaluation patterns
 
 Recent changes:
 
@@ -100,12 +102,23 @@ Recent changes:
 - `app/api/chat.py`: ✅ **Phase 3 Complete** - Chat endpoint with RAG and citations working
 
 **Next Priority:**
-1. **Phase 5**: Enhance citations + add guardrails (optional, can skip to Phase 6)
-2. **Phase 6**: Frontend implementation (HTML template with plan viewer, issues list, chat panel)
-3. **Phase 1 enhancement**: Add section number extraction to `pdf_ingest.py` (optional, nice-to-have)
+1. **RAG Technique Validation** (NEW): Validate hybrid retrieval choice using RAGAS metrics
+   - Compare hybrid (BM25 + Dense) vs dense-only retrieval
+   - Use patterns from `internal/lessons/day_5/1-advanced_retrievers.py`
+   - Metrics: context_precision, context_recall, answer_relevancy
+   - Goal: Validate assumption that hybrid retrieval is better for building codes
+2. **Phase 5**: Enhance citations + add guardrails (optional, can skip to Phase 6)
+3. **Phase 6**: Frontend implementation (HTML template with plan viewer, issues list, chat panel)
+4. **Phase 1 enhancement**: Add section number extraction to `pdf_ingest.py` (optional, nice-to-have)
 
 Todo next:
 
+- **RAG Technique Validation** (using day_5 lesson patterns):
+  - Create test dataset for building code questions (using RAGAS TestsetGenerator or manual)
+  - Create evaluation helper function (adapt `evaluate_retriever_with_ragas` from day_5)
+  - Evaluate hybrid retrieval (BM25 + Dense) vs dense-only retrieval
+  - Compare metrics: context_precision, context_recall, answer_relevancy
+  - Document results to validate hybrid retrieval choice
 - Frontend HTML template (`app/templates/index.html`) with:
   - Plan viewer (plan.png + overlays) with highlight on issue selection.
   - Issues list fetching `/api/issues` and rendering via DOM manipulation.
