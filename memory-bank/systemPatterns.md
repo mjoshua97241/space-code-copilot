@@ -6,7 +6,9 @@ Backend patterns:
   - Use `Path(__file__).parent` for absolute paths to static/templates directories.
   - Mount static files: `app.mount("/static", StaticFiles(directory=...))`
   - Setup templates: `Jinja2Templates(directory=...)`
-- API routes in app/api/\*.py, mounted in app/main.py via include_router.
+- API routes in app/api/\*.py, mounted in app/main.py via include_router:
+  - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
+  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with hybrid retrieval and citations
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ Basic functionality complete (section extraction optional enhancement)
