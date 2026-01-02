@@ -1,0 +1,93 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.18.1"
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "1d0db38904205bec4d6f6f6a1f6cec3e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "c34d97ca7e48216f33c755d408cdcbab",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "wGcJ",
+      "code_hash": "c06e46c1365bd942787582078e853f7d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "XmoV",
+      "code_hash": "313322241dcc0b14419766ddb25c0c73",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 LangSmith environment configured.\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "SfEr",
+      "code_hash": "71fe030498de25e7ef14ae83fe6ff987",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "BuPg",
+      "code_hash": "7fcceec20b51b87548f566dae91573ab",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Updating the plan to use Parent-Document Retrieval instead of weighted hybrid. This adds a different technique to compare.</span>\n<h2 id=\"updated-techniques-to-compare\">Updated techniques to compare</h2>\n<ol>\n<li>Dense-only (baseline) \u2014 current dense embeddings only</li>\n<li>BM25-only \u2014 sparse retrieval only</li>\n<li>Hybrid (BM25 + Dense) \u2014 current implementation (0.5/0.5 weights)</li>\n<li>Parent-Document Retrieval \u2014 small-to-big strategy (from day_5 lesson)</li>\n</ol>\n<h2 id=\"why-parent-document-retrieval\">Why Parent-Document Retrieval</h2>\n<span class=\"paragraph\">From day_5 lesson:</span>\n<ul>\n<li>Searches small chunks (better precision)</li>\n<li>Returns larger parent documents (more context)</li>\n<li>Useful for building codes where context matters</li>\n<li>Different approach from hybrid retrieval</li>\n</ul>\n<h2 id=\"updated-implementation-approach\">Updated implementation approach</h2>\n<div class=\"language-python codehilite\"><pre><span></span><code><span class=\"c1\"># evaluation/rag_evaluation.py (Marimo notebook structure)</span>\n\n<span class=\"c1\"># 1. Setup</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Load</span> <span class=\"n\">environment</span> <span class=\"n\">variables</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Setup</span> <span class=\"n\">LangSmith</span> <span class=\"p\">(</span><span class=\"n\">optional</span><span class=\"p\">)</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Setup</span> <span class=\"n\">RAGAS</span>\n\n<span class=\"c1\"># 2. Load building code PDFs</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Use</span> <span class=\"n\">backend</span><span class=\"o\">/</span><span class=\"n\">app</span><span class=\"o\">/</span><span class=\"n\">data</span><span class=\"o\">/*.</span><span class=\"n\">pdf</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Chunk</span> <span class=\"n\">using</span> <span class=\"n\">existing</span> <span class=\"n\">pattern</span>\n\n<span class=\"c1\"># 3. Create retrievers for each technique:</span>\n\n<span class=\"c1\"># Technique 1: Dense-only</span>\n<span class=\"n\">dense_retriever</span> <span class=\"o\">=</span> <span class=\"n\">vector_store</span><span class=\"o\">.</span><span class=\"n\">get_retriever</span><span class=\"p\">(</span><span class=\"n\">k</span><span class=\"o\">=</span><span class=\"mi\">5</span><span class=\"p\">,</span> <span class=\"n\">use_hybrid</span><span class=\"o\">=</span><span class=\"kc\">False</span><span class=\"p\">)</span>\n\n<span class=\"c1\"># Technique 2: BM25-only</span>\n<span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">langchain_community.retrievers</span><span class=\"w\"> </span><span class=\"kn\">import</span> <span class=\"n\">BM25Retriever</span>\n<span class=\"n\">bm25_retriever</span> <span class=\"o\">=</span> <span class=\"n\">BM25Retriever</span><span class=\"o\">.</span><span class=\"n\">from_documents</span><span class=\"p\">(</span><span class=\"n\">pdf_chunks</span><span class=\"p\">,</span> <span class=\"n\">k</span><span class=\"o\">=</span><span class=\"mi\">5</span><span class=\"p\">)</span>\n\n<span class=\"c1\"># Technique 3: Hybrid (BM25 + Dense)</span>\n<span class=\"n\">hybrid_retriever</span> <span class=\"o\">=</span> <span class=\"n\">vector_store</span><span class=\"o\">.</span><span class=\"n\">get_retriever</span><span class=\"p\">(</span><span class=\"n\">k</span><span class=\"o\">=</span><span class=\"mi\">5</span><span class=\"p\">,</span> <span class=\"n\">use_hybrid</span><span class=\"o\">=</span><span class=\"kc\">True</span><span class=\"p\">)</span>\n\n<span class=\"c1\"># Technique 4: Parent-Document Retrieval</span>\n<span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">langchain.retrievers</span><span class=\"w\"> </span><span class=\"kn\">import</span> <span class=\"n\">ParentDocumentRetriever</span>\n<span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">langchain.storage</span><span class=\"w\"> </span><span class=\"kn\">import</span> <span class=\"n\">InMemoryStore</span>\n<span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">langchain_text_splitters</span><span class=\"w\"> </span><span class=\"kn\">import</span> <span class=\"n\">RecursiveCharacterTextSplitter</span>\n\n<span class=\"c1\"># Setup parent-document retriever (from day_5 pattern)</span>\n<span class=\"n\">parent_docs</span> <span class=\"o\">=</span> <span class=\"n\">pdf_chunks</span>  <span class=\"c1\"># Or use original PDF pages as parents</span>\n<span class=\"n\">child_splitter</span> <span class=\"o\">=</span> <span class=\"n\">RecursiveCharacterTextSplitter</span><span class=\"p\">(</span><span class=\"n\">chunk_size</span><span class=\"o\">=</span><span class=\"mi\">750</span><span class=\"p\">)</span>\n\n<span class=\"c1\"># Create separate vectorstore for parent-document</span>\n<span class=\"n\">parent_vectorstore</span> <span class=\"o\">=</span> <span class=\"n\">QdrantVectorStore</span><span class=\"p\">(</span><span class=\"o\">...</span><span class=\"p\">)</span>  <span class=\"c1\"># New vectorstore</span>\n<span class=\"n\">store</span> <span class=\"o\">=</span> <span class=\"n\">InMemoryStore</span><span class=\"p\">()</span>\n\n<span class=\"n\">parent_document_retriever</span> <span class=\"o\">=</span> <span class=\"n\">ParentDocumentRetriever</span><span class=\"p\">(</span>\n    <span class=\"n\">vectorstore</span><span class=\"o\">=</span><span class=\"n\">parent_vectorstore</span><span class=\"p\">,</span>\n    <span class=\"n\">docstore</span><span class=\"o\">=</span><span class=\"n\">store</span><span class=\"p\">,</span>\n    <span class=\"n\">child_splitter</span><span class=\"o\">=</span><span class=\"n\">child_splitter</span>\n<span class=\"p\">)</span>\n<span class=\"n\">parent_document_retriever</span><span class=\"o\">.</span><span class=\"n\">add_documents</span><span class=\"p\">(</span><span class=\"n\">parent_docs</span><span class=\"p\">)</span>\n\n<span class=\"c1\"># 4. Create RAG chains (same pattern as day_5)</span>\n<span class=\"n\">retriever_chains</span> <span class=\"o\">=</span> <span class=\"p\">{</span>\n    <span class=\"s2\">&quot;Dense-Only&quot;</span><span class=\"p\">:</span> <span class=\"n\">create_rag_chain</span><span class=\"p\">(</span><span class=\"n\">dense_retriever</span><span class=\"p\">),</span>\n    <span class=\"s2\">&quot;BM25-Only&quot;</span><span class=\"p\">:</span> <span class=\"n\">create_rag_chain</span><span class=\"p\">(</span><span class=\"n\">bm25_retriever</span><span class=\"p\">),</span>\n    <span class=\"s2\">&quot;Hybrid&quot;</span><span class=\"p\">:</span> <span class=\"n\">create_rag_chain</span><span class=\"p\">(</span><span class=\"n\">hybrid_retriever</span><span class=\"p\">),</span>\n    <span class=\"s2\">&quot;Parent-Document&quot;</span><span class=\"p\">:</span> <span class=\"n\">create_rag_chain</span><span class=\"p\">(</span><span class=\"n\">parent_document_retriever</span><span class=\"p\">)</span>\n<span class=\"p\">}</span>\n\n<span class=\"c1\"># 5. Generate test dataset</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Use</span> <span class=\"n\">RAGAS</span> <span class=\"n\">TestsetGenerator</span> <span class=\"p\">(</span><span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">day_5</span><span class=\"p\">)</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Or</span> <span class=\"n\">manual</span> <span class=\"n\">building</span> <span class=\"n\">code</span> <span class=\"n\">questions</span>\n\n<span class=\"c1\"># 6. Evaluate all techniques</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Use</span> <span class=\"n\">evaluate_retriever_with_ragas</span><span class=\"p\">()</span> <span class=\"n\">pattern</span> <span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">day_5</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Compare</span> <span class=\"n\">metrics</span> <span class=\"n\">side</span><span class=\"o\">-</span><span class=\"n\">by</span><span class=\"o\">-</span><span class=\"n\">side</span>\n\n<span class=\"c1\"># 7. Analysis</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Which</span> <span class=\"ow\">is</span> <span class=\"n\">best</span> <span class=\"k\">for</span> <span class=\"n\">building</span> <span class=\"n\">codes</span><span class=\"err\">?</span>\n\n<span class=\"o\">-</span> <span class=\"n\">Does</span> <span class=\"n\">hybrid</span> <span class=\"n\">validate</span> <span class=\"n\">the</span> <span class=\"n\">assumption</span><span class=\"err\">?</span>\n\n<span class=\"o\">-</span> <span class=\"n\">How</span> <span class=\"n\">does</span> <span class=\"n\">parent</span><span class=\"o\">-</span><span class=\"n\">document</span> <span class=\"n\">compare</span><span class=\"err\">?</span>\n</code></pre></div>\n<h2 id=\"parent-document-retrieval-implementation-details\">Parent-Document Retrieval implementation details</h2>\n<span class=\"paragraph\">From day_5 lesson (lines 612-744):</span>\n<div class=\"language-python codehilite\"><pre><span></span><code><span class=\"c1\"># Pattern from day_5:</span>\n<span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">langchain.retrievers</span><span class=\"w\"> </span><span class=\"kn\">import</span> <span class=\"n\">ParentDocumentRetriever</span>\n<span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">langchain.storage</span><span class=\"w\"> </span><span class=\"kn\">import</span> <span class=\"n\">InMemoryStore</span>\n<span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">langchain_text_splitters</span><span class=\"w\"> </span><span class=\"kn\">import</span> <span class=\"n\">RecursiveCharacterTextSplitter</span>\n\n<span class=\"c1\"># Parent documents (larger chunks or original pages)</span>\n<span class=\"n\">parent_docs</span> <span class=\"o\">=</span> <span class=\"n\">pdf_chunks</span>  <span class=\"c1\"># Or use original PDF pages</span>\n\n<span class=\"c1\"># Child splitter (smaller chunks for search)</span>\n<span class=\"n\">child_splitter</span> <span class=\"o\">=</span> <span class=\"n\">RecursiveCharacterTextSplitter</span><span class=\"p\">(</span><span class=\"n\">chunk_size</span><span class=\"o\">=</span><span class=\"mi\">750</span><span class=\"p\">)</span>\n\n<span class=\"c1\"># Create vectorstore for children</span>\n<span class=\"n\">parent_vectorstore</span> <span class=\"o\">=</span> <span class=\"n\">QdrantVectorStore</span><span class=\"p\">(</span><span class=\"o\">...</span><span class=\"p\">)</span>\n\n<span class=\"c1\"># Create docstore for parents</span>\n<span class=\"n\">store</span> <span class=\"o\">=</span> <span class=\"n\">InMemoryStore</span><span class=\"p\">()</span>\n\n<span class=\"c1\"># Create retriever</span>\n<span class=\"n\">parent_document_retriever</span> <span class=\"o\">=</span> <span class=\"n\">ParentDocumentRetriever</span><span class=\"p\">(</span>\n    <span class=\"n\">vectorstore</span><span class=\"o\">=</span><span class=\"n\">parent_vectorstore</span><span class=\"p\">,</span>\n    <span class=\"n\">docstore</span><span class=\"o\">=</span><span class=\"n\">store</span><span class=\"p\">,</span>\n    <span class=\"n\">child_splitter</span><span class=\"o\">=</span><span class=\"n\">child_splitter</span>\n<span class=\"p\">)</span>\n\n<span class=\"c1\"># Add documents</span>\n<span class=\"n\">parent_document_retriever</span><span class=\"o\">.</span><span class=\"n\">add_documents</span><span class=\"p\">(</span><span class=\"n\">parent_docs</span><span class=\"p\">)</span>\n</code></pre></div>\n<h2 id=\"comparison-rationale\">Comparison rationale</h2>\n<ul>\n<li>Dense-only: Baseline semantic search</li>\n<li>BM25-only: Baseline exact term matching</li>\n<li>Hybrid: Combines both (current assumption)</li>\n<li>Parent-Document: Different strategy (small search, big context)</li>\n</ul>\n<span class=\"paragraph\">This tests whether hybrid is better than alternatives, including a context-focused approach.</span>\n<h2 id=\"updated-evaluation-questions\">Updated evaluation questions</h2>\n<ol>\n<li>Does hybrid outperform dense-only? (validates BM25 addition)</li>\n<li>Does hybrid outperform BM25-only? (validates dense addition)</li>\n<li>How does hybrid compare to parent-document? (different strategy)</li>\n<li>Which technique is best for building code questions overall?</li>\n</ol>\n<span class=\"paragraph\">Should I provide the complete marimo notebook code adapted for your building code context with these 4 techniques?</span></span>"
+          }
+        }
+      ],
+      "console": []
+    }
+  ]
+}
