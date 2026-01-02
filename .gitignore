@@ -99,3 +99,7 @@ coverage/
 # Cache (generated files)
 backend/cache/
 backend/**/cache/
+
+# API keys
+evaluation/OpenAI_key.txt
+evaluation/langsmith-api.txt
