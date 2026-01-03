@@ -2,102 +2,344 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Code-Aware Space Planning Copilot</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <div class="app-root">
+      <!-- Left Panel: Plan Viewer + Issues List -->
       <div class="left-panel">
         <div class="plan-container">
-          <img src="/static/plan.png" alt="Floor plan" />
-          <!-- Overlays drawn via absolutely-positioned divs if you want, later -->
+          <div class="plan-header">
+            <h2>Floor Plan</h2>
+          </div>
+          <div class="plan-image-wrapper">
+            <img src="/static/plan.png" alt="Floor plan" id="plan-image" />
+            <!-- Overlays can be added here later for interactive highlighting -->
+          </div>
         </div>
-        <div class="issues-panel" id="issues-panel">
-          <!-- Issues will be rendered here -->
+        <div class="issues-panel">
+          <div class="issues-header">
+            <h3>Compliance Issues</h3>
+            <span class="issues-count" id="issues-count">Loading...</span>
+          </div>
+          <div class="issues-list" id="issues-list">
+            <div class="loading">Loading issues...</div>
+          </div>
         </div>
       </div>
+
+      <!-- Right Panel: Chat -->
       <div class="right-panel">
-        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-header">
+          <h3>Building Code Assistant</h3>
+          <p class="chat-subtitle">Ask questions about building codes and compliance</p>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="welcome-message">
+            <p>👋 Welcome! I can help you understand building code requirements and compliance issues.</p>
+            <p>Try asking:</p>
+            <ul>
+              <li>"What is the minimum bedroom area?"</li>
+              <li>"What are the door width requirements?"</li>
+              <li>"Explain the accessible door requirements"</li>
+            </ul>
+          </div>
+        </div>
         <div class="chat-input">
           <form id="chat-form">
             <textarea
               id="chat-input"
-              placeholder="Ask about code or issues..."
+              placeholder="Ask about building codes or compliance issues..."
+              rows="3"
             ></textarea>
-            <button type="submit">Send</button>
+            <div class="chat-actions">
+              <button type="submit" id="chat-submit-btn">
+                <span class="btn-text">Send</span>
+                <span class="btn-loading" style="display: none;">Sending...</span>
+              </button>
+            </div>
           </form>
         </div>
       </div>
     </div>
 
     <script>
-      // Minimal browser JS. No npm, no tooling.
+      // ====================================================================
+      // State Management
+      // ====================================================================
+      let selectedIssueId = null;
+      let issues = [];
+
+      // ====================================================================
+      // Issues Fetching and Rendering
+      // ====================================================================
+
       async function fetchIssues() {
-        const panel = document.getElementById("issues-panel");
-        panel.textContent = "Loading issues...";
+        const listContainer = document.getElementById("issues-list");
+        const countElement = document.getElementById("issues-count");
+        
+        listContainer.innerHTML = '<div class="loading">Loading issues...</div>';
+        countElement.textContent = "Loading...";
+
         try {
           const res = await fetch("/api/issues");
-          const issues = await res.json();
-          if (!issues.length) {
-            panel.textContent = "No issues found.";
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          issues = await res.json();
+          
+          // Update count
+          countElement.textContent = `${issues.length} issue${issues.length !== 1 ? 's' : ''}`;
+          
+          if (issues.length === 0) {
+            listContainer.innerHTML = '<div class="no-issues">✅ No compliance issues found. Design is compliant!</div>';
             return;
           }
-          panel.innerHTML = "";
+
+          // Render issues
+          listContainer.innerHTML = "";
           issues.forEach((issue) => {
-            const div = document.createElement("div");
-            div.style.padding = "6px 0";
-            div.style.borderBottom = "1px solid #eee";
-            div.textContent =
-              issue.element_type.toUpperCase() +
-              " " +
-              issue.element_id +
-              ": " +
-              issue.message;
-            panel.appendChild(div);
+            const issueElement = createIssueElement(issue);
+            listContainer.appendChild(issueElement);
           });
         } catch (e) {
-          panel.textContent = "Failed to load issues.";
+          console.error("Error fetching issues:", e);
+          listContainer.innerHTML = `<div class="error">Failed to load issues: ${e.message}</div>`;
+          countElement.textContent = "Error";
         }
       }
 
-      async function sendChat(message) {
-        const container = document.getElementById("chat-messages");
-        const userDiv = document.createElement("div");
-        userDiv.textContent = "You: " + message;
-        container.appendChild(userDiv);
-        container.scrollTop = container.scrollHeight;
+      function createIssueElement(issue) {
+        const div = document.createElement("div");
+        div.className = "issue-item";
+        div.dataset.issueId = `${issue.element_type}-${issue.element_id}`;
+        
+        // Add click handler for selection
+        div.addEventListener("click", () => {
+          selectIssue(issue);
+        });
+
+        // Severity badge
+        const severityClass = issue.severity === "warning" ? "severity-warning" : "severity-error";
+        const severityText = issue.severity === "warning" ? "⚠ Warning" : "❌ Error";
+
+        div.innerHTML = `
+          <div class="issue-header">
+            <span class="issue-id">${issue.element_type.toUpperCase()} ${issue.element_id}</span>
+            <span class="severity-badge ${severityClass}">${severityText}</span>
+          </div>
+          <div class="issue-message">${escapeHtml(issue.message)}</div>
+          ${issue.code_ref ? `<div class="issue-code-ref">📋 ${escapeHtml(issue.code_ref)}</div>` : ""}
+          <div class="issue-rule">Rule: ${escapeHtml(issue.rule_id)}</div>
+        `;
+
+        return div;
+      }
+
+      function selectIssue(issue) {
+        // Remove previous selection
+        document.querySelectorAll(".issue-item").forEach(item => {
+          item.classList.remove("selected");
+        });
+
+        // Add selection to clicked issue
+        const issueElement = document.querySelector(
+          `.issue-item[data-issue-id="${issue.element_type}-${issue.element_id}"]`
+        );
+        if (issueElement) {
+          issueElement.classList.add("selected");
+          selectedIssueId = `${issue.element_type}-${issue.element_id}`;
+        }
+
+        // TODO: Highlight corresponding element on plan image (future enhancement)
+        // For now, we just highlight the issue in the list
+      }
+
+      // ====================================================================
+      // Chat Functionality
+      // ====================================================================
+
+      async function sendChat(query) {
+        const messagesContainer = document.getElementById("chat-messages");
+        const submitBtn = document.getElementById("chat-submit-btn");
+        const input = document.getElementById("chat-input");
+
+        // Remove welcome message if present
+        const welcomeMsg = messagesContainer.querySelector(".welcome-message");
+        if (welcomeMsg) {
+          welcomeMsg.remove();
+        }
+
+        // Add user message
+        const userMessageDiv = createUserMessage(query);
+        messagesContainer.appendChild(userMessageDiv);
+        scrollChatToBottom();
+
+        // Disable input and show loading
+        input.disabled = true;
+        submitBtn.disabled = true;
+        submitBtn.querySelector(".btn-text").style.display = "none";
+        submitBtn.querySelector(".btn-loading").style.display = "inline";
+
+        // Add loading message
+        const loadingDiv = createLoadingMessage();
+        messagesContainer.appendChild(loadingDiv);
+        scrollChatToBottom();
 
         try {
-          const res = await fetch("api/chat", {
+          const res = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              messages: [{ role: "user", content: message }],
-            }),
+            body: JSON.stringify({ query: query }),
           });
+
+          // Remove loading message
+          loadingDiv.remove();
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
+          }
+
           const data = await res.json();
-          const botDiv = document.createElement("div");
-          botDiv.textContent = "AI: " + data.reply;
-          container.appendChild(botDiv);
-          container.scrollTop = container.scrollHeight;
+          
+          // Add bot response with citations
+          const botMessageDiv = createBotMessage(data.answer, data.citations || []);
+          messagesContainer.appendChild(botMessageDiv);
+          scrollChatToBottom();
         } catch (e) {
-          const errDiv = document.createElement("div");
-          errDiv.textContent = "AI: [error sending request]";
-          container.appendChild(errDiv);
+          console.error("Error sending chat:", e);
+          loadingDiv.remove();
+          const errorDiv = createErrorMessage(e.message);
+          messagesContainer.appendChild(errorDiv);
+          scrollChatToBottom();
+        } finally {
+          // Re-enable input
+          input.disabled = false;
+          submitBtn.disabled = false;
+          submitBtn.querySelector(".btn-text").style.display = "inline";
+          submitBtn.querySelector(".btn-loading").style.display = "none";
         }
       }
 
+      function createUserMessage(text) {
+        const div = document.createElement("div");
+        div.className = "message message-user";
+        div.innerHTML = `
+          <div class="message-content">
+            <div class="message-text">${escapeHtml(text)}</div>
+          </div>
+        `;
+        return div;
+      }
+
+      function createBotMessage(answer, citations) {
+        const div = document.createElement("div");
+        div.className = "message message-bot";
+        
+        let citationsHtml = "";
+        if (citations && citations.length > 0) {
+          citationsHtml = `
+            <div class="citations">
+              <div class="citations-header">📚 Sources:</div>
+              ${citations.map(citation => `
+                <div class="citation-item">
+                  <strong>${escapeHtml(citation.source || "Unknown")}</strong>
+                  ${citation.page ? `, Page ${citation.page}` : ""}
+                  ${citation.section ? `, Section ${escapeHtml(citation.section)}` : ""}
+                </div>
+              `).join("")}
+            </div>
+          `;
+        }
+
+        div.innerHTML = `
+          <div class="message-content">
+            <div class="message-text">${formatAnswer(answer)}</div>
+            ${citationsHtml}
+          </div>
+        `;
+        return div;
+      }
+
+      function createLoadingMessage() {
+        const div = document.createElement("div");
+        div.className = "message message-bot message-loading";
+        div.innerHTML = `
+          <div class="message-content">
+            <div class="message-text">
+              <span class="loading-dots">
+                <span>.</span><span>.</span><span>.</span>
+              </span>
+            </div>
+          </div>
+        `;
+        return div;
+      }
+
+      function createErrorMessage(errorMessage) {
+        const div = document.createElement("div");
+        div.className = "message message-bot message-error";
+        div.innerHTML = `
+          <div class="message-content">
+            <div class="message-text">
+              ❌ Error: ${escapeHtml(errorMessage)}
+            </div>
+          </div>
+        `;
+        return div;
+      }
+
+      function formatAnswer(text) {
+        // Basic formatting: preserve line breaks and format citations
+        return escapeHtml(text)
+          .replace(/\n/g, "<br>")
+          .replace(/\[Source: ([^\]]+)\]/g, '<span class="inline-citation">[Source: $1]</span>');
+      }
+
+      function scrollChatToBottom() {
+        const messagesContainer = document.getElementById("chat-messages");
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      // ====================================================================
+      // Utility Functions
+      // ====================================================================
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // ====================================================================
+      // Event Listeners
+      // ====================================================================
+
       document.addEventListener("DOMContentLoaded", () => {
+        // Fetch issues on page load
         fetchIssues();
 
+        // Chat form submission
         const form = document.getElementById("chat-form");
         const input = document.getElementById("chat-input");
+        
         form.addEventListener("submit", (e) => {
           e.preventDefault();
           const text = input.value.trim();
           if (!text) return;
           input.value = "";
           sendChat(text);
+        });
+
+        // Allow Enter to submit (Shift+Enter for new line)
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            form.dispatchEvent(new Event("submit"));
+          }
         });
       });
     </script>
