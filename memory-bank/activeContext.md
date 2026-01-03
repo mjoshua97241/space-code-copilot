@@ -29,6 +29,14 @@ Current focus:
   - Modern CSS styling (`app/static/styles.css`) with responsive design
   - JavaScript for API integration, error handling, and user interactions
   - **Testing completed** - No issues found in console or terminal
+- ✅ **LLM Rule Extraction COMPLETE** - Integrated with project context filtering
+  - `app/services/rule_extractor.py` - Extracts rules from PDFs using LLM with BM25-only retrieval
+  - `app/models/domain.py` - Added `ProjectContext` model for filtering rules by project type
+  - `app/services/rules_seed.py` - Integrated rule extraction into `get_all_rules()` with context filtering
+  - **Project context filtering**: Filters out commercial, multi-story, fire exit, and accessibility rules when not applicable
+  - **Results**: Reduced compliance issues from 28 to 3 by filtering irrelevant rules
+  - Default context: Single-floor residential detached house (matches current MVP project)
+  - Extracts 6-7 relevant rules (down from 14 without filtering)
 
 Recent changes:
 
@@ -119,7 +127,7 @@ Recent changes:
 - `app/core/llm.py`: ✅ Complete - No changes needed
 - `app/services/pdf_ingest.py`: ✅ Basic functionality complete - Section extraction enhancement optional
 - `app/services/vector_store.py`: ✅ **Updated** - Defaults to BM25-only (validated best, composite score: 0.422), hybrid and dense-only available as options
-- `app/services/rule_extractor.py`: ✅ Ready - Will automatically use BM25-only retrieval (default)
+- `app/services/rule_extractor.py`: ✅ **COMPLETE** - LLM-based rule extraction with project context filtering, uses BM25-only retrieval (default, validated best)
 - `app/api/chat.py`: ✅ **Updated** - Chat endpoint uses BM25-only retrieval by default (validated best technique)
 
 **Next Priority:**
@@ -141,7 +149,12 @@ Recent changes:
    - Modern CSS styling with responsive design and smooth animations
    - JavaScript for API integration, error handling, and user interactions
    - **Testing completed** - No issues found in console or terminal
-4. **Phase 7**: Testing + deployment + presentation prep
+4. ✅ **LLM Rule Extraction COMPLETE** - Integrated with project context filtering
+   - Rule extraction from PDFs using LLM with BM25-only retrieval
+   - Project context filtering (building type, stories, occupancy, classification)
+   - Results: Reduced issues from 28 to 3 by filtering irrelevant rules
+   - Default context: Single-floor residential detached house
+5. **Phase 7**: Testing + deployment + presentation prep
 
 Todo next:
 
@@ -160,3 +173,12 @@ Todo next:
   - Modern CSS styling with responsive design, smooth animations, and professional UI
   - JavaScript for API integration, error handling, and user interactions
   - **Testing completed** - No issues found in console or terminal
+- ✅ **LLM Rule Extraction COMPLETE** (`app/services/rule_extractor.py`):
+  - Extracts rules from PDFs using LLM with structured output (JSON parsing)
+  - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
+  - Project context filtering via `ProjectContext` model
+  - Filters out commercial, multi-story, fire exit, and accessibility rules when not applicable
+  - ID conflict resolution (renames conflicting rule IDs)
+  - Rule type validation (fixes invalid rule_type assignments)
+  - Integrated into `get_all_rules()` in `rules_seed.py`
+  - **Results**: 10 total rules (4 seeded + 6 extracted), 3 compliance issues (down from 28)
