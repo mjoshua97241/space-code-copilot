@@ -30,25 +30,26 @@ Detailed 2-week implementation plan for Code-Aware Space Planning Copilot MVP, f
 ### Phase 1: PDF Ingest + Basic Chunking
 
 **Current Status:**
-- ✅ `app/services/pdf_ingest.py` exists with basic functionality:
+- ✅ `app/services/pdf_ingest.py` **COMPLETE** with enhanced functionality:
   - PDF loading with `PyMuPDFLoader`
   - Chunking with `RecursiveCharacterTextSplitter` (1000 chars, 100 overlap)
-  - Basic metadata: `source`, `chunk_index`
-- ⚠️ Missing enhancements:
-  - Page numbers in metadata (PyMuPDFLoader should provide this)
-  - Section number extraction (regex for "Section X.X.X" or "Chapter X")
+  - Enhanced metadata: `source`, `chunk_index`, `page_pdf`, `page_document`, `page` (preferred), `section`
+  - **Page number extraction**: Extracts document page numbers from text (footer/header) before chunking
+  - **Section number extraction**: Regex patterns for "Section X.X.X", "Chapter X", "Art. X.X.X", "§ X.X.X"
+  - **Dual page numbers**: Stores both PDF page (matches PDF reader) and document page (extracted from text)
+  - Conservative validation to avoid false positives (max 2000 pages, ±100 variance check)
 
-**Tasks:**
-1. Enhance `app/services/pdf_ingest.py`:
-   - Add page numbers to metadata (from PyMuPDFLoader)
-   - Extract section numbers from text (simple regex: "Section X.X.X" or "Chapter X")
-   - Store in metadata as `section` field
+**Completed:**
+1. ✅ Enhanced `app/services/pdf_ingest.py`:
+   - Added `extract_page_number_from_text()` - Extracts document page numbers from footer/header
+   - Added `extract_section_number()` - Extracts section numbers using regex patterns
+   - Updated `chunk_documents()` - Extracts page numbers from full pages before chunking (more accurate)
+   - Stores both `page_pdf` and `page_document` in metadata
+   - Sets `page` to prefer document page if available, otherwise PDF page
 
-**Deliverable**: PDF → chunks with enhanced metadata (source, page, chunk_index, section)
+**Deliverable**: ✅ PDF → chunks with enhanced metadata (source, chunk_index, page_pdf, page_document, page, section)
 
-**Estimated effort**: 1 day (enhancement only, base functionality exists)
-
-**Dependencies**: None
+**Status**: ✅ **COMPLETE** - Page number extraction and section extraction implemented and tested
 
 ---
 
@@ -116,17 +117,20 @@ ensemble_retriever = EnsembleRetriever(
   - Singleton pattern for vector store initialization (indexes PDFs on first use)
   - LLM cache setup (memory-based for MVP)
   - Citation extraction from retrieved document metadata
-  - Pydantic models: `ChatRequest`, `ChatResponse`, `Citation`
+  - **Citation formatting**: Explicitly shows page type - "(PDF page)" or "(document page)"
+  - **Post-processing**: `_fix_citations_in_answer()` automatically fixes LLM citations to include page type indicators
+  - Updated LLM prompt to instruct including page type in citations
+  - Pydantic models: `ChatRequest`, `ChatResponse`, `Citation` (page field updated to string for type indicators)
   - Proper error handling (ValueError, generic Exception)
   - Environment variable loading (dotenv) for API keys
   - Prompt template with system instructions for building code Q&A
-  - Chain: retriever → context building → prompt → LLM → response
+  - Chain: retriever → context building → prompt → LLM → post-processing → response
   - Updated to use BM25-only retrieval (validated via RAGAS evaluation)
 - ✅ Router mounted in `app/main.py` via `app.include_router(chat_router)`
 - ✅ `app/core/llm.py` verified working (no changes needed)
 - ⚠️ Optional: `setup_langsmith()` for metrics (deferred to Phase 5 or post-MVP)
 
-**Deliverable**: ✅ Working chat endpoint with RAG and citations
+**Deliverable**: ✅ Working chat endpoint with RAG, citations, and explicit page type indicators
 
 **Dependencies**: ✅ Phase 2 (hybrid retrieval) - Complete
 

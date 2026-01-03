@@ -8,13 +8,13 @@ Backend patterns:
   - Setup templates: `Jinja2Templates(directory=...)`
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
-  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best) and citations
+  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, and post-processing to fix LLM citations
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
-  - pdf_ingest (PDF → chunks) - **Status**: ✅ Basic functionality complete (section extraction optional enhancement)
+  - pdf_ingest (PDF → chunks) - **Status**: ✅ **COMPLETE** - Enhanced with page number extraction (PDF + document pages), section extraction, and metadata preservation
   - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
-  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: Ready, automatically uses BM25-only retrieval (default, validated best)
+  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: ✅ **COMPLETE** - Integrated with project context filtering, uses BM25-only retrieval (default, validated best)
 - LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, no changes needed
 
 AI patterns:
@@ -32,7 +32,7 @@ AI patterns:
 - Use LLM for:
   - summarizing issues
   - answering questions via RAG (handles multiple code documents)
-  - extracting rules from PDFs (MVP core feature) - automatically processes multiple code PDFs
+  - extracting rules from PDFs (MVP core feature) - **COMPLETE** - automatically processes multiple code PDFs with project context filtering
 - **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing
 
 Frontend patterns:
@@ -94,9 +94,11 @@ PDFs require more sophisticated caching due to expensive operations:
   - Uses LangChain's `CacheBackedEmbeddings` with `LocalFileStore`
   - Caches embeddings in `./cache/embeddings/` directory
   - Automatically checks cache before calling embedding API
-- **File**: `app/services/vector_store.py` (to be implemented)
+  - `CacheBackedEmbeddings` wrapper class implemented in `vector_store.py`
+  - Integrated into `VectorStore` class initialization
+- **File**: `app/services/vector_store.py` - ✅ **COMPLETE**
 
-#### LLM Response Cache (`llm.py`)
+#### LLM Response Cache (`llm.py` + `chat.py`)
 - **Purpose**: Cache LLM API responses
 - **Strategy**: `setup_llm_cache()` pattern from day_12 lesson
 - **Why**: LLM API calls are slow, expensive, and often have identical prompts
@@ -104,7 +106,9 @@ PDFs require more sophisticated caching due to expensive operations:
   - Uses `InMemoryCache` (dev) or `SQLiteCache` (production)
   - Configured via `setup_llm_cache(cache_type="memory"|"sqlite")`
   - Caches at LangChain global level
-- **File**: `app/core/llm.py` (to be implemented)
+  - `setup_llm_cache()` function implemented in `app/core/llm.py`
+  - Automatically called in `app/api/chat.py` on module import (memory cache for MVP)
+- **File**: `app/core/llm.py` + `app/api/chat.py` - ✅ **COMPLETE**
 
 ### Why Separate Caching Strategies?
 
@@ -235,3 +239,35 @@ PDFs require more sophisticated caching due to expensive operations:
 - ✅ Validated core technical decision with data-driven evidence
 - ✅ Provides metrics for presentation (composite scoring methodology)
 - ✅ Identified optimal technique before proceeding with frontend/Phase 5
+
+### Rule Extraction with Project Context
+
+**Status**: ✅ **COMPLETE**
+
+**Implementation**:
+- `app/services/rule_extractor.py` - LLM-based rule extraction from PDFs using BM25-only retrieval
+- `app/models/domain.py` - `ProjectContext` model for filtering rules by project characteristics
+- `app/services/rules_seed.py` - Integrated extraction into `get_all_rules()` with context filtering
+
+**Project Context Model**:
+- Fields: building_type, number_of_stories, occupancy, building_classification, requires_accessibility, requires_fire_rated
+- Default context: Single-floor residential detached house (matches current MVP project)
+- Used in extraction prompts to filter out irrelevant rules
+
+**Filtering Logic**:
+- Excludes commercial/industrial rules for residential projects
+- Excludes fire exit/stairwell rules for single-story buildings
+- Excludes public accessibility rules unless required
+- Excludes fire-rated requirements unless specified
+
+**Results**:
+- Before filtering: 28 compliance issues from 18 rules (included commercial/multi-story rules)
+- After filtering: 3 compliance issues from 10 rules (only residential single-story rules)
+- Extracted 6-7 relevant rules (down from 14 without filtering)
+
+**Key Features**:
+- Uses BM25-only retrieval (validated best technique, composite score: 0.422)
+- Structured output parsing (JSON) with validation and error handling
+- ID conflict resolution (renames conflicting rule IDs to avoid duplicates)
+- Rule type validation (fixes invalid rule_type assignments)
+- Graceful error handling with fallback to seeded rules
