@@ -1,6 +1,6 @@
 from typing import List
 
-from app.models.domain import Rule
+from app.models.domain import Rule, ProjectContext
 
 # ============================================================================
 # Seeded Building Code Rules
@@ -63,7 +63,26 @@ def get_seeded_rules() -> List[Rule]:
         ),
     ]
 
-def get_all_rules() -> List[Rule]:
+def get_default_project_context() -> ProjectContext:
+    """
+    Get default project context for single-floor residential detached house.
+    
+    This matches the current MVP project. Can be customized per project.
+    
+    Returns:
+        ProjectContext with default values for residential single-story detached house
+    """
+    return ProjectContext(
+        building_type="residential",
+        number_of_stories="single-story",
+        occupancy="single-family",
+        building_classification="detached",
+        requires_accessibility=False,
+        requires_fire_rated=False
+    )
+
+
+def get_all_rules(project_context: ProjectContext | None = None) -> List[Rule]:
     """
     Combine seeded rules with LLM-extracted rules from PDFs.
 
@@ -74,13 +93,22 @@ def get_all_rules() -> List[Rule]:
 
     **LLM Integration:**
     Extracts rules from PDFs in app/data/ directory.
+    Uses project context to filter rules to only those applicable.
     Falls back to seeded rules only if extraction fails.
+
+    Args:
+        project_context: Project context for filtering rules. If None, uses default
+                         (single-floor residential detached house).
 
     Returns:
         Combined list of all rules (seeded + extracted)
     """
     from pathlib import Path
     from app.services.rule_extractor import extract_rules_from_pdfs
+    
+    # Use default context if not provided
+    if project_context is None:
+        project_context = get_default_project_context()
     
     seeded = get_seeded_rules()
     
@@ -98,8 +126,11 @@ def get_all_rules() -> List[Rule]:
         from app.services.vector_store import VectorStore
         vector_store = VectorStore()
         
+        print(f"Extracting rules with project context: {project_context.building_type} {project_context.number_of_stories} {project_context.occupancy} {project_context.building_classification}")
+        
         extracted = extract_rules_from_pdfs(
             pdf_paths,
+            project_context=project_context,
             vector_store=vector_store,
             max_rules_per_pdf=15
         )

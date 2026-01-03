@@ -12,7 +12,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from app.core.llm import get_llm
-from app.models.domain import Rule
+from app.models.domain import Rule, ProjectContext
 from app.services.vector_store import VectorStore
 
 # Load environment variables
@@ -23,6 +23,7 @@ if env_path.exists():
 def extract_rules_from_pdf(
     pdf_path: str | Path,
     vector_store: VectorStore,
+    project_context: ProjectContext,
     max_rules: int = 20
 ) -> List[Rule]:
     """
@@ -51,14 +52,51 @@ def extract_rules_from_pdf(
     # Get retriever (uses BM25-only by default, validated best)
     retriever = vector_store.get_retriever(k=10)
     
+    # Build project context summary for prompt
+    context_summary = f"""
+PROJECT CONTEXT:
+- Building type: {project_context.building_type}
+- Number of stories: {project_context.number_of_stories}
+- Occupancy: {project_context.occupancy}
+- Building classification: {project_context.building_classification}
+- Requires accessibility: {project_context.requires_accessibility}
+- Requires fire-rated: {project_context.requires_fire_rated}
+"""
+    
+    # Build exclusion list based on context
+    exclusions = []
+    if project_context.building_type == "residential":
+        exclusions.append("- Commercial, industrial, or public building rules")
+        exclusions.append("- Rules for multi-tenant or commercial occupancy")
+    if project_context.number_of_stories == "single-story":
+        exclusions.append("- Fire exit doors and stairwell requirements")
+        exclusions.append("- Emergency exit requirements for multi-story buildings")
+        exclusions.append("- Rules specific to multi-story buildings")
+    if not project_context.requires_accessibility:
+        exclusions.append("- Public accessibility requirements (ADA, universal design)")
+        exclusions.append("- Accessible door widths (unless standard residential doors)")
+    if not project_context.requires_fire_rated:
+        exclusions.append("- Fire-rated door requirements")
+        exclusions.append("- Fire exit requirements")
+    
+    exclusion_text = "\n".join(exclusions) if exclusions else "- None (all rules applicable)"
+    
     # Prompt for rule extraction
     extraction_prompt = ChatPromptTemplate.from_messages([
         ("system", """You are an expert at extracting building code rules from documents.
-        
-Extract structured rules from the provided building code context. Focus on:
-- Minimum area requirements for rooms
-- Minimum width requirements for doors
-- Any numeric constraints (dimensions, areas)
+
+{project_context}
+
+EXTRACTION RULES:
+- Only extract rules that apply to THIS specific project context
+- EXCLUDE the following (they do NOT apply to this project):
+{exclusions}
+
+Focus on:
+- Minimum area requirements for {building_type} rooms
+- Minimum width requirements for {building_type} doors
+- Rules applicable to {occupancy} {building_classification} buildings
+- Rules for {number_of_stories} buildings
 
 IMPORTANT CONSTRAINTS:
 - element_type MUST be exactly "room" or "door" (no other values allowed)
@@ -79,6 +117,8 @@ Return only rules that have clear, measurable requirements. Use SI units (m² fo
 
 {context}
 
+{project_context}
+
 Extract up to {max_rules} rules. Return as a JSON array of Rule objects with these fields:
 - id: Unique identifier (e.g., "R003", "D003")
 - name: Clear descriptive name
@@ -88,7 +128,7 @@ Extract up to {max_rules} rules. Return as a JSON array of Rule objects with the
 - code_ref: Building code reference (section number, if available)
 - rule_text: Text description (optional)
 
-Format as JSON array. Only include rules for rooms or doors.""")
+Format as JSON array. Only include rules for rooms or doors that match the project context.""")
     ])
     
     # LLM with structured output
@@ -114,7 +154,13 @@ Format as JSON array. Only include rules for rooms or doors.""")
         # Invoke LLM with prompt
         response = extraction_prompt.invoke({
             "context": context,
-            "max_rules": max_rules
+            "max_rules": max_rules,
+            "project_context": context_summary,
+            "building_type": project_context.building_type,
+            "number_of_stories": project_context.number_of_stories,
+            "occupancy": project_context.occupancy,
+            "building_classification": project_context.building_classification,
+            "exclusions": exclusion_text
         })
         response = llm.invoke(response)
         answer = response.content if hasattr(response, 'content') else str(response)
@@ -180,6 +226,7 @@ Format as JSON array. Only include rules for rooms or doors.""")
 
 def extract_rules_from_pdfs(
     pdf_paths: List[str | Path],
+    project_context: ProjectContext,
     vector_store: VectorStore | None = None,
     max_rules_per_pdf: int = 15
 ) -> List[Rule]:
@@ -216,6 +263,7 @@ def extract_rules_from_pdfs(
         extracted = extract_rules_from_pdf(
             pdf_path_obj,
             vector_store,
+            project_context,
             max_rules=max_rules_per_pdf
         )
         
