@@ -26,6 +26,7 @@ dependencies = [
   "marimo>=0.18.1",
   "nest-asyncio>=1.6.0",
   "ragas>=0.4.2",
+  "rapidfuzz>=3.14.3",
 ]
 
 [project.optional-dependencies]
