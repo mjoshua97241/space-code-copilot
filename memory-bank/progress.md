@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, and **RAG Technique Validation** are complete. Evaluation results show **BM25-only** is the best technique (composite score: 0.422). Ready to update vector store to use BM25-only or proceed with frontend/Phase 5.
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, and **RAG Technique Validation** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. Ready to proceed with frontend/Phase 5.
 
 ## What Works
 
@@ -46,7 +46,7 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
     - `POST /api/chat` - RAG-based Q&A for building code questions
     - Accepts `ChatRequest` with user query
     - Returns `ChatResponse` with answer and citations
-    - Uses hybrid retrieval (BM25 + Dense) to find relevant context
+    - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
     - Extracts citations from retrieved document metadata
     - Singleton pattern for vector store (indexes PDFs on first use)
     - LLM cache setup for performance
@@ -58,15 +58,16 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
   - Static assets: `app/static/plan.png`, `app/static/styles.css`
   - Template: `app/templates/index.html` (empty)
-- Vector store with hybrid retrieval (`app/services/vector_store.py`):
+- Vector store with BM25-only retrieval (`app/services/vector_store.py`):
   - `VectorStore` class with cache-backed embeddings (OpenAI)
   - Qdrant vector store setup (in-memory for MVP)
-  - **Hybrid retrieval (BM25 + Dense)** using `EnsembleRetriever`:
+  - **BM25-only retrieval (default, validated best)** via RAGAS evaluation:
     - BM25 retriever for exact term matching (section numbers, citations)
-    - Dense embeddings for semantic similarity
-    - Merged results using Reciprocal Rank Fusion (RRF)
-  - Document storage for both BM25 and dense retrieval
-  - Configurable retrieval weights (default 0.5/0.5)
+    - Composite score: 0.422 (best among 4 techniques evaluated)
+    - Building codes benefit more from exact term matching than semantic similarity
+  - **Options available**: Hybrid (BM25 + Dense) and dense-only via parameters
+  - Document storage for BM25 retrieval
+  - Backward compatible: hybrid and dense-only still available
   - Tested and working (`test_vector_store.py` - successfully tested with PDF)
 - PDF ingest (`app/services/pdf_ingest.py`):
   - `load_pdf()` - Loads PDF using `PyMuPDFLoader`

@@ -57,16 +57,19 @@ Detailed 2-week implementation plan for Code-Aware Space Planning Copilot MVP, f
 **Status: ✅ COMPLETE**
 
 **Completed:**
-- ✅ `app/services/vector_store.py` updated with hybrid retrieval:
+- ✅ `app/services/vector_store.py` updated with BM25-only retrieval (validated best):
   - BM25 retriever setup using `BM25Retriever.from_documents()` from `langchain_community.retrievers`
-  - Hybrid retriever using `EnsembleRetriever` to combine BM25 + Dense
+  - **Default changed to BM25-only** (validated via RAGAS evaluation, composite score: 0.422)
+  - Hybrid retriever using `EnsembleRetriever` to combine BM25 + Dense (available as option)
   - Document storage: `self.documents` list stores raw documents for BM25 indexing
   - Updated `get_retriever()` method:
-    - Returns `EnsembleRetriever` by default (hybrid)
-    - Configurable `use_hybrid` parameter (default `True`)
-    - Configurable weights: `bm25_weight` and `dense_weight` (default 0.5/0.5)
-    - Backward compatible: Falls back to dense-only if `use_hybrid=False` or no documents
-  - Merges results using Reciprocal Rank Fusion (RRF) via `EnsembleRetriever`
+    - Returns `BM25Retriever` by default (BM25-only, validated best)
+    - New parameter: `use_bm25_only=True` (default) for explicit BM25-only control
+    - Configurable `use_hybrid` parameter (default `False`) for hybrid retrieval
+    - Configurable weights: `bm25_weight` and `dense_weight` (default 0.5/0.5) for hybrid
+    - Backward compatible: Falls back to dense-only if both `use_bm25_only=False` and `use_hybrid=False`
+  - Merges results using Reciprocal Rank Fusion (RRF) via `EnsembleRetriever` (when hybrid enabled)
+  - Updated docstrings with evaluation results and rationale
 - ✅ Dependencies added:
   - `langchain-community>=0.3.0,<0.4.0` (for `BM25Retriever`)
   - `rank-bm25>=0.2.2,<1.0.0` (required by `BM25Retriever`)
@@ -93,7 +96,7 @@ ensemble_retriever = EnsembleRetriever(
 )
 ```
 
-**Deliverable**: Hybrid retrieval working (BM25 + Dense)
+**Deliverable**: ✅ BM25-only retrieval (default, validated best), hybrid and dense-only available as options
 
 **Estimated effort**: 2-3 days
 
@@ -109,7 +112,7 @@ ensemble_retriever = EnsembleRetriever(
 - ✅ `app/api/chat.py` created with full RAG-based chat endpoint:
   - `POST /api/chat` endpoint accepting `ChatRequest` with user query
   - Returns `ChatResponse` with answer and citations
-  - Uses hybrid retriever (`vector_store.get_retriever()`) to get context from building code PDFs
+  - Uses BM25-only retriever (`vector_store.get_retriever()`) by default (validated best technique)
   - Singleton pattern for vector store initialization (indexes PDFs on first use)
   - LLM cache setup (memory-based for MVP)
   - Citation extraction from retrieved document metadata
@@ -118,6 +121,7 @@ ensemble_retriever = EnsembleRetriever(
   - Environment variable loading (dotenv) for API keys
   - Prompt template with system instructions for building code Q&A
   - Chain: retriever → context building → prompt → LLM → response
+  - Updated to use BM25-only retrieval (validated via RAGAS evaluation)
 - ✅ Router mounted in `app/main.py` via `app.include_router(chat_router)`
 - ✅ `app/core/llm.py` verified working (no changes needed)
 - ⚠️ Optional: `setup_langsmith()` for metrics (deferred to Phase 5 or post-MVP)

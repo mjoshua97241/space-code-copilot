@@ -8,13 +8,13 @@ Backend patterns:
   - Setup templates: `Jinja2Templates(directory=...)`
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
-  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with hybrid retrieval and citations
+  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best) and citations
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ Basic functionality complete (section extraction optional enhancement)
-  - vector_store (embedding + Qdrant search) - **Status**: ✅ **Hybrid retrieval (BM25 + Dense) implemented** - Evaluation shows BM25-only is best (composite score: 0.422)
+  - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
-  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: Ready, automatically uses hybrid retrieval
+  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: Ready, automatically uses BM25-only retrieval (default, validated best)
 - LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, no changes needed
 
 AI patterns:
@@ -25,7 +25,7 @@ AI patterns:
   - **Composite score**: 0.422 (BM25-only) - best among 4 techniques evaluated
   - Why BM25-only: Building codes are term-heavy with exact legal phrasing; exact term matching outperforms semantic similarity for this domain
   - See `memory-bank/implementationPlan.md` for evaluation details
-  - **Note**: `vector_store.py` currently supports hybrid retrieval; can be updated to default BM25-only
+  - **Status**: `vector_store.py` defaults to BM25-only retrieval (updated based on evaluation results)
 - Supports multiple code documents simultaneously (multi-jurisdiction support).
 - Architects can query across different building codes without switching contexts.
 - Use deterministic Python for simple numeric compliance (area, widths).
