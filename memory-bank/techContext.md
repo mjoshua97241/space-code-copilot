@@ -9,6 +9,7 @@ Backend:
 
 - FastAPI for HTTP API.
 - uvicorn for ASGI server.
+- jinja2 for HTML template rendering.
 - pydantic models: Room, Door, Rule, Issue.
 - LangChain + LangGraph for LLM orchestration and agents.
 - OpenAI / Gemini / Claude via config env vars.

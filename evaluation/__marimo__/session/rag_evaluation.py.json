@@ -1,0 +1,730 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.18.4"
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "1d0db38904205bec4d6f6f6a1f6cec3e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "1918d9195e9919ee795d2b889bdc6667",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "10690f48d4febb9cff210e2da8876a14",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 OpenAI API key loaded\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "43f7b4af757157d5aa86fd3b7604dc19",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 LangSmith environment configured.\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "9e26c4f77700b54df90fe9de04cfae6a",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 LangSmith client initialized\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "PKri",
+      "code_hash": "92cd3faa05b6f0ef4ab3a4382b21eedb",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"rag-technique-evaluation-for-building-code-copilot\">RAG Technique Evaluation for Building Code Copilot</h1>\n<span class=\"paragraph\">This notebook evaluates 4 different RAG retrieval techniques to validate the assumption that <strong>Hybrid Retrieval (BM25 + Dense)</strong> is better than alternatives for building code questions.</span>\n<h2 id=\"techniques-to-compare\">Techniques to Compare</h2>\n<ol>\n<li><strong>Dense-only</strong> (baseline) - Current dense embeddings only</li>\n<li><strong>BM25-only</strong> - Sparse retrieval only</li>\n<li><strong>Hybrid (BM25 + Dense)</strong> - Current implementation (0.5/0.5 weights)</li>\n<li><strong>Parent-Document Retrieval</strong> - Small-to-big strategy (from day_5 lesson)</li>\n</ol>\n<h2 id=\"evaluation-questions\">Evaluation Questions</h2>\n<ol>\n<li>Does hybrid outperform dense-only? (validates BM25 addition)</li>\n<li>Does hybrid outperform BM25-only? (validates dense addition)</li>\n<li>How does hybrid compare to parent-document? (different strategy)</li>\n<li>Which technique is best for building code questions overall?</li>\n</ol>\n<h2 id=\"metrics\">Metrics</h2>\n<span class=\"paragraph\">Using RAGAS metrics:</span>\n<ul>\n<li><code>context_precision</code>: Measures precision of retrieved context</li>\n<li><code>context_recall</code>: Measures recall of retrieved context</li>\n<li><code>answer_relevancy</code>: Measures relevancy of retrieved context to query</li>\n</ul></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "7a54f131d7ce6aa906ff2119c1bffbfa",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Project services imported\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "3fc286b938a7e350014b67c7a67aa526",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Found 2 PDF files:\n  - National-Building-Code.pdf\n  - RA9514-RIRR-rev-2019-compressed.pdf\n  \u2713 Loaded National-Building-Code.pdf: 733 chunks\n  \u2713 Loaded RA9514-RIRR-rev-2019-compressed.pdf: 1795 chunks\n\n\u2714 Total chunks: 2528\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "dcc2f919b08f606b3003ffd666990cb1",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\ud83d\udcca Using 250 chunks for evaluation (out of 2528 total)\n   Token savings: ~2278 chunks \u00d7 ~1000 tokens = ~2,278,000 tokens\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "RGSE",
+      "code_hash": "ce69cb186ef298108aa990e57d9cb236",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-2-setup-llm-and-embeddings-for-ragas\">Step 2: Setup LLM and Embeddings for RAGAS</h2>\n<span class=\"paragraph\">RAGAS needs LLM and embeddings for evaluation metrics.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Kclp",
+      "code_hash": "2c12e860f8edf303622329d62336b35e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 LLM and embeddings configured\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "emfo",
+      "code_hash": "a62b9ef1edfee9583c253c37f6c088b1",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "/tmp/marimo_78940/__marimo__cell_emfo_.py:2: DeprecationWarning: LangchainLLMWrapper is deprecated and will be removed in a future version. Use llm_factory instead: from openai import OpenAI; from ragas.llms import llm_factory; llm = llm_factory('gpt-4o-mini', client=OpenAI(api_key='...'))\n  generator_llm = LangchainLLMWrapper(chat_model)\n/tmp/marimo_78940/__marimo__cell_emfo_.py:3: DeprecationWarning: LangchainEmbeddingsWrapper is deprecated and will be removed in a future version. Use the modern embedding providers instead: embedding_factory('openai', model='text-embedding-3-small', client=openai_client) or from ragas.embeddings import OpenAIEmbeddings, GoogleEmbeddings, HuggingFaceEmbeddings\n  generator_embeddings = LangchainEmbeddingsWrapper(embeddings)\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 RAGAS wrappers created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "Hstk",
+      "code_hash": "2d87b91bf7e2f690157911d70ee56f78",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-3-create-rag-prompt-template\">Step 3: Create RAG Prompt Template</h2>\n<span class=\"paragraph\">Standard RAG prompt for building code Q&amp;A.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "nWHF",
+      "code_hash": "523887e16eea85592e30b99bd3b9b6e7",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 RAG prompt template created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "iLit",
+      "code_hash": "ad01dd664b056386cadf78cdc97a5495",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-4-create-retrievers-for-each-technique\">Step 4: Create Retrievers for Each Technique</h2>\n<span class=\"paragraph\">We'll create 4 retrievers:</span>\n<ol>\n<li>Dense-only (from VectorStore with use_hybrid=False)</li>\n<li>BM25-only (from langchain_community)</li>\n<li>Hybrid (from VectorStore with use_hybrid=True)</li>\n<li>Parent-Document (from day_5 pattern)</li>\n</ol></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ZHCJ",
+      "code_hash": "2d44a1e8f30ca1ca4b25bb20701a9e57",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "/home/mj/workspace/space-code-copilot/backend/.venv/lib/python3.11/site-packages/langchain/embeddings/cache.py:58: UserWarning: Using default key encoder: SHA-1 is *not* collision-resistant. While acceptable for most cache scenarios, a motivated attacker can craft two different payloads that map to the same cache key. If that risk matters in your environment, supply a stronger encoder (e.g. SHA-256 or BLAKE2) via the `key_encoder` argument. If you change the key encoder, consider also creating a new cache, to avoid (the potential for) collisions with existing keys.\n  _warn_about_sha1_encoder()\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Dense-only retriever created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "ROlb",
+      "code_hash": "f19e2e5d359a7071099433217dec070a",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 BM25-only retriever created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "qnkX",
+      "code_hash": "baf917f6e78a17241cca0d52ab5e498a",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Hybrid retriever created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "TqIu",
+      "code_hash": "f73c305fed90467eb304f407632304bc",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Parent-Document retriever created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "Vxnm",
+      "code_hash": "8bcd725db63d0c97a7203b0bfb3caa9c",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-5-create-rag-chains-for-each-retriever\">Step 5: Create RAG Chains for Each Retriever</h2>\n<span class=\"paragraph\">Build RAG chains using LCEL (LangChain Expression Language) pattern from day_5.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "DnEU",
+      "code_hash": "4085340bf8214111e23f576af08a42e2",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Dense-only RAG chain created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "ulZA",
+      "code_hash": "b9ccb5f2a6afe2dab0eccf366a38a55c",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 BM25-only RAG chain created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "ecfG",
+      "code_hash": "b7ea5ff1d5442d94176ed2aea590b6cc",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Hybrid RAG chain created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "Pvdt",
+      "code_hash": "195159b76d6f37e6139762d449d9aed0",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Parent-Document RAG chain created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "ZBYS",
+      "code_hash": "cbfb87d1b5df6225087a27edc5ecaffc",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 All 4 retriever chains created:\n  - Dense-Only\n  - BM25-Only\n  - Hybrid\n  - Parent-Document\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "aLJB",
+      "code_hash": "f395998992684ca6fe144d389b8744c8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-6-generate-test-dataset\">Step 6: Generate Test Dataset</h2>\n<span class=\"paragraph\">We'll use RAGAS TestsetGenerator to create synthetic building code questions, or create a manual test set.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "nHfw",
+      "code_hash": "2a63129bb657af55ad671743333a2aee",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\ud83d\udcc2 Loading existing golden dataset from /home/mj/workspace/space-code-copilot/evaluation/data/golden_dataset.csv\n\u2714 Loaded 12 test examples\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "xXTn",
+      "code_hash": "0242a51dc48556adb4aedd1a458343f0",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-7-setup-evaluation-infrastructure\">Step 7: Setup Evaluation Infrastructure</h2>\n<span class=\"paragraph\">Define RAGAS metrics and create evaluation helper function.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "AjVT",
+      "code_hash": "803722f4bd4d034bee30d568671c8918",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "/tmp/marimo_78940/__marimo__cell_AjVT_.py:2: DeprecationWarning: Importing context_precision from 'ragas.metrics' is deprecated and will be removed in v1.0. Please use 'ragas.metrics.collections' instead. Example: from ragas.metrics.collections import context_precision\n  from ragas.metrics import context_precision, context_recall, answer_relevancy\n/tmp/marimo_78940/__marimo__cell_AjVT_.py:2: DeprecationWarning: Importing context_recall from 'ragas.metrics' is deprecated and will be removed in v1.0. Please use 'ragas.metrics.collections' instead. Example: from ragas.metrics.collections import context_recall\n  from ragas.metrics import context_precision, context_recall, answer_relevancy\n/tmp/marimo_78940/__marimo__cell_AjVT_.py:2: DeprecationWarning: Importing answer_relevancy from 'ragas.metrics' is deprecated and will be removed in v1.0. Please use 'ragas.metrics.collections' instead. Example: from ragas.metrics.collections import answer_relevancy\n  from ragas.metrics import context_precision, context_recall, answer_relevancy\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Retriever-specific metrics loaded:\n* `context_precision`: Measures precision of retrieved context.\n* `context_recall`: Measures recall of retrieved context.\n* `answer_relevancy`: Measures relevancy of retrieved context to query.\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "pHFh",
+      "code_hash": "a41bab69915a9b6ae6ad12783c7876a6",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Helper function created\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "NCOB",
+      "code_hash": "fc8a786289456d7b8ccee02c0cf4772b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-8-evaluate-all-retrievers\">Step 8: Evaluate All Retrievers</h2>\n<span class=\"paragraph\">Run evaluation on all 4 retrievers using the golden dataset.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "aqbW",
+      "code_hash": "e07003711af747fa09a8c9cc3c2ce8dc",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\ud83d\udd0d Checking LangSmith for evaluation results in project 'Building_Code_Copilot_Evaluation'...\n\n\ud83d\udd28 Running evaluation (this may take a while and use API credits)...\n   This will evaluate all 4 retrievers on the golden dataset.\n\n############################################################\n# Evaluating: Dense-Only\n############################################################\n\n============================================================\nEvaluation: Dense-Only\n============================================================\nRunning RAGAS evaluation...\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "\rEvaluating:   0%|                                                                         | 0/36 [00:00<?, ?it/s]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   3%|\u2588\u258a                                                               | 1/36 [00:05<02:58,  5.09s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   6%|\u2588\u2588\u2588\u258c                                                             | 2/36 [00:25<08:07, 14.35s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  14%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                                                        | 5/36 [00:39<03:45,  7.27s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  31%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c                                            | 11/36 [00:46<01:19,  3.18s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  33%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e                                          | 12/36 [00:51<01:21,  3.39s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  36%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                                         | 13/36 [01:11<02:20,  6.13s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  50%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                                | 18/36 [01:17<01:03,  3.53s/it]\rEvaluating:  53%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a                              | 19/36 [01:36<01:35,  5.59s/it]\rEvaluating:  61%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                         | 22/36 [01:43<01:01,  4.37s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  64%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589                       | 23/36 [01:49<01:00,  4.68s/it]\rEvaluating:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b                     | 24/36 [02:05<01:18,  6.53s/it]\rEvaluating:  69%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258d                   | 25/36 [02:08<01:04,  5.85s/it]\rEvaluating:  72%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f                 | 26/36 [02:20<01:11,  7.17s/it]\rEvaluating:  81%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c            | 29/36 [02:21<00:27,  3.89s/it]\rEvaluating:  83%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e          | 30/36 [02:22<00:20,  3.41s/it]\rEvaluating:  86%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588         | 31/36 [02:25<00:16,  3.25s/it]\rEvaluating:  92%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b     | 33/36 [02:32<00:09,  3.31s/it]\rEvaluating:  94%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258d   | 34/36 [02:33<00:05,  2.89s/it]\rEvaluating:  97%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f | 35/36 [02:34<00:02,  2.44s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [02:36<00:00,  2.31s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [02:36<00:00,  4.34s/it]\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Evaluation complete for Dense-Only\n   Average latency: 4.755s\n\n############################################################\n# Evaluating: BM25-Only\n############################################################\n\n============================================================\nEvaluation: BM25-Only\n============================================================\nRunning RAGAS evaluation...\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "\rEvaluating:   0%|                                                                         | 0/36 [00:00<?, ?it/s]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   3%|\u2588\u258a                                                               | 1/36 [00:06<03:37,  6.20s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   6%|\u2588\u2588\u2588\u258c                                                             | 2/36 [00:31<09:46, 17.25s/it]\rEvaluating:  17%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a                                                      | 6/36 [00:39<02:46,  5.54s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  31%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c                                            | 11/36 [00:43<01:11,  2.85s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  33%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e                                          | 12/36 [01:10<02:30,  6.27s/it]\rEvaluating:  50%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                                | 18/36 [01:15<00:58,  3.22s/it]\rEvaluating:  53%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a                              | 19/36 [01:37<01:32,  5.41s/it]\rEvaluating:  61%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                         | 22/36 [01:42<00:58,  4.19s/it]\rEvaluating:  64%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589                       | 23/36 [01:49<01:00,  4.63s/it]\rEvaluating:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b                     | 24/36 [02:04<01:15,  6.27s/it]\rEvaluating:  72%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f                 | 26/36 [02:05<00:44,  4.49s/it]\rEvaluating:  75%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                | 27/36 [02:09<00:38,  4.24s/it]\rEvaluating:  78%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a              | 28/36 [02:12<00:32,  4.12s/it]\rEvaluating:  81%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c            | 29/36 [02:19<00:32,  4.68s/it]\rEvaluating:  89%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589       | 32/36 [02:27<00:14,  3.73s/it]\rEvaluating:  94%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258d   | 34/36 [02:30<00:06,  3.04s/it]\rEvaluating:  97%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f | 35/36 [02:33<00:02,  2.97s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [02:36<00:00,  3.06s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [02:36<00:00,  4.36s/it]\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Evaluation complete for BM25-Only\n   Average latency: 3.865s\n\n############################################################\n# Evaluating: Hybrid\n############################################################\n\n============================================================\nEvaluation: Hybrid\n============================================================\nRunning RAGAS evaluation...\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "\rEvaluating:   0%|                                                                         | 0/36 [00:00<?, ?it/s]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   3%|\u2588\u258a                                                               | 1/36 [00:05<03:00,  5.15s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   6%|\u2588\u2588\u2588\u258c                                                             | 2/36 [00:29<09:19, 16.45s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  17%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a                                                      | 6/36 [00:38<02:43,  5.44s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  31%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c                                            | 11/36 [00:44<01:15,  3.01s/it]\rEvaluating:  33%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e                                          | 12/36 [00:57<01:47,  4.46s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  36%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                                         | 13/36 [01:10<02:14,  5.84s/it]\rEvaluating:  50%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                                | 18/36 [01:16<01:00,  3.36s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  53%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a                              | 19/36 [01:37<01:37,  5.75s/it]\rEvaluating:  58%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e                          | 21/36 [01:43<01:13,  4.91s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  64%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589                       | 23/36 [02:03<01:22,  6.38s/it]\rEvaluating:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b                     | 24/36 [02:07<01:11,  5.98s/it]\rEvaluating:  69%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258d                   | 25/36 [02:55<02:36, 14.24s/it]Exception raised in Job[15]: TimeoutError()\nException raised in Job[6]: TimeoutError()\nException raised in Job[3]: TimeoutError()\nException raised in Job[9]: TimeoutError()\nException raised in Job[12]: TimeoutError()\n\rEvaluating:  86%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588         | 31/36 [02:58<00:28,  5.62s/it]\rEvaluating:  89%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589       | 32/36 [03:11<00:26,  6.60s/it]\rEvaluating:  92%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b     | 33/36 [03:15<00:18,  6.19s/it]\rEvaluating:  94%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258d   | 34/36 [03:17<00:10,  5.31s/it]\rEvaluating:  97%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f | 35/36 [03:20<00:04,  4.81s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [03:21<00:00,  4.03s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [03:21<00:00,  5.59s/it]\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Evaluation complete for Hybrid\n   Average latency: 5.055s\n\n############################################################\n# Evaluating: Parent-Document\n############################################################\n\n============================================================\nEvaluation: Parent-Document\n============================================================\nRunning RAGAS evaluation...\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "\rEvaluating:   0%|                                                                         | 0/36 [00:00<?, ?it/s]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   3%|\u2588\u258a                                                               | 1/36 [00:06<03:33,  6.10s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:   6%|\u2588\u2588\u2588\u258c                                                             | 2/36 [00:28<08:58, 15.83s/it]\rEvaluating:  17%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a                                                      | 6/36 [00:39<02:49,  5.64s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  31%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c                                            | 11/36 [00:46<01:21,  3.25s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\nLLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  33%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e                                          | 12/36 [01:14<02:41,  6.73s/it]LLM returned 1 generations instead of requested 3. Proceeding with 1 generations.\n\rEvaluating:  50%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                                | 18/36 [01:20<01:04,  3.61s/it]\rEvaluating:  53%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a                              | 19/36 [01:36<01:24,  4.96s/it]\rEvaluating:  56%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258c                            | 20/36 [01:46<01:32,  5.77s/it]\rEvaluating:  64%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589                       | 23/36 [02:09<01:24,  6.47s/it]\rEvaluating:  83%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258e          | 30/36 [02:10<00:17,  2.97s/it]\rEvaluating:  86%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588         | 31/36 [02:12<00:14,  2.80s/it]\rEvaluating:  89%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589       | 32/36 [02:20<00:13,  3.44s/it]\rEvaluating:  92%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b     | 33/36 [02:22<00:09,  3.33s/it]\rEvaluating:  97%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f | 35/36 [02:25<00:02,  2.70s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [02:28<00:00,  2.78s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 36/36 [02:28<00:00,  4.12s/it]\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Evaluation complete for Parent-Document\n   Average latency: 4.194s\n\n\u2714 Results saved to local file: /home/mj/workspace/space-code-copilot/evaluation/results/evaluation_results.json\n\n\ud83d\udcbe Saving results to LangSmith dataset 'Building_Code_Copilot_Evaluation_evaluation_results'...\n   Created new dataset: 11bbe2a7-120b-4d54-84d3-2c43fb8ac789\n\u2714 Saved 4 results to LangSmith dataset\n   View at: https://smith.langchain.com/datasets/11bbe2a7-120b-4d54-84d3-2c43fb8ac789\n\n============================================================\n\u2713 Completed evaluation for 4 retrievers\n============================================================\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "TRpd",
+      "code_hash": "135bd12adfd2cefa399639280b7a8a78",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-9-compare-results\">Step 9: Compare Results</h2>\n<span class=\"paragraph\">Display comparison table and analysis.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "TXez",
+      "code_hash": "6e5ee00dd21d79de8c75d2b66057b02d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\n============================================================\nRAG TECHNIQUE COMPARISON RESULTS\n============================================================\n\n\ud83d\udcca Metrics Table (sorted by Composite Score):\n\n      retriever  answer_relevancy  context_precision  context_recall  avg_latency  composite_score\n      BM25-Only          0.585371           0.104167        0.041667     3.865138         0.421852\nParent-Document          0.461998           0.027778        0.000000     4.194244         0.308886\n         Hybrid          0.584525           0.000000        0.000000     5.054596         0.292262\n     Dense-Only          0.383976           0.041667        0.000000     4.754970         0.225511\n\n============================================================\n\n\ud83d\udcc8 Ranking by Answer Relevancy (single metric):\n  1. BM25-Only: 0.585\n  2. Hybrid: 0.585\n  3. Parent-Document: 0.462\n  4. Dense-Only: 0.384\n\n\ud83d\udcca Ranking by Composite Score (multi-metric):\n  1. BM25-Only: 0.422 (relevancy: 0.585, precision: 0.104, recall: 0.042, latency: 3.865s)\n  2. Parent-Document: 0.309 (relevancy: 0.462, precision: 0.028, recall: 0.000, latency: 4.194s)\n  3. Hybrid: 0.292 (relevancy: 0.585, precision: 0.000, recall: 0.000, latency: 5.055s)\n  4. Dense-Only: 0.226 (relevancy: 0.384, precision: 0.042, recall: 0.000, latency: 4.755s)\n\n\ud83c\udfc6 Best Technique (Composite Score): BM25-Only\n   Composite Score: 0.422\n   Answer Relevancy: 0.585\n   Context Precision: 0.104\n   Context Recall: 0.042\n   Avg Latency: 3.865s\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "dNNg",
+      "code_hash": "b3f94ec05689d183408b73d699425956",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"step-10-analysis-and-conclusions\">Step 10: Analysis and Conclusions</h2>\n<span class=\"paragraph\">Answer the key evaluation questions:</span>\n<ol>\n<li>Does hybrid outperform dense-only?</li>\n<li>Does hybrid outperform BM25-only?</li>\n<li>How does hybrid compare to parent-document?</li>\n<li>Which technique is best overall?</li>\n</ol></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "yCnT",
+      "code_hash": "d15cbbf430ef08dfafdeca46eced68b8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\n============================================================\nANALYSIS\n============================================================\n\n1. Does hybrid outperform dense-only? \u2705 YES\n   Hybrid: 0.585 vs Dense-only: 0.384\n\n2. Does hybrid outperform BM25-only? \u274c NO\n   Hybrid: 0.585 vs BM25-only: 0.585\n\n3. How does hybrid compare to parent-document? \u2705 BETTER\n   Hybrid: 0.585 vs Parent-Document: 0.462\n\n4. Best technique overall: BM25-Only\n   Answer Relevancy: 0.585\n\n============================================================\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "wlCL",
+      "code_hash": "b055498fbcfdd173203d16f43f22aad5",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2714 Results saved to /home/mj/workspace/space-code-copilot/evaluation/results/rag_evaluation_results.csv\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    }
+  ]
+}

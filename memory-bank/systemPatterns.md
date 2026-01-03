@@ -2,24 +2,38 @@
 
 Backend patterns:
 
-- API routes in app/api/\*.py, mounted in app/main.py via include_router.
+- FastAPI app in `app/main.py`:
+  - Use `Path(__file__).parent` for absolute paths to static/templates directories.
+  - Mount static files: `app.mount("/static", StaticFiles(directory=...))`
+  - Setup templates: `Jinja2Templates(directory=...)`
+- API routes in app/api/\*.py, mounted in app/main.py via include_router:
+  - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
+  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best) and citations
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
-  - pdf_ingest (PDF → chunks)
-  - vector_store (embedding + Qdrant search)
+  - pdf_ingest (PDF → chunks) - **Status**: ✅ Basic functionality complete (section extraction optional enhancement)
+  - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
-  - rule_extractor (LLM-based rule extraction; stretch goal)
-- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude.
+  - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: Ready, automatically uses BM25-only retrieval (default, validated best)
+- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, no changes needed
 
 AI patterns:
 
-- Use RAG for building-code questions:
-  - user query → embed → vector search over code chunks → pass snippets + question to chat model.
+- Use **BM25-Only RAG** for building-code questions (Validated via RAGAS evaluation):
+  - **BM25 retrieval**: Catches exact terms, section numbers, citations (e.g., "Section 5.2.3", "minimum 800mm")
+  - **Evaluation result**: BM25-only outperformed hybrid (BM25 + Dense), dense-only, and parent-document retrieval
+  - **Composite score**: 0.422 (BM25-only) - best among 4 techniques evaluated
+  - Why BM25-only: Building codes are term-heavy with exact legal phrasing; exact term matching outperforms semantic similarity for this domain
+  - See `memory-bank/implementationPlan.md` for evaluation details
+  - **Status**: `vector_store.py` defaults to BM25-only retrieval (updated based on evaluation results)
+- Supports multiple code documents simultaneously (multi-jurisdiction support).
+- Architects can query across different building codes without switching contexts.
 - Use deterministic Python for simple numeric compliance (area, widths).
-- Use LLM only for:
+- Use LLM for:
   - summarizing issues
-  - answering questions
-  - extracting rules from text (phase 2).
+  - answering questions via RAG (handles multiple code documents)
+  - extracting rules from PDFs (MVP core feature) - automatically processes multiple code PDFs
+- **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing
 
 Frontend patterns:
 
@@ -47,3 +61,177 @@ Plan/Act:
   - Prefer following the patterns defined in this file and in the current backend layout.
   - Look at internal/lessons/ only to copy small, relevant patterns (e.g., a vector_store abstraction, a LangGraph agent node) and then adapt them.
   - Do not import internal/lessons modules directly into production code.
+
+### When to use lessons
+
+**Don't use lessons for:**
+- Simple/standard patterns (CSV parsing, basic FastAPI routes, Pydantic models)
+- Standard Python libraries (csv, pathlib, etc.)
+- Basic CRUD operations
+
+## Caching Strategy
+
+The project uses different caching strategies for different data types and operations:
+
+### CSV Data Caching (`design_loader.py`)
+- **Purpose**: Cache parsed Room/Door models from CSV files
+- **Strategy**: Python's `@lru_cache` decorator
+- **Why**: CSV files are read frequently (every `/api/issues` call), but parsing is fast
+- **Implementation**: 
+  - `load_rooms()` and `load_doors()` use `@lru_cache(maxsize=2)`
+  - Cache key includes file path + modification time (auto-invalidation)
+  - Returns tuples (hashable) for caching, converted to lists when needed
+- **File**: `app/services/design_loader.py`
+
+### PDF Processing Caching (Separate Files)
+PDFs require more sophisticated caching due to expensive operations:
+
+#### Embedding Cache (`vector_store.py`)
+- **Purpose**: Cache expensive embedding computations
+- **Strategy**: `CacheBackedEmbeddings` pattern from day_12 lesson
+- **Why**: Embedding API calls are slow and expensive
+- **Implementation**: 
+  - Uses LangChain's `CacheBackedEmbeddings` with `LocalFileStore`
+  - Caches embeddings in `./cache/embeddings/` directory
+  - Automatically checks cache before calling embedding API
+- **File**: `app/services/vector_store.py` (to be implemented)
+
+#### LLM Response Cache (`llm.py`)
+- **Purpose**: Cache LLM API responses
+- **Strategy**: `setup_llm_cache()` pattern from day_12 lesson
+- **Why**: LLM API calls are slow, expensive, and often have identical prompts
+- **Implementation**:
+  - Uses `InMemoryCache` (dev) or `SQLiteCache` (production)
+  - Configured via `setup_llm_cache(cache_type="memory"|"sqlite")`
+  - Caches at LangChain global level
+- **File**: `app/core/llm.py` (to be implemented)
+
+### Why Separate Caching Strategies?
+
+| Data Type | Operation | Caching Strategy | File |
+|-----------|-----------|------------------|------|
+| **CSV** | File I/O + parsing | `lru_cache` (simple) | `design_loader.py` |
+| **PDF embeddings** | Embedding API calls | `CacheBackedEmbeddings` (day_12) | `vector_store.py` |
+| **LLM responses** | LLM API calls | `setup_llm_cache()` (day_12) | `llm.py` |
+
+**Rationale**:
+- CSV caching is simple (built-in Python decorator)
+- PDF/LLM caching uses day_12 lesson patterns (production-ready, handles expensive operations)
+- Separation of concerns: each file handles its own caching needs
+- Reusability: `llm.py` cache is shared across multiple services
+
+### Cache Invalidation
+
+- **CSV cache**: Invalidates automatically when file modification time changes
+- **Embedding cache**: Persistent file-based cache (survives restarts)
+- **LLM cache**: Memory cache (cleared on restart) or SQLite (persistent)
+
+**Do use lessons for:**
+- `app/services/vector_store.py` - RAG/vector DB patterns (Qdrant setup, embedding pipelines)
+- `app/core/llm.py` - Multi-provider LLM abstraction (OpenAI/Gemini/Claude switching)
+- `app/services/rule_extractor.py` - LLM-based extraction patterns (structured output, prompt engineering)
+- `app/services/pdf_ingest.py` - PDF chunking patterns (if complex chunking strategies needed)
+- LangGraph agent orchestration (if we add agent workflows)
+
+**Decision process:**
+1. If it's a standard Python/library pattern → implement directly
+2. If it's LLM/AI-specific and complex → check lessons for patterns
+3. Use `/use-lesson-pattern` command when explicitly requested
+
+## Metrics and Observability
+
+**Metrics implementation patterns from lessons:**
+
+- **LangSmith** (day_12 lesson): Tracing and monitoring for LLM calls
+  - Setup in `app/core/llm.py` or `app/main.py`
+  - Automatic tracing of all LangChain calls
+  - Tracks: token usage, latency, cost, retrieval quality
+  - See `memory-bank/presentation.md` for implementation details
+
+- **RAGAS** (day_13 lesson): Evaluation framework for RAG systems
+  - Optional: For testing/evaluation of RAG quality
+  - Metrics: faithfulness, answer relevancy, context precision, context recall
+  - See `memory-bank/presentation.md` for implementation details
+
+- **Performance metrics**: API response times, cache hit rates
+  - FastAPI middleware for response time tracking
+  - Cache statistics in service layer
+  - See `memory-bank/presentation.md` for implementation details
+
+**Metrics endpoint:**
+- Optional `GET /api/metrics/summary` endpoint for presentation
+- Returns: issue counts, cache stats, LLM call counts
+- See `memory-bank/presentation.md` for example implementation
+
+### Where to Implement Metrics in MVP
+
+**1. LangSmith Setup** → `app/core/llm.py`
+- Add `setup_langsmith()` function at top of file
+- Sets `LANGCHAIN_PROJECT` and `LANGCHAIN_TRACING_V2` environment variables
+- Call `setup_langsmith()` in `app/main.py` at startup
+- All LangChain calls automatically traced once enabled
+
+**2. Performance Metrics Middleware** → `app/main.py`
+- Add HTTP middleware after CORS middleware
+- Tracks response time for all API endpoints
+- Adds `X-Process-Time` header to responses
+- Simple implementation: `time.time()` before/after request
+
+**3. Metrics Endpoint** → `app/api/metrics.py` (new file)
+- Create new `APIRouter` for metrics endpoints
+- `GET /api/metrics/summary` returns summary statistics
+- Uses existing `get_compliance_summary()` from compliance_checker
+- Mount router in `app/main.py` via `app.include_router(metrics_router)`
+
+**4. Cache Statistics** → Service files
+- Track in `design_loader.py` for CSV cache hits/misses
+- Track in `vector_store.py` for embedding cache (when implemented)
+- Simple counter variables or logging
+
+**Implementation Priority:**
+1. ✅ **Complete**: RAG Technique Validation - BM25-only selected (composite score: 0.422)
+   - Evaluation notebook: `evaluation/rag_evaluation.py`
+   - Results: BM25-only outperformed hybrid, dense-only, and parent-document
+   - Saved to LangSmith dataset and local JSON
+2. **High**: LangSmith setup (automatic tracing, no code changes needed)
+3. **Medium**: Performance middleware (simple, useful for monitoring)
+4. **Low**: Metrics endpoint (optional, for presentation/monitoring)
+5. **Low**: Cache statistics (optional, for optimization insights)
+
+### RAG Technique Validation (COMPLETE)
+
+**Purpose**: Validate retrieval technique choice for building code questions.
+
+**Reference Pattern**: `internal/lessons/day_5/1-advanced_retrievers.py`
+- Shows how to evaluate retrievers with RAGAS
+- Provides `evaluate_retriever_with_ragas()` function pattern
+- Demonstrates comparison of multiple retrieval techniques
+- Uses metrics: context_precision, context_recall, answer_relevancy
+
+**Evaluation Completed**:
+1. ✅ Created test dataset (12 building code questions)
+   - Used RAGAS TestsetGenerator with knowledge graph from building code PDFs
+   - Filtered chunks using measurement-related keywords
+   - Saved to `evaluation/data/golden_dataset.csv`
+2. ✅ Created evaluation notebook: `evaluation/rag_evaluation.py` (Marimo)
+   - Adapted `evaluate_retriever_with_ragas()` from day_5 lesson
+   - Composite scoring: 50% relevancy, 20% precision, 20% recall, 10% latency
+3. ✅ Evaluated 4 retrieval techniques:
+   - Dense-only: `get_retriever(k=5, use_hybrid=False)`
+   - BM25-only: `BM25Retriever.from_documents()`
+   - Hybrid: `get_retriever(k=5, use_hybrid=True)`
+   - Parent-Document: Small-to-big strategy from day_5
+4. ✅ Results documented:
+   - **Best technique: BM25-only** (composite score: 0.422)
+   - Results saved to LangSmith dataset and `evaluation/results/evaluation_results.json`
+   - LangSmith integration: Can load results from cloud or local cache
+
+**Key Finding**:
+- BM25-only outperformed hybrid retrieval for building code questions
+- Building codes benefit more from exact term matching than semantic similarity
+- Recommendation: Update `vector_store.py` default to BM25-only (or keep hybrid as option)
+
+**Why this matters**:
+- ✅ Validated core technical decision with data-driven evidence
+- ✅ Provides metrics for presentation (composite scoring methodology)
+- ✅ Identified optimal technique before proceeding with frontend/Phase 5

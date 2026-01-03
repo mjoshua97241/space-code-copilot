@@ -2,15 +2,161 @@
 
 Current focus:
 
-- Implement Phase 0–3 of the plan:
-  - backend/app/main.py with /health and CORS.
-  - design_loader service and basic CSV models.
-  - rules_seed and compliance_checker.
-  - /api/issues returning Issue[].
+- Foundation complete: FastAPI app (`app/main.py`) is working with `/health` endpoint, CORS, static files, and template setup.
+- Domain models complete: All Pydantic models (Room, Door, Rule, Issue) implemented in `app/models/domain.py`
+- CSV loaders complete: `design_loader.py` with caching and validation
+- Seeded rules complete: `rules_seed.py` with 4 rules ready for compliance checking
+- Compliance checker complete: `compliance_checker.py` tested and working (found 2 violations as expected)
+- API endpoints complete: `/api/issues` endpoint working and tested
+- LLM components: Phase 2 (Hybrid Retrieval) and Phase 3 (Chat Endpoint) complete
+  - `vector_store.py` supports BM25 + Dense hybrid retrieval
+  - `/api/chat` endpoint working with RAG-based Q&A and citations
+- ✅ **RAG Technique Validation COMPLETE** - Evaluated 4 techniques using RAGAS metrics
+  - Compared: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
+  - **Result: BM25-only selected as best technique** (composite score: 0.422)
+  - Evaluation notebook: `evaluation/rag_evaluation.py` with LangSmith integration
+  - Results saved to: `evaluation/results/evaluation_results.json` and LangSmith dataset
+- ✅ **Vector Store Updated** - `app/services/vector_store.py` now defaults to BM25-only retrieval
+  - Default changed: `use_bm25_only=True` (validated best technique)
+  - Backward compatible: Hybrid and dense-only still available via parameters
+  - Chat endpoint (`app/api/chat.py`) updated to use BM25-only by default
+  - Documentation updated with evaluation results and rationale
+- ✅ **Phase 6: Frontend Implementation COMPLETE & TESTED** - Full-featured UI implemented and verified
+  - HTML template (`app/templates/index.html`) with three-panel layout
+  - Plan viewer displaying `plan.png` with header
+  - Issues list with click handlers, severity badges, and code references
+  - Chat panel with message rendering, citations display, and loading states
+  - Modern CSS styling (`app/static/styles.css`) with responsive design
+  - JavaScript for API integration, error handling, and user interactions
+  - **Testing completed** - No issues found in console or terminal
+
+Recent changes:
+
+- Completed `/api/issues` endpoint (`app/api/issues.py`):
+  - `GET /api/issues` - Returns list of all compliance issues
+  - `GET /api/issues/summary` - Returns summary statistics
+  - Uses `APIRouter` pattern with proper error handling
+  - Router mounted in `main.py` via `app.include_router(issues_router)`
+  - Tested and working (returns 2 door violations as expected)
+- Completed CSV loaders (`app/services/design_loader.py`):
+  - `load_rooms()` and `load_doors()` with `@lru_cache` for performance
+  - Automatic validation of door->room references
+  - File modification time-based cache invalidation
+  - Helper functions for filtering and lookup
+- Completed compliance checker (`app/services/compliance_checker.py`):
+  - `check_compliance()` - Main orchestrator function
+  - `check_room_compliance()` and `check_door_compliance()` - Element-specific checkers
+  - `get_compliance_summary()` - Helper for statistics
+  - Returns Issue[] objects with detailed violation messages
+  - Tested and working (`test_compliance_checker.py` - correctly found 2 door violations)
+- Completed seeded rules (`app/services/rules_seed.py`):
+  - 4 hardcoded rules: 2 room area rules, 2 door width rules
+  - `get_all_rules()` function ready for LLM integration
+  - Helper functions for rule filtering and lookup
+  - Tested and working (`test_rules_seed.py`)
+- Completed domain models (`app/models/domain.py`):
+  - Room, Door, Rule, Issue models with Pydantic validation
+  - Proper type hints and field constraints
+  - Rule model supports both seeded and LLM-extracted rules (MVP core feature)
+- Fixed import errors in `main.py` (`fastapi.responses` module)
+- Added `jinja2` dependency to `pyproject.toml`
+- Fixed static files path to use absolute paths via `Path(__file__).parent`
+- Verified app imports and runs successfully
+- Created deployment documentation (`memory-bank/deployment.md`):
+  - Deployment options (Railway.app, Docker, Local)
+  - Pre-deployment checklist
+  - Required files and configurations
+  - Environment variables documentation
+  - Minimal frontend template reference
+- Created presentation guide (`memory-bank/presentation.md`):
+  - Problem, Solution, Architecture, Metrics, Demo sections
+  - Timing: 7 minutes presentation + 3 minutes Q&A
+  - Metrics implementation patterns from lessons (LangSmith, RAGAS)
+  - Demo flow and checklist
+  - Visual aids and preparation steps
+- Created implementation plan (`memory-bank/implementationPlan.md`):
+  - 2-week MVP implementation plan with 7 phases
+  - Focus on hybrid retrieval (BM25 + Dense), citations, guardrails
+  - Deferred advanced features (structured parsing, multi-hop, conflict resolution) to post-MVP
+  - Risk mitigation strategies and dependencies documented
+- **Completed Phase 2: Hybrid Retrieval** (`app/services/vector_store.py`):
+  - Implemented BM25 retriever using `BM25Retriever` from `langchain_community`
+  - Implemented hybrid retriever using `EnsembleRetriever` (BM25 + Dense)
+  - Document storage for BM25 (stores raw documents alongside embeddings)
+  - Configurable retrieval weights (default 0.5/0.5 for BM25/dense)
+  - Tested and verified working (`test_vector_store.py` - successfully tested with PDF ingestion)
+  - Added dependencies: `langchain-community>=0.3.0`, `rank-bm25>=0.2.2`
+- **Updated Vector Store** (`app/services/vector_store.py`):
+  - **Default changed to BM25-only** (validated best technique, composite score: 0.422)
+  - New parameter: `use_bm25_only=True` (default) for explicit BM25-only control
+  - Backward compatible: `use_hybrid=True` still works for hybrid retrieval
+  - Updated docstrings with evaluation results and rationale
+  - Chat endpoint (`app/api/chat.py`) updated to use BM25-only by default
+- **Completed Phase 3: Chat Endpoint** (`app/api/chat.py`):
+  - `POST /api/chat` endpoint with RAG-based Q&A
+  - Uses hybrid retrieval (BM25 + Dense) to find relevant context from building code PDFs
+  - Pydantic models: `ChatRequest`, `ChatResponse`, `Citation`
+  - Singleton pattern for vector store initialization (indexes PDFs on first use)
+  - LLM cache setup (memory-based for MVP)
+  - Citation extraction from retrieved document metadata
+  - Proper error handling and environment variable loading (dotenv)
+  - Router mounted in `main.py` via `app.include_router(chat_router)`
+  - Tested and working (successfully answers questions with citations)
+
+**Recent LLM Component Updates:**
+
+- ✅ **Phase 2 Complete**: `app/services/vector_store.py` now implements hybrid retrieval:
+  - BM25 retriever setup using `BM25Retriever` from `langchain_community`
+  - Hybrid retriever using `EnsembleRetriever` to combine BM25 + Dense
+  - Document storage for BM25 (stores raw documents in addition to embeddings)
+  - Configurable weights for BM25/dense (default 0.5/0.5)
+  - Backward compatible: `use_hybrid=False` falls back to dense-only
+  - Tested and working (`test_vector_store.py` - successfully retrieves 9 results for test query)
+- ✅ **Dependencies added**: `langchain-community`, `rank-bm25` added to `pyproject.toml`
+- ✅ **Test file**: `app/tests/test_vector_store.py` created and working
+
+**Current Status:**
+- `app/core/llm.py`: ✅ Complete - No changes needed
+- `app/services/pdf_ingest.py`: ✅ Basic functionality complete - Section extraction enhancement optional
+- `app/services/vector_store.py`: ✅ **Updated** - Defaults to BM25-only (validated best, composite score: 0.422), hybrid and dense-only available as options
+- `app/services/rule_extractor.py`: ✅ Ready - Will automatically use BM25-only retrieval (default)
+- `app/api/chat.py`: ✅ **Updated** - Chat endpoint uses BM25-only retrieval by default (validated best technique)
+
+**Next Priority:**
+1. ✅ **RAG Technique Validation COMPLETE**: Evaluated 4 techniques using RAGAS metrics
+   - Compared: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
+   - **Best technique: BM25-only** (composite score: 0.422)
+   - Metrics evaluated: context_precision, context_recall, answer_relevancy, latency
+   - Composite scoring: 50% relevancy, 20% precision, 20% recall, 10% latency
+   - Results: BM25-only outperformed hybrid, dense-only, and parent-document
+   - Evaluation notebook: `evaluation/rag_evaluation.py` with save/load from LangSmith
+2. ✅ **Vector Store Updated**: `app/services/vector_store.py` defaults to BM25-only
+   - Default: `use_bm25_only=True` (validated best technique)
+   - Chat endpoint updated to use BM25-only by default
+   - Hybrid and dense-only still available via parameters (backward compatible)
+3. ✅ **Phase 6: Frontend Implementation COMPLETE & TESTED**
+   - HTML template with three-panel layout (left: plan + issues, right: chat)
+   - Issues list with fetch, rendering, click handlers, and severity badges
+   - Chat panel with form submission, message rendering, citations display
+   - Modern CSS styling with responsive design and smooth animations
+   - JavaScript for API integration, error handling, and user interactions
+   - **Testing completed** - No issues found in console or terminal
+4. **Phase 7**: Testing + deployment + presentation prep
 
 Todo next:
 
-- Frontend HTML template (`app/templates/index.html`) with:
-  - Plan viewer (plan.png + overlays) with highlight on issue selection.
-  - Issues list fetching `/api/issues` and rendering via DOM manipulation.
-  - Chat panel posting to `/api/chat` and rendering replies.
+- ✅ **RAG Technique Validation COMPLETE**:
+  - Created evaluation notebook: `evaluation/rag_evaluation.py`
+  - Generated golden dataset using RAGAS TestsetGenerator (12 questions from building code PDFs)
+  - Evaluated 4 techniques: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
+  - Used composite scoring (50% relevancy, 20% precision, 20% recall, 10% latency)
+  - **Result: BM25-only is best** (composite score: 0.422)
+  - Results saved to LangSmith dataset and local JSON
+  - Evaluation can be reloaded from LangSmith or local cache
+- ✅ **Frontend HTML template COMPLETE & TESTED** (`app/templates/index.html`):
+  - Plan viewer displaying `plan.png` with header and image wrapper
+  - Issues list fetching `/api/issues` with click handlers, severity badges, code references
+  - Chat panel posting to `/api/chat` with message rendering, citations display, loading states
+  - Modern CSS styling with responsive design, smooth animations, and professional UI
+  - JavaScript for API integration, error handling, and user interactions
+  - **Testing completed** - No issues found in console or terminal
