@@ -134,3 +134,34 @@ class Issue(BaseModel):
 
     class Config:
         frozen = False
+
+class ProjectContext(BaseModel):
+    """
+    Project context for filtering building code rules.
+    
+    Used to ensure extracted rules match the project type.
+    """
+    building_type: Literal["residential", "commercial", "mixed-use", "industrial"] = Field(
+        ...,
+        description="Type of building"
+    )
+    number_of_stories: Literal["single-story", "multi-story"] = Field(
+        ...,
+        description="Number of stories/floors"
+    )
+    occupancy: Literal["single-family", "multi-family", "commercial", "public"] = Field(
+        ...,
+        description="Occupancy type"
+    )
+    building_classification: Literal["detached", "attached", "apartment", "townhouse"] = Field(
+        ...,
+        description="Building classification"
+    )
+    requires_accessibility: bool = Field(
+        default=False,
+        description="Whether building requires accessibility compliance (ADA, etc.)"
+    )
+    requires_fire_rated: bool = Field(
+        default=False,
+        description="Whether building requires fire-rated elements"
+    )

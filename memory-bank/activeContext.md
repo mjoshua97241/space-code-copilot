@@ -29,6 +29,23 @@ Current focus:
   - Modern CSS styling (`app/static/styles.css`) with responsive design
   - JavaScript for API integration, error handling, and user interactions
   - **Testing completed** - No issues found in console or terminal
+- ✅ **LLM Rule Extraction COMPLETE** - Integrated with project context filtering
+  - `app/services/rule_extractor.py` - Extracts rules from PDFs using LLM with BM25-only retrieval
+  - `app/models/domain.py` - Added `ProjectContext` model for filtering rules by project type
+  - `app/services/rules_seed.py` - Integrated rule extraction into `get_all_rules()` with context filtering
+  - **Project context filtering**: Filters out commercial, multi-story, fire exit, and accessibility rules when not applicable
+  - **Results**: Reduced compliance issues from 28 to 3 by filtering irrelevant rules
+  - Default context: Single-floor residential detached house (matches current MVP project)
+  - Extracts 6-7 relevant rules (down from 14 without filtering)
+- ✅ **Page Number Extraction & Citation Formatting COMPLETE**
+  - `app/services/pdf_ingest.py` - Enhanced with document page number extraction from text (footer/header)
+  - Stores both `page_pdf` (PDF reader page) and `page_document` (extracted from text) in metadata
+  - Extracts page numbers from full pages before chunking for accuracy
+  - Conservative validation to avoid false positives (max 2000 pages, ±100 variance check)
+  - `app/api/chat.py` - Updated citations to explicitly show page type: "(PDF page)" or "(document page)"
+  - Added post-processing function `_fix_citations_in_answer()` to automatically fix LLM citations
+  - Updated LLM prompt to instruct including page type indicators in citations
+  - **Result**: All citations now clearly indicate whether using PDF page numbers (matches PDF reader) or document page numbers (extracted from text)
 
 Recent changes:
 
@@ -94,11 +111,14 @@ Recent changes:
   - Chat endpoint (`app/api/chat.py`) updated to use BM25-only by default
 - **Completed Phase 3: Chat Endpoint** (`app/api/chat.py`):
   - `POST /api/chat` endpoint with RAG-based Q&A
-  - Uses hybrid retrieval (BM25 + Dense) to find relevant context from building code PDFs
-  - Pydantic models: `ChatRequest`, `ChatResponse`, `Citation`
+  - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
+  - Pydantic models: `ChatRequest`, `ChatResponse`, `Citation` (page field updated to string for type indicators)
   - Singleton pattern for vector store initialization (indexes PDFs on first use)
   - LLM cache setup (memory-based for MVP)
   - Citation extraction from retrieved document metadata
+  - **Citation formatting**: Explicitly shows page type - "(PDF page)" or "(document page)"
+  - **Post-processing**: `_fix_citations_in_answer()` automatically fixes LLM citations
+  - Updated LLM prompt to instruct including page type in citations
   - Proper error handling and environment variable loading (dotenv)
   - Router mounted in `main.py` via `app.include_router(chat_router)`
   - Tested and working (successfully answers questions with citations)
@@ -117,10 +137,10 @@ Recent changes:
 
 **Current Status:**
 - `app/core/llm.py`: ✅ Complete - No changes needed
-- `app/services/pdf_ingest.py`: ✅ Basic functionality complete - Section extraction enhancement optional
+- `app/services/pdf_ingest.py`: ✅ **COMPLETE** - Enhanced with page number extraction (PDF page + document page), section extraction, and metadata preservation
 - `app/services/vector_store.py`: ✅ **Updated** - Defaults to BM25-only (validated best, composite score: 0.422), hybrid and dense-only available as options
-- `app/services/rule_extractor.py`: ✅ Ready - Will automatically use BM25-only retrieval (default)
-- `app/api/chat.py`: ✅ **Updated** - Chat endpoint uses BM25-only retrieval by default (validated best technique)
+- `app/services/rule_extractor.py`: ✅ **COMPLETE** - LLM-based rule extraction with project context filtering, uses BM25-only retrieval (default, validated best)
+- `app/api/chat.py`: ✅ **COMPLETE** - Chat endpoint with BM25-only retrieval, explicit page type indicators in citations, and post-processing to fix LLM citations
 
 **Next Priority:**
 1. ✅ **RAG Technique Validation COMPLETE**: Evaluated 4 techniques using RAGAS metrics
@@ -141,7 +161,12 @@ Recent changes:
    - Modern CSS styling with responsive design and smooth animations
    - JavaScript for API integration, error handling, and user interactions
    - **Testing completed** - No issues found in console or terminal
-4. **Phase 7**: Testing + deployment + presentation prep
+4. ✅ **LLM Rule Extraction COMPLETE** - Integrated with project context filtering
+   - Rule extraction from PDFs using LLM with BM25-only retrieval
+   - Project context filtering (building type, stories, occupancy, classification)
+   - Results: Reduced issues from 28 to 3 by filtering irrelevant rules
+   - Default context: Single-floor residential detached house
+5. **Phase 7**: Testing + deployment + presentation prep
 
 Todo next:
 
@@ -160,3 +185,12 @@ Todo next:
   - Modern CSS styling with responsive design, smooth animations, and professional UI
   - JavaScript for API integration, error handling, and user interactions
   - **Testing completed** - No issues found in console or terminal
+- ✅ **LLM Rule Extraction COMPLETE** (`app/services/rule_extractor.py`):
+  - Extracts rules from PDFs using LLM with structured output (JSON parsing)
+  - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
+  - Project context filtering via `ProjectContext` model
+  - Filters out commercial, multi-story, fire exit, and accessibility rules when not applicable
+  - ID conflict resolution (renames conflicting rule IDs)
+  - Rule type validation (fixes invalid rule_type assignments)
+  - Integrated into `get_all_rules()` in `rules_seed.py`
+  - **Results**: 10 total rules (4 seeded + 6 extracted), 3 compliance issues (down from 28)

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, and **Phase 6 (Frontend Implementation)** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. Ready to proceed with Phase 7 (Testing + Deployment + Presentation Prep).
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, and **LLM Rule Extraction with Project Context Filtering** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). Ready to proceed with Phase 7 (Testing + Deployment + Presentation Prep).
 
 ## What Works
 
@@ -17,6 +17,7 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
   - `Door` model (id, location_room_id, clear_width_mm, level)
   - `Rule` model (id, name, rule_type, element_type, min_value, rule_text, code_ref)
   - `Issue` model (element_id, element_type, rule_id, message, code_ref, severity)
+  - `ProjectContext` model (building_type, number_of_stories, occupancy, building_classification, requires_accessibility, requires_fire_rated)
   - All models use Pydantic with proper validation and type hints
 - CSV loaders (`app/services/design_loader.py`):
   - `load_rooms()` - Loads rooms from CSV with `@lru_cache` for performance
@@ -26,7 +27,8 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
   - Helper functions for filtering and lookup
 - Seeded rules (`app/services/rules_seed.py`):
   - `get_seeded_rules()` - Returns 4 hardcoded rules (2 room area, 2 door width)
-  - `get_all_rules()` - Ready for LLM integration (combines seeded + extracted)
+  - `get_all_rules()` - **COMPLETE** - Combines seeded + LLM-extracted rules with project context filtering
+  - `get_default_project_context()` - Returns default context for single-floor residential detached house
   - Helper functions: `get_rules_for_element_type()`, `get_rules_by_type()`, `get_rule_by_id()`
   - Rules include: minimum bedroom area (9.5 m²), living room area (12.0 m²), accessible door width (800 mm), standard door width (700 mm)
 - Compliance checker (`app/services/compliance_checker.py`):
@@ -48,6 +50,9 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
     - Returns `ChatResponse` with answer and citations
     - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
     - Extracts citations from retrieved document metadata
+    - **Citation formatting**: Explicitly shows page type - "(PDF page)" or "(document page)"
+    - **Post-processing**: `_fix_citations_in_answer()` automatically fixes LLM citations to include page type indicators
+    - Updated LLM prompt to instruct including page type in citations
     - Singleton pattern for vector store (indexes PDFs on first use)
     - LLM cache setup for performance
     - Environment variable loading (dotenv)
@@ -72,8 +77,10 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - PDF ingest (`app/services/pdf_ingest.py`):
   - `load_pdf()` - Loads PDF using `PyMuPDFLoader`
   - `chunk_documents()` - Chunks documents using `RecursiveCharacterTextSplitter` (1000 chars, 100 overlap)
-  - `ingest_pdf()` - Convenience function with metadata
-  - Basic metadata: `source`, `chunk_index`, page numbers
+  - `ingest_pdf()` - Convenience function with enhanced metadata
+  - `extract_page_number_from_text()` - Extracts document page numbers from footer/header text
+  - `extract_section_number()` - Extracts section numbers using regex patterns
+  - Enhanced metadata: `source`, `chunk_index`, `page_pdf` (PDF reader page), `page_document` (extracted from text), `page` (preferred: document if available, otherwise PDF), `section` (extracted section number)
 - LLM wrapper (`app/core/llm.py`):
   - `get_llm()` - Provider abstraction (OpenAI, with placeholders for Gemini/Claude)
   - `setup_llm_cache()` - In-memory or SQLite caching for LLM responses
@@ -98,11 +105,10 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - [x] Compliance checker (`app/services/compliance_checker.py`)
 - [x] `/api/issues` endpoint returning `Issue[]` (`app/api/issues.py`)
 - [x] PDF ingest (`app/services/pdf_ingest.py`) - Basic functionality complete
-- [x] Vector store setup (`app/services/vector_store.py`) - **Hybrid retrieval (BM25 + Dense) complete**
+- [x] Vector store setup (`app/services/vector_store.py`) - **BM25-only retrieval (validated best) complete**
 - [x] LLM wrapper (`app/core/llm.py`) - Basic functionality complete
-- [ ] Rule extraction from PDFs (`app/services/rule_extractor.py`) - LLM-based (will use hybrid retrieval automatically)
+- [x] Rule extraction from PDFs (`app/services/rule_extractor.py`) - **COMPLETE** - LLM-based with project context filtering
 - [x] `/api/chat` endpoint with RAG and citations - **COMPLETE**
-- [ ] `/api/rag/query` endpoint (optional)
 - [x] API routers mounted in `main.py` (issues + chat routers)
 
 ### UI (MVP)
@@ -137,11 +143,12 @@ None yet (project in early setup phase).
    - [x] JavaScript for API integration, error handling, and user interactions
    - [x] **Testing completed** - No issues found in console or terminal
 
-3. Add RAG pipeline and rule extraction:
-   - PDF ingest
-   - Vector store indexing
-   - LLM-based rule extraction from PDFs
-   - `/api/chat` with RAG context
+3. ✅ Add RAG pipeline and rule extraction - **COMPLETE**:
+   - [x] PDF ingest
+   - [x] Vector store indexing
+   - [x] LLM-based rule extraction from PDFs with project context filtering
+   - [x] `/api/chat` with RAG context
+   - [x] Project context filtering (reduced issues from 28 to 3)
 
 4. Implement RAG pipeline (see `memory-bank/implementationPlan.md`):
    - [x] Phase 1: PDF ingest + basic chunking (basic functionality complete, section extraction optional)
