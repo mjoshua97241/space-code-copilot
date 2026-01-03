@@ -109,7 +109,6 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - [x] LLM wrapper (`app/core/llm.py`) - Basic functionality complete
 - [x] Rule extraction from PDFs (`app/services/rule_extractor.py`) - **COMPLETE** - LLM-based with project context filtering
 - [x] `/api/chat` endpoint with RAG and citations - **COMPLETE**
-- [ ] `/api/rag/query` endpoint (optional)
 - [x] API routers mounted in `main.py` (issues + chat routers)
 
 ### UI (MVP)
