@@ -11,9 +11,12 @@ Current focus:
 - LLM components: Phase 2 (Hybrid Retrieval) and Phase 3 (Chat Endpoint) complete
   - `vector_store.py` supports BM25 + Dense hybrid retrieval
   - `/api/chat` endpoint working with RAG-based Q&A and citations
-- Next: **RAG Technique Validation** - Use RAGAS metrics to validate hybrid retrieval (BM25 + Dense) choice
-  - Compare hybrid vs dense-only retrieval on building code questions
-  - Reference: `internal/lessons/day_5/1-advanced_retrievers.py` for evaluation patterns
+- ✅ **RAG Technique Validation COMPLETE** - Evaluated 4 techniques using RAGAS metrics
+  - Compared: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
+  - **Result: BM25-only selected as best technique** (composite score: 0.422)
+  - Evaluation notebook: `evaluation/rag_evaluation.py` with LangSmith integration
+  - Results saved to: `evaluation/results/evaluation_results.json` and LangSmith dataset
+- Next: Update `vector_store.py` to use BM25-only (or keep hybrid as option) based on evaluation results
 
 Recent changes:
 
@@ -102,23 +105,27 @@ Recent changes:
 - `app/api/chat.py`: ✅ **Phase 3 Complete** - Chat endpoint with RAG and citations working
 
 **Next Priority:**
-1. **RAG Technique Validation** (NEW): Validate hybrid retrieval choice using RAGAS metrics
-   - Compare hybrid (BM25 + Dense) vs dense-only retrieval
-   - Use patterns from `internal/lessons/day_5/1-advanced_retrievers.py`
-   - Metrics: context_precision, context_recall, answer_relevancy
-   - Goal: Validate assumption that hybrid retrieval is better for building codes
-2. **Phase 5**: Enhance citations + add guardrails (optional, can skip to Phase 6)
-3. **Phase 6**: Frontend implementation (HTML template with plan viewer, issues list, chat panel)
-4. **Phase 1 enhancement**: Add section number extraction to `pdf_ingest.py` (optional, nice-to-have)
+1. ✅ **RAG Technique Validation COMPLETE**: Evaluated 4 techniques using RAGAS metrics
+   - Compared: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
+   - **Best technique: BM25-only** (composite score: 0.422)
+   - Metrics evaluated: context_precision, context_recall, answer_relevancy, latency
+   - Composite scoring: 50% relevancy, 20% precision, 20% recall, 10% latency
+   - Results: BM25-only outperformed hybrid, dense-only, and parent-document
+   - Evaluation notebook: `evaluation/rag_evaluation.py` with save/load from LangSmith
+2. **Update vector store**: Consider updating `vector_store.py` default to BM25-only (or keep hybrid as option)
+3. **Phase 5**: Enhance citations + add guardrails (optional, can skip to Phase 6)
+4. **Phase 6**: Frontend implementation (HTML template with plan viewer, issues list, chat panel)
 
 Todo next:
 
-- **RAG Technique Validation** (using day_5 lesson patterns):
-  - Create test dataset for building code questions (using RAGAS TestsetGenerator or manual)
-  - Create evaluation helper function (adapt `evaluate_retriever_with_ragas` from day_5)
-  - Evaluate hybrid retrieval (BM25 + Dense) vs dense-only retrieval
-  - Compare metrics: context_precision, context_recall, answer_relevancy
-  - Document results to validate hybrid retrieval choice
+- ✅ **RAG Technique Validation COMPLETE**:
+  - Created evaluation notebook: `evaluation/rag_evaluation.py`
+  - Generated golden dataset using RAGAS TestsetGenerator (12 questions from building code PDFs)
+  - Evaluated 4 techniques: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
+  - Used composite scoring (50% relevancy, 20% precision, 20% recall, 10% latency)
+  - **Result: BM25-only is best** (composite score: 0.422)
+  - Results saved to LangSmith dataset and local JSON
+  - Evaluation can be reloaded from LangSmith or local cache
 - Frontend HTML template (`app/templates/index.html`) with:
   - Plan viewer (plan.png + overlays) with highlight on issue selection.
   - Issues list fetching `/api/issues` and rendering via DOM manipulation.
