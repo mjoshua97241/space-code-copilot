@@ -16,7 +16,11 @@ Current focus:
   - **Result: BM25-only selected as best technique** (composite score: 0.422)
   - Evaluation notebook: `evaluation/rag_evaluation.py` with LangSmith integration
   - Results saved to: `evaluation/results/evaluation_results.json` and LangSmith dataset
-- Next: Update `vector_store.py` to use BM25-only (or keep hybrid as option) based on evaluation results
+- ✅ **Vector Store Updated** - `app/services/vector_store.py` now defaults to BM25-only retrieval
+  - Default changed: `use_bm25_only=True` (validated best technique)
+  - Backward compatible: Hybrid and dense-only still available via parameters
+  - Chat endpoint (`app/api/chat.py`) updated to use BM25-only by default
+  - Documentation updated with evaluation results and rationale
 
 Recent changes:
 
@@ -74,6 +78,12 @@ Recent changes:
   - Configurable retrieval weights (default 0.5/0.5 for BM25/dense)
   - Tested and verified working (`test_vector_store.py` - successfully tested with PDF ingestion)
   - Added dependencies: `langchain-community>=0.3.0`, `rank-bm25>=0.2.2`
+- **Updated Vector Store** (`app/services/vector_store.py`):
+  - **Default changed to BM25-only** (validated best technique, composite score: 0.422)
+  - New parameter: `use_bm25_only=True` (default) for explicit BM25-only control
+  - Backward compatible: `use_hybrid=True` still works for hybrid retrieval
+  - Updated docstrings with evaluation results and rationale
+  - Chat endpoint (`app/api/chat.py`) updated to use BM25-only by default
 - **Completed Phase 3: Chat Endpoint** (`app/api/chat.py`):
   - `POST /api/chat` endpoint with RAG-based Q&A
   - Uses hybrid retrieval (BM25 + Dense) to find relevant context from building code PDFs
@@ -100,9 +110,9 @@ Recent changes:
 **Current Status:**
 - `app/core/llm.py`: ✅ Complete - No changes needed
 - `app/services/pdf_ingest.py`: ✅ Basic functionality complete - Section extraction enhancement optional
-- `app/services/vector_store.py`: ✅ **Phase 2 Complete** - Hybrid retrieval (BM25 + Dense) implemented and tested
-- `app/services/rule_extractor.py`: ✅ Ready - Will automatically use hybrid retrieval
-- `app/api/chat.py`: ✅ **Phase 3 Complete** - Chat endpoint with RAG and citations working
+- `app/services/vector_store.py`: ✅ **Updated** - Defaults to BM25-only (validated best, composite score: 0.422), hybrid and dense-only available as options
+- `app/services/rule_extractor.py`: ✅ Ready - Will automatically use BM25-only retrieval (default)
+- `app/api/chat.py`: ✅ **Updated** - Chat endpoint uses BM25-only retrieval by default (validated best technique)
 
 **Next Priority:**
 1. ✅ **RAG Technique Validation COMPLETE**: Evaluated 4 techniques using RAGAS metrics
@@ -112,7 +122,10 @@ Recent changes:
    - Composite scoring: 50% relevancy, 20% precision, 20% recall, 10% latency
    - Results: BM25-only outperformed hybrid, dense-only, and parent-document
    - Evaluation notebook: `evaluation/rag_evaluation.py` with save/load from LangSmith
-2. **Update vector store**: Consider updating `vector_store.py` default to BM25-only (or keep hybrid as option)
+2. ✅ **Vector Store Updated**: `app/services/vector_store.py` defaults to BM25-only
+   - Default: `use_bm25_only=True` (validated best technique)
+   - Chat endpoint updated to use BM25-only by default
+   - Hybrid and dense-only still available via parameters (backward compatible)
 3. **Phase 5**: Enhance citations + add guardrails (optional, can skip to Phase 6)
 4. **Phase 6**: Frontend implementation (HTML template with plan viewer, issues list, chat panel)
 
