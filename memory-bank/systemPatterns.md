@@ -94,9 +94,11 @@ PDFs require more sophisticated caching due to expensive operations:
   - Uses LangChain's `CacheBackedEmbeddings` with `LocalFileStore`
   - Caches embeddings in `./cache/embeddings/` directory
   - Automatically checks cache before calling embedding API
-- **File**: `app/services/vector_store.py` (to be implemented)
+  - `CacheBackedEmbeddings` wrapper class implemented in `vector_store.py`
+  - Integrated into `VectorStore` class initialization
+- **File**: `app/services/vector_store.py` - ✅ **COMPLETE**
 
-#### LLM Response Cache (`llm.py`)
+#### LLM Response Cache (`llm.py` + `chat.py`)
 - **Purpose**: Cache LLM API responses
 - **Strategy**: `setup_llm_cache()` pattern from day_12 lesson
 - **Why**: LLM API calls are slow, expensive, and often have identical prompts
@@ -104,7 +106,9 @@ PDFs require more sophisticated caching due to expensive operations:
   - Uses `InMemoryCache` (dev) or `SQLiteCache` (production)
   - Configured via `setup_llm_cache(cache_type="memory"|"sqlite")`
   - Caches at LangChain global level
-- **File**: `app/core/llm.py` (to be implemented)
+  - `setup_llm_cache()` function implemented in `app/core/llm.py`
+  - Automatically called in `app/api/chat.py` on module import (memory cache for MVP)
+- **File**: `app/core/llm.py` + `app/api/chat.py` - ✅ **COMPLETE**
 
 ### Why Separate Caching Strategies?
 
