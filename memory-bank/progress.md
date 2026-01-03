@@ -50,6 +50,9 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
     - Returns `ChatResponse` with answer and citations
     - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
     - Extracts citations from retrieved document metadata
+    - **Citation formatting**: Explicitly shows page type - "(PDF page)" or "(document page)"
+    - **Post-processing**: `_fix_citations_in_answer()` automatically fixes LLM citations to include page type indicators
+    - Updated LLM prompt to instruct including page type in citations
     - Singleton pattern for vector store (indexes PDFs on first use)
     - LLM cache setup for performance
     - Environment variable loading (dotenv)
@@ -74,8 +77,10 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - PDF ingest (`app/services/pdf_ingest.py`):
   - `load_pdf()` - Loads PDF using `PyMuPDFLoader`
   - `chunk_documents()` - Chunks documents using `RecursiveCharacterTextSplitter` (1000 chars, 100 overlap)
-  - `ingest_pdf()` - Convenience function with metadata
-  - Basic metadata: `source`, `chunk_index`, page numbers
+  - `ingest_pdf()` - Convenience function with enhanced metadata
+  - `extract_page_number_from_text()` - Extracts document page numbers from footer/header text
+  - `extract_section_number()` - Extracts section numbers using regex patterns
+  - Enhanced metadata: `source`, `chunk_index`, `page_pdf` (PDF reader page), `page_document` (extracted from text), `page` (preferred: document if available, otherwise PDF), `section` (extracted section number)
 - LLM wrapper (`app/core/llm.py`):
   - `get_llm()` - Provider abstraction (OpenAI, with placeholders for Gemini/Claude)
   - `setup_llm_cache()` - In-memory or SQLite caching for LLM responses

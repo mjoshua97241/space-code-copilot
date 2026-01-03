@@ -8,10 +8,10 @@ Backend patterns:
   - Setup templates: `Jinja2Templates(directory=...)`
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
-  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best) and citations
+  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, and post-processing to fix LLM citations
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
-  - pdf_ingest (PDF → chunks) - **Status**: ✅ Basic functionality complete (section extraction optional enhancement)
+  - pdf_ingest (PDF → chunks) - **Status**: ✅ **COMPLETE** - Enhanced with page number extraction (PDF + document pages), section extraction, and metadata preservation
   - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
   - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: ✅ **COMPLETE** - Integrated with project context filtering, uses BM25-only retrieval (default, validated best)
