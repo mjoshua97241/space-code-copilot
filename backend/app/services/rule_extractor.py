@@ -136,10 +136,24 @@ Format as JSON array. Only include rules for rooms or doors that match the proje
     
     # Create chain: retrieve context → format → LLM → parse
     def format_docs(docs):
-        return "\n\n---\n\n".join([
-            f"[Source: {doc.metadata.get('source', 'Unknown')}, Page: {doc.metadata.get('page', '?')}]\n{doc.page_content}"
-            for doc in docs
-        ])
+        formatted = []
+        for doc in docs:
+            source = doc.metadata.get('source', 'Unknown')
+            
+            # Prefer document page number if available, otherwise use PDF page
+            page_document = doc.metadata.get('page_document')
+            page_pdf = doc.metadata.get('page_pdf')
+            
+            # Format page with explicit type indication
+            if page_document:
+                page = f"{page_document} (document page)"
+            elif page_pdf:
+                page = f"{page_pdf} (PDF page)"
+            else:
+                page = '?'
+            
+            formatted.append(f"[Source: {source}, Page: {page}]\n{doc.page_content}")
+        return "\n\n---\n\n".join(formatted)
     
     # Extract rules (using a general query to find all rule-like sections)
     query = "minimum area requirements room dimensions door width accessibility"

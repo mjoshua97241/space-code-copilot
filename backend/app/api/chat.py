@@ -51,7 +51,7 @@ class Citation(BaseModel):
     Represents a reference to a source document that supports the answer.
     """
     source: str = Field(..., description="Source document name (e.g., 'National-Building-Code')")
-    page: Optional[int] = Field(None, description="Page number in source document")
+    page: Optional[str] = Field(None, description="Page number in source document (e.g., '31 (PDF page)' or '20 (document page)')")
     section: Optional[str] = Field(None, description="Section number (e.g., '5.2.3')")
     text: Optional[str] = Field(None, description="Relevant excerpt from source")
 
@@ -143,6 +143,75 @@ if not _setup_cache_done:
 
 
 # ============================================================================
+# Helper Functions
+# ============================================================================
+
+def _fix_citations_in_answer(answer: str, retrieved_docs: list) -> str:
+    """
+    Post-process LLM answer to fix citations that are missing page type indicators.
+    
+    Finds citations in format [Source: ..., Page: X, ...] and adds "(PDF page)" or "(document page)"
+    by looking up the actual page type from retrieved documents.
+    
+    Args:
+        answer: LLM-generated answer text
+        retrieved_docs: List of retrieved documents with metadata
+    
+    Returns:
+        Answer text with corrected citations
+    """
+    import re
+    
+    # Create a map of (source, page_number) -> page_type
+    page_type_map = {}
+    for doc in retrieved_docs:
+        source = doc.metadata.get("source", "Unknown")
+        page_document = doc.metadata.get("page_document")
+        page_pdf = doc.metadata.get("page_pdf")
+        
+        # Map both PDF and document pages
+        if page_pdf:
+            page_type_map[(source, str(page_pdf))] = "PDF page"
+        if page_document:
+            page_type_map[(source, str(page_document))] = "document page"
+    
+    # Pattern to find citations: [Source: Name, Page X, Section: Y] or [Source: Name, Page: X, Section: Y]
+    # Handles both "Page X" and "Page: X" formats
+    citation_pattern = r'\[Source:\s*([^,]+),\s*Page:?\s*(\d+)(?:\s*\([^)]+\))?(?:\s*,\s*Section:\s*([^\]]+))?\]'
+    
+    def replace_citation(match):
+        source = match.group(1).strip()
+        page_num = match.group(2).strip()
+        section = match.group(3).strip() if match.group(3) else None
+        
+        # Check if citation already has page type
+        if "(PDF page)" in match.group(0) or "(document page)" in match.group(0):
+            return match.group(0)  # Already has type, don't change
+        
+        # Look up page type from map
+        page_type = page_type_map.get((source, page_num))
+        
+        if page_type:
+            # Reconstruct citation with page type
+            citation = f"[Source: {source}, Page: {page_num} ({page_type})"
+            if section:
+                citation += f", Section: {section}"
+            citation += "]"
+            return citation
+        else:
+            # If not found, default to PDF page (most common)
+            citation = f"[Source: {source}, Page: {page_num} (PDF page)"
+            if section:
+                citation += f", Section: {section}"
+            citation += "]"
+            return citation
+    
+    # Replace all citations in the answer
+    fixed_answer = re.sub(citation_pattern, replace_citation, answer)
+    return fixed_answer
+
+
+# ============================================================================
 # POST /api/chat Endpoint
 # ============================================================================
 
@@ -216,7 +285,18 @@ def chat(request: ChatRequest) -> ChatResponse:
         context_parts = []
         for i, doc in enumerate(retrieved_docs, 1):
             source = doc.metadata.get("source", "Unknown")
-            page = doc.metadata.get("page", "?")
+            
+            # Prefer document page number if available, otherwise use PDF page
+            page_document = doc.metadata.get("page_document")
+            page_pdf = doc.metadata.get("page_pdf")
+            
+            if page_document:
+                page = f"{page_document} (document page)"
+            elif page_pdf:
+                page = f"{page_pdf} (PDF page)"
+            else:
+                page = "?"
+            
             section = doc.metadata.get("section", "")
             
             context_parts.append(
@@ -238,7 +318,14 @@ def chat(request: ChatRequest) -> ChatResponse:
 **Instructions:**
 - Answer the question using ONLY information from the provided context
 - If the context doesn't contain enough information, say so clearly
-- Always cite your sources using the format: [Source: Document Name, Page X, Section Y.Y.Y]
+- Always cite your sources using the EXACT format from the context
+- **CRITICAL**: When citing pages, you MUST include the page type indicator exactly as shown in the context:
+  - If context shows "Page: 31 (PDF page)", cite as: [Source: Document Name, Page: 31 (PDF page), Section: Y.Y.Y]
+  - If context shows "Page: 20 (document page)", cite as: [Source: Document Name, Page: 20 (document page), Section: Y.Y.Y]
+- Example citations (copy the exact format):
+  - [Source: National-Building-Code, Page: 31 (PDF page), Section: 5.2.3]
+  - [Source: RA9514-RIRR-rev-2019-compressed, Page: 20 (document page), Section: 10.2.5.2]
+  - [Source: Document-Name, Page: 99 (PDF page)]  (if no section)
 - Be precise with numbers, units, and requirements
 - If multiple sources have conflicting information, mention this
 - Use SI units (meters, square meters, millimeters) as specified in the context
@@ -254,7 +341,11 @@ Question: {query}
 Context from building code documents:
 {context}
 
-Provide a clear, accurate answer with citations.""")
+Provide a clear, accurate answer with citations.
+
+IMPORTANT: When citing pages, use the EXACT format from the context above, including "(PDF page)" or "(document page)" after the page number. For example:
+- [Source: Document-Name, Page: 99 (PDF page), Section: 10.2.5.2]
+- [Source: Document-Name, Page: 20 (document page), Section: 5.2.3]""")
         ])
         
         # Get LLM instance
@@ -272,6 +363,9 @@ Provide a clear, accurate answer with citations.""")
         # Extract answer text
         answer = response.content if hasattr(response, 'content') else str(response)
         
+        # Post-process answer to fix citations (add page type indicators if missing)
+        answer = _fix_citations_in_answer(answer, retrieved_docs)
+        
         # Extract citations from retrieved documents
         # We use the metadata from the documents that were actually retrieved
         citations = []
@@ -279,11 +373,24 @@ Provide a clear, accurate answer with citations.""")
         
         for doc in retrieved_docs:
             source = doc.metadata.get("source", "Unknown")
-            page = doc.metadata.get("page")
+            
+            # Prefer document page number if available, otherwise use PDF page
+            page_document = doc.metadata.get("page_document")
+            page_pdf = doc.metadata.get("page_pdf")
+            
+            # Format page with explicit type indication
+            if page_document:
+                page = f"{page_document} (document page)"
+            elif page_pdf:
+                page = f"{page_pdf} (PDF page)"
+            else:
+                page = None
+            
             section = doc.metadata.get("section")
             
             # Create unique key for citation (avoid duplicates)
-            citation_key = (source, page, section)
+            # Use raw page numbers for uniqueness check
+            citation_key = (source, page_document or page_pdf, section)
             if citation_key not in seen_sources:
                 citations.append(Citation(
                     source=source,
