@@ -1,0 +1,42 @@
+[
+  {
+    "retriever": "Dense-Only",
+    "context_precision": 0.0416666666625,
+    "context_recall": 0.0,
+    "answer_relevancy": 0.3839756109678827,
+    "avg_latency": 4.754969517389934,
+    "evaluated_at": "2026-01-03T14:38:52.278905",
+    "golden_dataset_size": 12,
+    "source": "new_evaluation"
+  },
+  {
+    "retriever": "BM25-Only",
+    "context_precision": 0.10416666665625,
+    "context_recall": 0.041666666666666664,
+    "answer_relevancy": 0.5853707035635524,
+    "avg_latency": 3.8651379148165383,
+    "evaluated_at": "2026-01-03T14:42:17.455220",
+    "golden_dataset_size": 12,
+    "source": "new_evaluation"
+  },
+  {
+    "retriever": "Hybrid",
+    "context_precision": 0.0,
+    "context_recall": 0.0,
+    "answer_relevancy": 0.5845247565410944,
+    "avg_latency": 5.054596404234569,
+    "evaluated_at": "2026-01-03T14:46:41.503767",
+    "golden_dataset_size": 12,
+    "source": "new_evaluation"
+  },
+  {
+    "retriever": "Parent-Document",
+    "context_precision": 0.027777777774999998,
+    "context_recall": 0.0,
+    "answer_relevancy": 0.46199800115473005,
+    "avg_latency": 4.194243669509888,
+    "evaluated_at": "2026-01-03T14:50:02.313425",
+    "golden_dataset_size": 12,
+    "source": "new_evaluation"
+  }
+]

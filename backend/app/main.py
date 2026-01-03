@@ -1,10 +1,14 @@
+from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.response import HTMLResponse
+from fastapi.responses import HTMLResponse
+from app.api.chat import router as chat_router
 
-app = FASTAPI(title="Code-Aware Space Planning Copilot")
+from app.api.issues import router as issues_router
+
+app = FastAPI(title="Code-Aware Space Planning Copilot")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,8 +18,13 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+app.include_router(issues_router)
+app.include_router(chat_router)
+
+# Use absolute paths relative to this file
+BASE_DIR = Path(__file__).parent
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 @app.get("/health")
 def health():

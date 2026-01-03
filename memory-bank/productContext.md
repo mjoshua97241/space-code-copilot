@@ -8,6 +8,22 @@ Primary problem:
 
 - Manually checking room areas, door widths, and corridor widths against building codes and internal standards is slow and error-prone.
 
+**Key pain points:**
+
+1. **Multiple jurisdictions, multiple codes**: Architects work across different locations, each with its own building code (e.g., National Building Code of Philippines, IBC, local codes). They must read and familiarize themselves with many different code documents, which is time-consuming.
+
+2. **Code complexity**: Building codes are dense, technical documents. Finding relevant requirements for specific design elements (room sizes, door widths) requires extensive reading and cross-referencing.
+
+3. **Manual checking**: Verifying compliance involves manually comparing design values against code requirements, which is slow and error-prone.
+
+**Why LLM/RAG solves this:**
+
+- **RAG (Retrieval-Augmented Generation)**: Can ingest multiple building code PDFs and answer questions about requirements without requiring architects to read entire documents.
+
+- **Rule extraction**: LLM can automatically extract structured rules from code PDFs, reducing the need to manually identify and codify requirements.
+
+- **Multi-code support**: The system can handle multiple code documents simultaneously, allowing architects to check against different jurisdictions without switching contexts.
+
 Inputs:
 
 - Floor plan image (plan.png).

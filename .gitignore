@@ -1,22 +1,106 @@
 # Python / backend
 backend/.venv/
-backend/__pycache__/
-backend/**/*.pyc
+backend/venv/
+backend/env/
+backend/ENV/
+**/__pycache__/
+backend/app/models/__pycache__
+backend/app/services/__pycache__
+backend/app/tests/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.so
+**/*.egg
+**/*.egg-info/
+backend/**/dist/
+backend/**/build/
+backend/**/.eggs/
 
 # uv
 backend/uv.lock
+backend/.uv/
+
+# Testing
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.tox/
+backend/.hypothesis/
+backend/.mypy_cache/
+backend/.pyre/
+backend/.pytype/
+backend/pytest.ini.local
+
+# Linting / Formatting
+backend/.ruff_cache/
+backend/.black_cache/
 
 # Node / frontend
 frontend/node_modules/
 frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/.nuxt/
+frontend/.cache/
+frontend/.parcel-cache/
+frontend/.vite/
 
 # OS / editor
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 *.log
+*.swp
+*.swo
+*~
 .idea/
 .vscode/
+*.sublime-project
+*.sublime-workspace
 
+# Environment / secrets
+backend/.env
+backend/.env.local
+backend/.env.*.local
+*.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.cache
+
+# Project-specific
 internal/lessons/
 internal/
 
-backend/.env
+# Jupyter / Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Coverage reports
+coverage/
+.coverage.*
+*.cover
+.hypothesis/
+
+# Cache (generated files)
+backend/cache/
+cache
+backend/**/cache/
+
+# API keys
+evaluation/OpenAI_key.txt
+evaluation/langsmith-api.txt
