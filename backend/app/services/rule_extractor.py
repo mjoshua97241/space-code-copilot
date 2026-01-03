@@ -3,8 +3,10 @@ Rule extraction service: Extract structured rules from building code PDFs using 
 
 MVP core feature - extracts rules from PDFs for compliance checking.
 """
+import os
 from typing import List
 from pathlib import Path
+from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
@@ -13,6 +15,10 @@ from app.core.llm import get_llm
 from app.models.domain import Rule
 from app.services.vector_store import VectorStore
 
+# Load environment variables
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
 
 def extract_rules_from_pdf(
     pdf_path: str | Path,
