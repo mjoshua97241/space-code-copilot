@@ -152,15 +152,15 @@ def chat(request: ChatRequest) -> ChatResponse:
     Answer building code questions using RAG (Retrieval-Augmented Generation).
     
     This endpoint:
-    1. Retrieves relevant context from building code PDFs using hybrid retrieval (BM25 + Dense)
+    1. Retrieves relevant context from building code PDFs using BM25-only retrieval (validated best)
     2. Passes context + user query to LLM
     3. Extracts citations from the response
     4. Returns answer with citations
     
     **How it works:**
-    - Uses hybrid retrieval to find relevant sections from building code PDFs
-    - BM25 catches exact terms (section numbers, citations)
-    - Dense embeddings catch semantic meaning (paraphrases)
+    - Uses BM25-only retrieval (validated via RAGAS evaluation, composite score: 0.422)
+    - BM25 catches exact terms (section numbers, citations, legal phrases)
+    - Building codes benefit more from exact term matching than semantic similarity
     - LLM generates answer based on retrieved context
     - Citations extracted from metadata of retrieved documents
     
@@ -195,12 +195,13 @@ def chat(request: ChatRequest) -> ChatResponse:
         # Get vector store (initializes and indexes PDFs if needed)
         vector_store = get_vector_store()
         
-        # Get hybrid retriever (BM25 + Dense)
-        # k=5 means retrieve top 5 documents from each retriever, then merge
-        retriever = vector_store.get_retriever(k=5, use_hybrid=True)
+        # Get BM25-only retriever (validated as best technique via RAGAS evaluation)
+        # k=5 means retrieve top 5 documents
+        # Default is BM25-only (composite score: 0.422, best among 4 techniques)
+        retriever = vector_store.get_retriever(k=5)
         
         # Retrieve relevant context documents
-        # This uses hybrid retrieval: BM25 for exact terms, dense for semantic similarity
+        # Uses BM25-only retrieval: Exact term matching for section numbers, citations, legal phrases
         retrieved_docs = retriever.invoke(request.query)
         
         if not retrieved_docs:

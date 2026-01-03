@@ -1,10 +1,15 @@
 """
-Vector store service: Embeddings + Qdrant for RAG retrieval with Hybrid Retrieval (BM25 + Dense).
+Vector store service: Embeddings + Qdrant for RAG retrieval with BM25-Only (Validated).
+
+Based on RAGAS evaluation results (composite score: 0.422), BM25-only retrieval
+outperformed hybrid (BM25 + Dense), dense-only, and parent-document retrieval for
+building code questions.
 
 Adapted from:
 - day_12: CacheBackedEmbeddings for embedding caching
 - day_9_A2A: QdrantVectorStore setup
 - day_13: Hybrid retrieval pattern (BM25 + Dense via EnsembleRetriever)
+- day_5: BM25 retrieval evaluation patterns
 """
 import hashlib
 import os
@@ -71,16 +76,25 @@ class CacheBackedEmbeddings:
 
 class VectorStore:
     """
-    Vector store with caching and hybrid retrieval (BM25 + Dense) for building code PDFs.
+    Vector store with caching and BM25-only retrieval (validated via RAGAS evaluation).
     
-    Hybrid retrieval combines:
+    **Evaluation Results** (from `evaluation/rag_evaluation.py`):
+    - BM25-only: Composite score 0.422 (best) - answer_relevancy: 0.585
+    - Hybrid (BM25 + Dense): answer_relevancy: 0.584
+    - Dense-only: answer_relevancy: 0.384
+    - Parent-Document: answer_relevancy: 0.462
+    
+    **Default**: BM25-only retrieval (validated as best for building codes)
     - BM25: Exact term matching (section numbers, citations, legal phrases)
-    - Dense embeddings: Semantic similarity (paraphrases, related concepts)
+    - Building codes benefit more from exact term matching than semantic similarity
+    
+    **Options**: Hybrid (BM25 + Dense) and dense-only available via `get_retriever()` parameters
     
     Pattern adapted from:
     - day_12: CacheBackedEmbeddings for embedding caching
     - day_9_A2A: QdrantVectorStore setup
     - day_13: Hybrid retrieval via EnsembleRetriever
+    - day_5: BM25 retrieval evaluation patterns
     """
     
     def __init__(
@@ -166,49 +180,77 @@ class VectorStore:
     def get_retriever(
         self, 
         k: int = 5, 
-        use_hybrid: bool = True,
+        use_hybrid: bool = False,
+        use_bm25_only: bool = True,
         bm25_weight: float = 0.5,
         dense_weight: float = 0.5
     ):
         """
         Get retriever for RAG queries.
         
-        By default, returns hybrid retriever (BM25 + Dense) for better building code retrieval.
-        BM25 catches exact terms (section numbers, citations), dense catches semantic meaning.
+        **Default: BM25-only** (validated as best technique via RAGAS evaluation, composite score: 0.422)
+        
+        Based on evaluation results, BM25-only outperformed hybrid, dense-only, and parent-document
+        retrieval for building code questions. Building codes benefit more from exact term matching
+        (section numbers, citations) than semantic similarity.
         
         Args:
-            k: Number of documents to retrieve from each retriever (before merging)
-            use_hybrid: If True, use hybrid retrieval (BM25 + Dense). If False, dense-only.
-            bm25_weight: Weight for BM25 results in ensemble (default 0.5)
-            dense_weight: Weight for dense results in ensemble (default 0.5)
+            k: Number of documents to retrieve
+            use_hybrid: If True, use hybrid retrieval (BM25 + Dense). Overrides use_bm25_only.
+            use_bm25_only: If True (default), use BM25-only retrieval. If False and use_hybrid=False, use dense-only.
+            bm25_weight: Weight for BM25 results in hybrid ensemble (default 0.5)
+            dense_weight: Weight for dense results in hybrid ensemble (default 0.5)
         
         Returns:
-            LangChain retriever (EnsembleRetriever for hybrid, or dense-only retriever)
-        """
-        # Dense retriever (always available)
-        dense_retriever = self.vectorstore.as_retriever(
-            search_kwargs={"k": k}
-        )
+            LangChain retriever:
+            - BM25Retriever if use_bm25_only=True (default)
+            - EnsembleRetriever if use_hybrid=True
+            - Dense retriever if use_bm25_only=False and use_hybrid=False
         
-        # If hybrid and we have documents, combine BM25 + Dense
+        Examples:
+            # Default: BM25-only (validated best)
+            retriever = vector_store.get_retriever(k=5)
+            
+            # Hybrid retrieval (BM25 + Dense)
+            retriever = vector_store.get_retriever(k=5, use_hybrid=True)
+            
+            # Dense-only
+            retriever = vector_store.get_retriever(k=5, use_bm25_only=False, use_hybrid=False)
+        """
+        # If hybrid requested, combine BM25 + Dense
         if use_hybrid and self.documents:
-            # Setup BM25 retriever (day_13 pattern)
-            # BM25Retriever needs documents to build its index
+            # Setup BM25 retriever
             bm25_retriever = BM25Retriever.from_documents(
                 self.documents, 
                 k=k
             )
             
-            # Combine using EnsembleRetriever (day_13 pattern)
-            # EnsembleRetriever merges results using Reciprocal Rank Fusion (RRF)
+            # Setup dense retriever
+            dense_retriever = self.vectorstore.as_retriever(
+                search_kwargs={"k": k}
+            )
+            
+            # Combine using EnsembleRetriever (Reciprocal Rank Fusion)
             hybrid_retriever = EnsembleRetriever(
                 retrievers=[bm25_retriever, dense_retriever],
-                weights=[bm25_weight, dense_weight]  # Equal weighting by default
+                weights=[bm25_weight, dense_weight]
             )
             
             return hybrid_retriever
+        
+        # Default: BM25-only (validated best technique)
+        elif use_bm25_only and self.documents:
+            bm25_retriever = BM25Retriever.from_documents(
+                self.documents,
+                k=k
+            )
+            return bm25_retriever
+        
+        # Fallback: Dense-only (if BM25 not available or explicitly disabled)
         else:
-            # Fallback to dense-only (backward compatible)
+            dense_retriever = self.vectorstore.as_retriever(
+                search_kwargs={"k": k}
+            )
             return dense_retriever
     
     def similarity_search(self, query: str, k: int = 5) -> List[Document]:
