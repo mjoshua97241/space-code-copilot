@@ -57,16 +57,21 @@ def extract_rules_from_pdf(
         
 Extract structured rules from the provided building code context. Focus on:
 - Minimum area requirements for rooms
-- Minimum width requirements for doors/corridors
-- Accessibility requirements
+- Minimum width requirements for doors
 - Any numeric constraints (dimensions, areas)
+
+IMPORTANT CONSTRAINTS:
+- element_type MUST be exactly "room" or "door" (no other values allowed)
+- rule_type MUST be "area_min", "width_min", or "text"
+- For room area rules: element_type="room", rule_type="area_min"
+- For door width rules: element_type="door", rule_type="width_min"
+- Only extract rules that apply to rooms or doors
 
 For each rule, extract:
 - Rule name (clear, descriptive)
 - Rule type (area_min, width_min, or text)
-- Element type (room, door, or corridor)
+- Element type (MUST be "room" or "door" only)
 - Minimum value (if numeric)
-- Rule text (exact quote or summary)
 - Code reference (section number, if available)
 
 Return only rules that have clear, measurable requirements. Use SI units (m² for area, mm for width)."""),
@@ -78,12 +83,12 @@ Extract up to {max_rules} rules. Return as a JSON array of Rule objects with the
 - id: Unique identifier (e.g., "R003", "D003")
 - name: Clear descriptive name
 - rule_type: "area_min", "width_min", or "text"
-- element_type: "room", "door", or "corridor"
+- element_type: MUST be "room" or "door" (no other values)
 - min_value: Numeric value if applicable (null otherwise)
 - code_ref: Building code reference (section number, if available)
 - rule_text: Text description (optional)
 
-Format as JSON array.""")
+Format as JSON array. Only include rules for rooms or doors.""")
     ])
     
     # LLM with structured output
@@ -96,21 +101,22 @@ Format as JSON array.""")
             for doc in docs
         ])
     
-    # Chain: query → retrieve → format → prompt → LLM
-    chain = (
-        {
-            "context": retriever | format_docs,
-            "max_rules": RunnablePassthrough()
-        }
-        | extraction_prompt
-        | llm
-    )
-    
     # Extract rules (using a general query to find all rule-like sections)
     query = "minimum area requirements room dimensions door width accessibility"
     
     try:
-        response = chain.invoke({"query": query, "max_rules": max_rules})
+        # Retrieve documents
+        retrieved_docs = retriever.invoke(query)
+        
+        # Format context
+        context = format_docs(retrieved_docs)
+        
+        # Invoke LLM with prompt
+        response = extraction_prompt.invoke({
+            "context": context,
+            "max_rules": max_rules
+        })
+        response = llm.invoke(response)
         answer = response.content if hasattr(response, 'content') else str(response)
         
         # Parse JSON response manually (LLM returns JSON string)
@@ -123,17 +129,41 @@ Format as JSON array.""")
             rules_data = json.loads(json_match.group())
             rules = []
             for rule_data in rules_data:
+                # Validate and filter element_type (must be "room" or "door")
+                element_type = rule_data.get("element_type", "room")
+                if element_type not in ["room", "door"]:
+                    # Skip invalid element types
+                    print(f"  Skipping rule with invalid element_type: {element_type}")
+                    continue
+                
+                # Validate rule_type matches element_type
+                rule_type = rule_data.get("rule_type", "text")
+                if element_type == "room" and rule_type not in ["area_min", "text"]:
+                    # Room rules should be area_min or text, not width_min
+                    print(f"  Fixing rule_type for room rule: {rule_type} -> text")
+                    rule_type = "text"
+                elif element_type == "door" and rule_type not in ["width_min", "text"]:
+                    # Door rules should be width_min or text, not area_min
+                    if rule_type == "area_min":
+                        print(f"  Fixing rule_type for door rule: {rule_type} -> text")
+                        rule_type = "text"
+                
                 # Ensure all required fields are present
-                rule = Rule(
-                    id=rule_data.get("id", f"EXTRACTED_{len(rules) + 1}"),
-                    name=rule_data.get("name", "Extracted rule"),
-                    rule_type=rule_data.get("rule_type", "text"),
-                    element_type=rule_data.get("element_type", "room"),
-                    min_value=rule_data.get("min_value"),
-                    code_ref=rule_data.get("code_ref"),
-                    rule_text=rule_data.get("rule_text")
-                )
-                rules.append(rule)
+                try:
+                    rule = Rule(
+                        id=rule_data.get("id", f"EXTRACTED_{len(rules) + 1}"),
+                        name=rule_data.get("name", "Extracted rule"),
+                        rule_type=rule_type,
+                        element_type=element_type,
+                        min_value=rule_data.get("min_value"),
+                        code_ref=rule_data.get("code_ref"),
+                        rule_text=rule_data.get("rule_text")
+                    )
+                    rules.append(rule)
+                except Exception as e:
+                    # Skip invalid rules
+                    print(f"  Skipping invalid rule: {e}")
+                    continue
             return rules
         else:
             # Fallback: try to parse as single rule
@@ -174,6 +204,7 @@ def extract_rules_from_pdfs(
     
     all_rules = []
     seen_rule_ids = set()  # Avoid duplicates
+    rule_counter = {"R": 100, "D": 100}  # Start extracted IDs at 100 to avoid conflicts with seeded (R001-D002)
     
     for pdf_path in pdf_paths:
         pdf_path_obj = Path(pdf_path)
@@ -188,8 +219,18 @@ def extract_rules_from_pdfs(
             max_rules=max_rules_per_pdf
         )
         
-        # Filter duplicates and add unique rules
+        # Filter duplicates and assign unique IDs
         for rule in extracted:
+            # Generate unique ID if it conflicts with existing or seeded rules
+            original_id = rule.id
+            if original_id in seen_rule_ids or original_id in ["R001", "R002", "D001", "D002"]:
+                # Generate new ID based on element type
+                prefix = "R" if rule.element_type == "room" else "D"
+                new_id = f"{prefix}{rule_counter[prefix]:03d}"
+                rule_counter[prefix] += 1
+                rule.id = new_id
+                print(f"  Renamed rule ID from {original_id} to {new_id} (conflict)")
+            
             if rule.id not in seen_rule_ids:
                 all_rules.append(rule)
                 seen_rule_ids.add(rule.id)
