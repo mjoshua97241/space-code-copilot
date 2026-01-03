@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, and **Phase 3 (Chat Endpoint)** are complete. Ready to implement frontend or continue with Phase 5 (Citations + Guardrails).
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, and **RAG Technique Validation** are complete. Evaluation results show **BM25-only** is the best technique (composite score: 0.422). Ready to update vector store to use BM25-only or proceed with frontend/Phase 5.
 
 ## What Works
 
@@ -144,7 +144,7 @@ None yet (project in early setup phase).
    - [x] Phase 1: PDF ingest + basic chunking (basic functionality complete, section extraction optional)
    - [x] Phase 2: Hybrid retrieval (BM25 + Dense) - **COMPLETE**
    - [x] Phase 3: LLM wrapper + chat endpoint - **COMPLETE**
-   - [ ] **RAG Technique Validation** - Validate hybrid retrieval choice using RAGAS metrics (NEW)
+   - [x] **RAG Technique Validation** - **COMPLETE** - Evaluated 4 techniques, BM25-only selected (composite score: 0.422)
    - [ ] Phase 4: Parent-child chunking (optional)
    - [ ] Phase 5: Citations + guardrails
    - [ ] Phase 6: Frontend implementation

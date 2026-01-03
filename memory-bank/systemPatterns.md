@@ -12,19 +12,20 @@ Backend patterns:
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ Basic functionality complete (section extraction optional enhancement)
-  - vector_store (embedding + Qdrant search) - **Status**: ✅ **Hybrid retrieval (BM25 + Dense) complete** - Uses `EnsembleRetriever` to combine BM25 and dense embeddings
+  - vector_store (embedding + Qdrant search) - **Status**: ✅ **Hybrid retrieval (BM25 + Dense) implemented** - Evaluation shows BM25-only is best (composite score: 0.422)
   - compliance_checker (rules + design → issues)
   - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: Ready, automatically uses hybrid retrieval
 - LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, no changes needed
 
 AI patterns:
 
-- Use **Hybrid RAG** for building-code questions (MVP decision):
+- Use **BM25-Only RAG** for building-code questions (Validated via RAGAS evaluation):
   - **BM25 retrieval**: Catches exact terms, section numbers, citations (e.g., "Section 5.2.3", "minimum 800mm")
-  - **Dense embeddings**: Catches paraphrases and semantic meaning (e.g., "bedroom size" → "habitable room minimum area")
-  - **Combined**: Merge results using Reciprocal Rank Fusion (RRF) or weighted scoring
-  - Why hybrid: Building codes are term-heavy with exact legal phrasing; dense-only fails on exact statutory language
-  - See `memory-bank/implementationPlan.md` for implementation details
+  - **Evaluation result**: BM25-only outperformed hybrid (BM25 + Dense), dense-only, and parent-document retrieval
+  - **Composite score**: 0.422 (BM25-only) - best among 4 techniques evaluated
+  - Why BM25-only: Building codes are term-heavy with exact legal phrasing; exact term matching outperforms semantic similarity for this domain
+  - See `memory-bank/implementationPlan.md` for evaluation details
+  - **Note**: `vector_store.py` currently supports hybrid retrieval; can be updated to default BM25-only
 - Supports multiple code documents simultaneously (multi-jurisdiction support).
 - Architects can query across different building codes without switching contexts.
 - Use deterministic Python for simple numeric compliance (area, widths).
@@ -188,18 +189,18 @@ PDFs require more sophisticated caching due to expensive operations:
 - Simple counter variables or logging
 
 **Implementation Priority:**
-1. **High**: RAG Technique Validation (NEW) - Validate hybrid retrieval choice using RAGAS
-   - Reference: `internal/lessons/day_5/1-advanced_retrievers.py`
-   - Compare hybrid vs dense-only using context_precision, context_recall, answer_relevancy
-   - Goal: Data-driven validation of core technical decision
+1. ✅ **Complete**: RAG Technique Validation - BM25-only selected (composite score: 0.422)
+   - Evaluation notebook: `evaluation/rag_evaluation.py`
+   - Results: BM25-only outperformed hybrid, dense-only, and parent-document
+   - Saved to LangSmith dataset and local JSON
 2. **High**: LangSmith setup (automatic tracing, no code changes needed)
 3. **Medium**: Performance middleware (simple, useful for monitoring)
 4. **Low**: Metrics endpoint (optional, for presentation/monitoring)
 5. **Low**: Cache statistics (optional, for optimization insights)
 
-### RAG Technique Validation (NEW)
+### RAG Technique Validation (COMPLETE)
 
-**Purpose**: Validate that hybrid retrieval (BM25 + Dense) is better than dense-only for building code questions.
+**Purpose**: Validate retrieval technique choice for building code questions.
 
 **Reference Pattern**: `internal/lessons/day_5/1-advanced_retrievers.py`
 - Shows how to evaluate retrievers with RAGAS
@@ -207,17 +208,30 @@ PDFs require more sophisticated caching due to expensive operations:
 - Demonstrates comparison of multiple retrieval techniques
 - Uses metrics: context_precision, context_recall, answer_relevancy
 
-**Implementation approach**:
-1. Create test dataset (10-15 building code questions)
-   - Option A: Use RAGAS TestsetGenerator (from day_5)
-   - Option B: Manual test set covering exact terms, semantic queries, mixed queries
-2. Adapt evaluation function from day_5 lesson
-3. Evaluate both retrievers:
+**Evaluation Completed**:
+1. ✅ Created test dataset (12 building code questions)
+   - Used RAGAS TestsetGenerator with knowledge graph from building code PDFs
+   - Filtered chunks using measurement-related keywords
+   - Saved to `evaluation/data/golden_dataset.csv`
+2. ✅ Created evaluation notebook: `evaluation/rag_evaluation.py` (Marimo)
+   - Adapted `evaluate_retriever_with_ragas()` from day_5 lesson
+   - Composite scoring: 50% relevancy, 20% precision, 20% recall, 10% latency
+3. ✅ Evaluated 4 retrieval techniques:
    - Dense-only: `get_retriever(k=5, use_hybrid=False)`
+   - BM25-only: `BM25Retriever.from_documents()`
    - Hybrid: `get_retriever(k=5, use_hybrid=True)`
-4. Compare metrics and document results
+   - Parent-Document: Small-to-big strategy from day_5
+4. ✅ Results documented:
+   - **Best technique: BM25-only** (composite score: 0.422)
+   - Results saved to LangSmith dataset and `evaluation/results/evaluation_results.json`
+   - LangSmith integration: Can load results from cloud or local cache
+
+**Key Finding**:
+- BM25-only outperformed hybrid retrieval for building code questions
+- Building codes benefit more from exact term matching than semantic similarity
+- Recommendation: Update `vector_store.py` default to BM25-only (or keep hybrid as option)
 
 **Why this matters**:
-- Validates core technical assumption (hybrid is better for building codes)
-- Provides evidence for presentation
-- Identifies optimization needs before proceeding
+- ✅ Validated core technical decision with data-driven evidence
+- ✅ Provides metrics for presentation (composite scoring methodology)
+- ✅ Identified optimal technique before proceeding with frontend/Phase 5

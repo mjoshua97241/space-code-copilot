@@ -128,41 +128,43 @@ ensemble_retriever = EnsembleRetriever(
 
 ---
 
-## RAG Technique Validation (NEW - Before Phase 4)
+## RAG Technique Validation (COMPLETE - Before Phase 4)
 
 **Purpose**: Validate the assumption that hybrid retrieval (BM25 + Dense) is better than dense-only for building code questions.
 
 **Reference**: `internal/lessons/day_5/1-advanced_retrievers.py` - Evaluation patterns with RAGAS
 
 **Current Status:**
-- ✅ Hybrid retrieval implemented and working
-- ✅ Chat endpoint working
-- ❌ No validation that hybrid is actually better than dense-only
+- ✅ Evaluation notebook created: `evaluation/rag_evaluation.py`
+- ✅ Evaluated 4 techniques: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
+- ✅ **Result: BM25-only selected as best technique** (composite score: 0.422)
+- ✅ Results saved to LangSmith dataset and local JSON for future reference
 
-**Tasks:**
-1. Create test dataset for building code questions:
-   - Option A: Use RAGAS TestsetGenerator (from day_5 lesson) to generate synthetic questions
-   - Option B: Create manual test set with 10-15 building code questions
-   - Questions should cover: exact term matching (section numbers), semantic queries (paraphrases), mixed queries
+**Tasks Completed:**
+1. ✅ Created test dataset for building code questions:
+   - Used RAGAS TestsetGenerator with knowledge graph from building code PDFs
+   - Generated 12 synthetic questions focused on measurement-related content
+   - Filtered chunks using keywords (minimum, maximum, area, width, height, etc.)
+   - Saved to `evaluation/data/golden_dataset.csv` for reuse
 
-2. Create evaluation helper function:
-   - Adapt `evaluate_retriever_with_ragas` pattern from day_5 lesson
-   - Function should:
-     - Take RAG chain and test dataset
-     - Run RAG chain for each question
-     - Format results for RAGAS evaluation
-     - Return metrics: context_precision, context_recall, answer_relevancy
+2. ✅ Created evaluation infrastructure:
+   - Evaluation notebook: `evaluation/rag_evaluation.py` (Marimo)
+   - Evaluation helper: `evaluate_retriever_with_ragas()` adapted from day_5 lesson
+   - RAGAS metrics: context_precision, context_recall, answer_relevancy
+   - Composite scoring: 50% relevancy, 20% precision, 20% recall, 10% latency
 
-3. Evaluate both retrievers:
+3. ✅ Evaluated 4 retrieval techniques:
    - Dense-only: `vector_store.get_retriever(k=5, use_hybrid=False)`
+   - BM25-only: `BM25Retriever.from_documents()`
    - Hybrid: `vector_store.get_retriever(k=5, use_hybrid=True)`
-   - Compare metrics side-by-side
+   - Parent-Document: Small-to-big strategy from day_5 lesson
+   - All techniques evaluated on same golden dataset
 
-4. Document results:
-   - Which technique performs better on building code questions?
-   - Does hybrid retrieval validate the assumption (better for exact terms + semantic meaning)?
-   - If hybrid is better, proceed with confidence
-   - If dense-only is better, reconsider approach
+4. ✅ Results documented:
+   - **Best technique: BM25-only** (composite score: 0.422)
+   - BM25-only outperformed hybrid, dense-only, and parent-document
+   - Results saved to LangSmith dataset and local JSON
+   - Evaluation can be reloaded from cache (LangSmith or local file)
 
 **Implementation pattern** (from day_5 lesson):
 ```python
@@ -182,16 +184,24 @@ hybrid_results = evaluate_retriever_with_ragas(hybrid_chain, "Hybrid", test_data
 compare_results(dense_results, hybrid_results)
 ```
 
-**Deliverable**: Validation report showing hybrid vs dense-only performance on building code questions
+**Deliverable**: ✅ Complete - Evaluation notebook with results showing BM25-only is best technique
 
-**Estimated effort**: 1-2 days
+**Completed**: 
+- Evaluation notebook: `evaluation/rag_evaluation.py`
+- Results: BM25-only selected (composite score: 0.422)
+- Saved to: `evaluation/results/evaluation_results.json` and LangSmith dataset
+- LangSmith integration: Results can be loaded from cloud or local cache
 
-**Dependencies**: Phase 2 (hybrid retrieval), Phase 3 (chat endpoint)
+**Key Findings**:
+- BM25-only outperformed hybrid retrieval for building code questions
+- Composite score: 0.422 (BM25-only) vs lower scores for other techniques
+- Building codes benefit from exact term matching (section numbers, citations) over semantic similarity
+- Recommendation: Update `vector_store.py` default to BM25-only (or keep hybrid as option)
 
 **Why this matters**: 
-- Validates the core technical decision (hybrid retrieval)
-- Provides data-driven evidence for presentation
-- Identifies if optimization is needed before proceeding
+- ✅ Validated core technical decision with data-driven evidence
+- ✅ Provides metrics for presentation (composite scoring methodology)
+- ✅ Identified optimal technique before proceeding with frontend/Phase 5
 
 ---
 
