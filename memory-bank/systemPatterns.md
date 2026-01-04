@@ -42,12 +42,19 @@ Frontend patterns:
   - Left: plan viewer (`<img src="/static/plan.png">` + overlay `<div>`s positioned absolutely).
   - Bottom: issues list container.
   - Right: chat panel with form and message container.
+- **Overlay System** (`app/static/overlays.json` + JavaScript):
+  - Overlays defined in JSON with pixel coordinates (x, y, width, height) for rooms and doors
+  - JavaScript loads overlays on page load, calculates scaling based on image dimensions
+  - Overlays positioned absolutely over plan image, automatically scale on window resize
+  - Highlight behavior: Clicking an issue in compliance list highlights matching overlay by `element_id`
+  - CSS: Blue base state (rgba(13, 110, 253, 0.3)), red highlight state (#dc3545) with pulsing animation
+  - Supports both room and door overlays (matched by element_id from issues)
 - JavaScript (inline or minimal separate script):
-  - On page load: `fetch('/api/issues')` → render issues list.
-  - On issue click: save `element_id`, highlight corresponding overlay in plan viewer.
+  - On page load: `fetch('/api/issues')` → render issues list, `fetch('/static/overlays.json')` → render overlays.
+  - On issue click: save `element_id`, highlight corresponding overlay in plan viewer (red pulsing border).
   - On chat submit: `fetch('/api/chat', {method: 'POST', body: ...})` → render reply.
-  - DOM manipulation: create/update elements for issues and messages.
-- CSS (`app/static/styles.css`): layout (flex/grid), styling, highlight states.
+  - DOM manipulation: create/update elements for issues, messages, and overlays.
+- CSS (`app/static/styles.css`): layout (flex/grid), styling, overlay states (base, hover, highlighted).
 - Static assets served via FastAPI `StaticFiles` mount at `/static/`.
 
 Plan/Act:
