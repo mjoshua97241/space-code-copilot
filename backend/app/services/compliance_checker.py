@@ -15,6 +15,7 @@ def check_room_compliance(room: Room, rules: List[Rule]) -> List[Issue]:
     Applies all rules that:
     - Have element_type="room"
     - Have rule_type="area_min" (for now - future: handle "text" rules with LLM)
+    - Match room type (e.g., "bedroom" rules only apply to bedrooms)
     
     Args:
         room: Room object to check
@@ -33,6 +34,21 @@ def check_room_compliance(room: Room, rules: List[Rule]) -> List[Issue]:
     room_rules = [rule for rule in rules if rule.element_type == "room"]
     
     for rule in room_rules:
+        # Match rule to room type based on rule name
+        # Heuristic: if rule name contains room type, only apply to that type
+        rule_name_lower = rule.name.lower()
+        room_type_lower = room.type.lower()
+        
+        # Check if rule is type-specific
+        is_bedroom_rule = "bedroom" in rule_name_lower
+        is_living_rule = "living" in rule_name_lower
+        
+        # Apply rule only if it matches room type, or if it's not type-specific
+        if is_bedroom_rule and room_type_lower != "bedroom":
+            continue
+        if is_living_rule and room_type_lower != "living":
+            continue
+        
         # Only check numeric rules for now (area_min, width_min)
         # Future: "text" rules will require LLM interpretation
         if rule.rule_type == "area_min":
