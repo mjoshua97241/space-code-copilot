@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, and **LLM Rule Extraction with Project Context Filtering** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). Ready to proceed with Phase 7 (Testing + Deployment + Presentation Prep).
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, and **Overlays with Highlight Behavior** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. Ready to proceed with Phase 7 (Testing + Deployment + Presentation Prep).
 
 ## What Works
 
@@ -33,7 +33,7 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
   - Rules include: minimum bedroom area (9.5 m²), living room area (12.0 m²), accessible door width (800 mm), standard door width (700 mm)
 - Compliance checker (`app/services/compliance_checker.py`):
   - `check_compliance()` - Main function that checks rooms and doors against rules
-  - `check_room_compliance()` - Checks individual rooms against area_min rules
+  - `check_room_compliance()` - Checks individual rooms against area_min rules with type-specific matching (bedroom rules only apply to bedrooms, living rules only to living rooms)
   - `check_door_compliance()` - Checks individual doors against width_min rules
   - `get_compliance_summary()` - Helper for issue statistics
   - Returns Issue[] objects with detailed violation messages
@@ -61,8 +61,9 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - Project structure:
   - Backend directories: `app/api/`, `app/services/`, `app/models/`, `app/core/`
   - Data files exist: `app/data/rooms.csv`, `app/data/doors.csv`, `app/data/code_sample.pdf`, `app/data/overlays.json`
-  - Static assets: `app/static/plan.png`, `app/static/styles.css`
+  - Static assets: `app/static/plan.png`, `app/static/styles.css`, `app/static/overlays.json`
   - Template: `app/templates/index.html` - **COMPLETE** - Full-featured frontend UI with three-panel layout
+  - Overlays: Room and door overlays loaded from JSON, positioned over plan image, highlight in red when issue selected
 - Vector store with BM25-only retrieval (`app/services/vector_store.py`):
   - `VectorStore` class with cache-backed embeddings (OpenAI)
   - Qdrant vector store setup (in-memory for MVP)
@@ -115,7 +116,7 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 
 - [x] Basic layout in `index.html` (left viewer, bottom issues, right chat) - **COMPLETE & TESTED**
 - [x] Plan viewer displaying `plan.png` - **COMPLETE & TESTED**
-- [ ] (Optional) Overlays from JSON with highlight behavior
+- [x] Overlays from JSON with highlight behavior - **COMPLETE** - Room and door overlays with red highlight on issue selection
 - [x] Issues list fetching `/api/issues` and rendering - **COMPLETE & TESTED**
 - [x] Chat form posting to `/api/chat` and rendering replies - **COMPLETE & TESTED**
 - [x] CSS styling in `styles.css` - **COMPLETE & TESTED**

@@ -23,11 +23,13 @@ Current focus:
   - Documentation updated with evaluation results and rationale
 - ✅ **Phase 6: Frontend Implementation COMPLETE & TESTED** - Full-featured UI implemented and verified
   - HTML template (`app/templates/index.html`) with three-panel layout
-  - Plan viewer displaying `plan.png` with header
+  - Plan viewer displaying `plan.png` with header and overlay system
+  - **Overlays**: Room and door overlays loaded from JSON, positioned absolutely over plan image
+  - **Highlight behavior**: Clicking an issue highlights corresponding overlay in red with pulsing animation
   - Issues list with click handlers, severity badges, and code references
   - Chat panel with message rendering, citations display, and loading states
-  - Modern CSS styling (`app/static/styles.css`) with responsive design
-  - JavaScript for API integration, error handling, and user interactions
+  - Modern CSS styling (`app/static/styles.css`) with responsive design and overlay animations
+  - JavaScript for API integration, error handling, user interactions, and overlay management
   - **Testing completed** - No issues found in console or terminal
 - ✅ **LLM Rule Extraction COMPLETE** - Integrated with project context filtering
   - `app/services/rule_extractor.py` - Extracts rules from PDFs using LLM with BM25-only retrieval
@@ -46,6 +48,14 @@ Current focus:
   - Added post-processing function `_fix_citations_in_answer()` to automatically fix LLM citations
   - Updated LLM prompt to instruct including page type indicators in citations
   - **Result**: All citations now clearly indicate whether using PDF page numbers (matches PDF reader) or document page numbers (extracted from text)
+- ✅ **Overlays with Highlight Behavior COMPLETE**
+  - `app/static/overlays.json` - Contains room and door overlay definitions with pixel coordinates (x, y, width, height)
+  - `app/templates/index.html` - JavaScript loads overlays, renders them over plan image, handles highlighting
+  - `app/static/styles.css` - Overlay styling with blue base state, red highlight state (with !important), pulsing animation
+  - **Room type matching**: Updated `check_room_compliance()` to match rules by room type (bedroom rules only apply to bedrooms, living rules only to living rooms)
+  - **Highlight behavior**: Clicking an issue in the compliance list highlights the corresponding overlay (room or door) in red with pulsing animation
+  - **Responsive**: Overlays automatically scale and reposition when window resizes
+  - **Test data**: R101 area set to 8.5 m² (below 9.5 m² minimum) for demonstration
 
 Recent changes:
 

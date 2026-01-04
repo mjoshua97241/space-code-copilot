@@ -15,8 +15,10 @@
             <h2>Floor Plan</h2>
           </div>
           <div class="plan-image-wrapper">
-            <img src="/static/plan.png" alt="Floor plan" id="plan-image" />
-            <!-- Overlays can be added here later for interactive highlighting -->
+            <div class="plan-image-container">
+              <img src="/static/plan.png" alt="Floor plan" id="plan-image" />
+              <div class="overlays-container" id="overlays-container"></div>
+            </div>
           </div>
         </div>
         <div class="issues-panel">
@@ -71,6 +73,8 @@
       // ====================================================================
       let selectedIssueId = null;
       let issues = [];
+      let overlays = [];
+      let overlayElements = new Map(); // Map of element_id -> overlay DOM element
 
       // ====================================================================
       // Issues Fetching and Rendering
@@ -144,6 +148,11 @@
           item.classList.remove("selected");
         });
 
+        // Remove previous overlay highlights
+        document.querySelectorAll(".overlay").forEach(overlay => {
+          overlay.classList.remove("highlighted");
+        });
+
         // Add selection to clicked issue
         const issueElement = document.querySelector(
           `.issue-item[data-issue-id="${issue.element_type}-${issue.element_id}"]`
@@ -153,8 +162,13 @@
           selectedIssueId = `${issue.element_type}-${issue.element_id}`;
         }
 
-        // TODO: Highlight corresponding element on plan image (future enhancement)
-        // For now, we just highlight the issue in the list
+        // Highlight corresponding overlay on plan image
+        const overlayElement = overlayElements.get(issue.element_id);
+        if (overlayElement) {
+          overlayElement.classList.add("highlighted");
+          // Scroll overlay into view if needed
+          overlayElement.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        }
       }
 
       // ====================================================================
@@ -305,6 +319,110 @@
       }
 
       // ====================================================================
+      // Overlay Loading and Rendering
+      // ====================================================================
+
+      async function loadOverlays() {
+        try {
+          const res = await fetch("/static/overlays.json");
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          overlays = await res.json();
+          renderOverlays();
+        } catch (e) {
+          console.error("Error loading overlays:", e);
+          // Silently fail - overlays are optional
+        }
+      }
+
+      function renderOverlays() {
+        const container = document.getElementById("overlays-container");
+        const planImage = document.getElementById("plan-image");
+        
+        if (!container || !planImage || overlays.length === 0) {
+          return;
+        }
+
+        // Wait for image to load to get actual dimensions
+        if (planImage.complete) {
+          renderOverlayElements();
+        } else {
+          planImage.addEventListener("load", renderOverlayElements, { once: true });
+        }
+        
+        // Update overlay positions on window resize
+        window.addEventListener("resize", handleResize);
+      }
+
+      function renderOverlayElements() {
+        const container = document.getElementById("overlays-container");
+        const planImage = document.getElementById("plan-image");
+        const imageContainer = planImage?.parentElement;
+        
+        if (!container || !planImage || !imageContainer) {
+          return;
+        }
+
+        // Clear existing overlays
+        container.innerHTML = "";
+        overlayElements.clear();
+
+        // Get image dimensions
+        const imgRect = planImage.getBoundingClientRect();
+        const containerRect = imageContainer.getBoundingClientRect();
+        const imgNaturalWidth = planImage.naturalWidth;
+        const imgNaturalHeight = planImage.naturalHeight;
+        
+        // Calculate scale factor if image is scaled
+        const scaleX = imgRect.width / imgNaturalWidth;
+        const scaleY = imgRect.height / imgNaturalHeight;
+        
+        // Calculate offset if image is centered within container
+        const offsetX = imgRect.left - containerRect.left;
+        const offsetY = imgRect.top - containerRect.top;
+        
+        // Position overlay container to match image
+        container.style.left = `${offsetX}px`;
+        container.style.top = `${offsetY}px`;
+        container.style.width = `${imgRect.width}px`;
+        container.style.height = `${imgRect.height}px`;
+
+        // Create overlay elements
+        overlays.forEach((overlay) => {
+          const overlayDiv = document.createElement("div");
+          overlayDiv.className = "overlay";
+          overlayDiv.dataset.elementId = overlay.id;
+          overlayDiv.dataset.elementType = overlay.type;
+          
+          // Calculate scaled position and size (relative to overlay container)
+          const x = overlay.x * scaleX;
+          const y = overlay.y * scaleY;
+          const width = overlay.width * scaleX;
+          const height = overlay.height * scaleY;
+          
+          overlayDiv.style.left = `${x}px`;
+          overlayDiv.style.top = `${y}px`;
+          overlayDiv.style.width = `${width}px`;
+          overlayDiv.style.height = `${height}px`;
+          
+          // Store reference for highlighting
+          overlayElements.set(overlay.id, overlayDiv);
+          
+          container.appendChild(overlayDiv);
+        });
+      }
+      
+      // Throttled resize handler
+      let resizeTimeout;
+      function handleResize() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          renderOverlayElements();
+        }, 100);
+      }
+
+      // ====================================================================
       // Utility Functions
       // ====================================================================
 
@@ -319,6 +437,9 @@
       // ====================================================================
 
       document.addEventListener("DOMContentLoaded", () => {
+        // Load overlays on page load
+        loadOverlays();
+        
         // Fetch issues on page load
         fetchIssues();
 
