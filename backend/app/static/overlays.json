@@ -1,0 +1,34 @@
+[
+    {
+        "id":"R101",
+        "type":"bedroom",
+        "x":129,
+        "y":136,
+        "width":132,
+        "height":152
+    },
+    {
+        "id":"R102",
+        "type":"bedroom",
+        "x":129,
+        "y":290,
+        "width":132,
+        "height":165        
+    },
+    {
+        "id":"R201",
+        "type":"bedroom",
+        "x":657,
+        "y":136,
+        "width":226,
+        "height":142 
+    },
+    {
+        "id":"R301",
+        "type":"living",
+        "x":261,
+        "y":290,
+        "width":623,
+        "height":164        
+    }
+]
