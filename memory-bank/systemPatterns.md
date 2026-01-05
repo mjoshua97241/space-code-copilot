@@ -50,9 +50,10 @@ Frontend patterns:
   - CSS: Blue base state (rgba(13, 110, 253, 0.3)), red highlight state (#dc3545) with pulsing animation
   - Supports both room and door overlays (matched by element_id from issues)
 - JavaScript (inline or minimal separate script):
-  - On page load: `fetch('/api/issues')` → render issues list, `fetch('/static/overlays.json')` → render overlays.
+  - On page load: `fetch('/api/issues/')` → render issues list, `fetch('/static/overlays.json')` → render overlays.
+  - **Note**: API endpoints require trailing slashes (`/api/issues/`, `/api/chat/`) to match FastAPI router definitions (`@router.get("/")` with prefix).
   - On issue click: save `element_id`, highlight corresponding overlay in plan viewer (red pulsing border).
-  - On chat submit: `fetch('/api/chat', {method: 'POST', body: ...})` → render reply.
+  - On chat submit: `fetch('/api/chat/', {method: 'POST', body: ...})` → render reply.
   - DOM manipulation: create/update elements for issues, messages, and overlays.
 - CSS (`app/static/styles.css`): layout (flex/grid), styling, overlay states (base, hover, highlighted).
 - Static assets served via FastAPI `StaticFiles` mount at `/static/`.
@@ -278,3 +279,46 @@ PDFs require more sophisticated caching due to expensive operations:
 - ID conflict resolution (renames conflicting rule IDs to avoid duplicates)
 - Rule type validation (fixes invalid rule_type assignments)
 - Graceful error handling with fallback to seeded rules
+
+## Future Enhancements
+
+### User-Provided API Keys (Post-MVP)
+
+**Goal**: Allow users to use their own OpenAI/Gemini API keys instead of server's API key to eliminate server costs and prevent abuse.
+
+**Implementation Plan**:
+1. **Update `ChatRequest` model** (`app/api/chat.py`):
+   - Add optional `api_key: Optional[str]` field
+   - Add optional `provider: str = "openai"` field (support "openai" or "gemini")
+
+2. **Update `get_llm()` function** (`app/core/llm.py`):
+   - Add optional `api_key: Optional[str]` parameter
+   - Use provided API key if available, otherwise fall back to environment variable
+   - Add Gemini support using `langchain_google_genai.ChatGoogleGenerativeAI`
+
+3. **Update chat endpoint** (`app/api/chat.py`):
+   - Pass user-provided API key to `get_llm()` if provided
+   - Use user's provider preference (OpenAI or Gemini)
+
+4. **Update frontend** (`app/templates/index.html`):
+   - Add optional API key input field (password type)
+   - Add provider selector dropdown (OpenAI/Gemini)
+   - Include API key and provider in chat request body
+   - Add instructions: "Enter your API key to use your own credits (optional)"
+
+5. **Security considerations**:
+   - Use HTTPS (Railway provides automatically)
+   - Never log API keys in server logs
+   - Consider rate limiting even with user keys
+   - Option: Make API key required (no server costs) or optional (fallback to server key)
+
+**Benefits**:
+- ✅ Eliminates server costs for LLM usage
+- ✅ Prevents API key abuse
+- ✅ Allows users to choose their preferred provider
+- ✅ Scales without server cost concerns
+
+**Dependencies**:
+- Add `langchain-google-genai` to `pyproject.toml` for Gemini support
+- Update frontend UI to include API key input
+- Add user instructions/documentation
