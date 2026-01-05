@@ -56,6 +56,21 @@ Current focus:
   - **Highlight behavior**: Clicking an issue in the compliance list highlights the corresponding overlay (room or door) in red with pulsing animation
   - **Responsive**: Overlays automatically scale and reposition when window resizes
   - **Test data**: R101 area set to 8.5 m² (below 9.5 m² minimum) for demonstration
+- ✅ **End-to-End Testing COMPLETE**
+  - Created comprehensive test suite: `app/tests/test_e2e.py`
+  - **All 16 tests passing** (100% success rate)
+  - Tests cover: Health endpoint, static files, frontend template, issues endpoint, chat endpoint, PDF ingest, vector store, compliance checker, rule extraction
+  - Test documentation: `app/tests/TEST_RESULTS.md` (detailed results), `app/tests/TEST_CHECKLIST.md` (manual testing guide)
+  - System verified ready for deployment
+- ✅ **Deployment Setup COMPLETE**
+  - `backend/.env.example` - Environment variable template (OPENAI_API_KEY, optional Qdrant config)
+  - `backend/railway.json` - Railway.app configuration (auto-detects Python, sets start command)
+  - `backend/Dockerfile` - Docker configuration (multi-stage build with uv, can deploy to Railway/Render/Fly.io)
+  - `backend/.dockerignore` - Docker ignore patterns (excludes cache, venv, .env files)
+  - `DEPLOYMENT.md` - Comprehensive deployment guide (Railway.app, Docker, local demo)
+  - `DEPLOYMENT_CHECKLIST.md` - Step-by-step deployment checklist
+  - `README.md` - Updated with deployment section (Railway.app, Docker, local instructions)
+  - **Next step**: Deploy to Railway.app to get public URL for mentors/cohorts
 
 Recent changes:
 
@@ -176,7 +191,12 @@ Recent changes:
    - Project context filtering (building type, stories, occupancy, classification)
    - Results: Reduced issues from 28 to 3 by filtering irrelevant rules
    - Default context: Single-floor residential detached house
-5. **Phase 7**: Testing + deployment + presentation prep
+5. ✅ **Phase 7: Testing + Deployment Setup COMPLETE**
+   - End-to-end testing: 16/16 tests passing (100% success rate)
+   - Deployment files created: Dockerfile, railway.json, .env.example, .dockerignore
+   - Deployment documentation: DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md
+   - README.md updated with deployment section
+   - **Next**: Deploy to Railway.app (get public URL) + presentation prep
 
 Todo next:
 

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, and **Overlays with Highlight Behavior** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. Ready to proceed with Phase 7 (Testing + Deployment + Presentation Prep).
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. Ready to proceed with actual deployment to Railway.app and presentation prep.
 
 ## What Works
 
@@ -159,10 +159,27 @@ None yet (project in early setup phase).
   - [ ] Phase 4: Parent-child chunking (optional)
   - [ ] Phase 5: Citations + guardrails (optional)
   - [x] Phase 6: Frontend implementation - **COMPLETE & TESTED** - No issues found
-  - [ ] Phase 7: Testing + deployment + presentation prep
+  - [x] Phase 7: Testing + deployment setup - **COMPLETE** - End-to-end testing (16/16 passed), deployment files created
+  - [ ] Phase 7: Actual deployment to Railway.app + presentation prep
 
-5. Prepare for presentation (see `memory-bank/presentation.md`):
-   - [ ] Implement metrics tracking (LangSmith setup, metrics endpoint)
+5. ✅ End-to-End Testing - **COMPLETE**:
+   - [x] Created comprehensive test suite (`app/tests/test_e2e.py`)
+   - [x] All 16 tests passing (100% success rate)
+   - [x] Tested: Health endpoint, static files, frontend template, issues endpoint, chat endpoint, PDF ingest, vector store, compliance checker, rule extraction
+   - [x] Test documentation: `TEST_RESULTS.md`, `TEST_CHECKLIST.md`
+
+6. ✅ Deployment Setup - **COMPLETE**:
+   - [x] Created `backend/.env.example` - Environment variable template
+   - [x] Created `backend/railway.json` - Railway.app configuration
+   - [x] Created `backend/Dockerfile` - Docker configuration
+   - [x] Created `backend/.dockerignore` - Docker ignore patterns
+   - [x] Created `DEPLOYMENT.md` - Deployment guide for assessors
+   - [x] Created `DEPLOYMENT_CHECKLIST.md` - Step-by-step deployment checklist
+   - [x] Updated `README.md` - Added deployment section
+   - [ ] **Next**: Deploy to Railway.app and get public URL
+
+7. Prepare for presentation (see `memory-bank/presentation.md`):
+   - [ ] Implement metrics tracking (LangSmith setup, metrics endpoint) - Optional
    - [ ] Prepare demo data and test results
    - [ ] Create visual aids (architecture diagram, slides)
    - [ ] Practice 7-minute presentation flow
