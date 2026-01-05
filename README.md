@@ -132,9 +132,56 @@ See `memory-bank/progress.md` for detailed status.
   2. Text from code PDFs via RAG
 - **Frontend**: No build toolchain. Plain HTML/CSS/JS served by FastAPI.
 
+## Deployment
+
+### Railway.app (Recommended for Demo)
+
+1. Push your code to GitHub
+2. Go to [Railway.app](https://railway.app) and sign in
+3. Click "New Project" → "Deploy from GitHub repo"
+4. Select your repository
+5. Add environment variable: `OPENAI_API_KEY` (in Railway dashboard → Variables)
+6. Railway will auto-detect Python and deploy
+7. Your app will be live at `https://your-app.railway.app`
+
+**Note**: The project includes `railway.json` for automatic configuration.
+
+### Docker
+
+```bash
+cd backend
+docker build -t space-code-copilot .
+docker run -p 8000:8000 -e OPENAI_API_KEY=your_key space-code-copilot
+```
+
+### Local Demo
+
+For assessors to run locally:
+
+```bash
+# Clone repo
+git clone <your-repo-url>
+cd space-code-copilot/backend
+
+# Install dependencies
+uv sync
+
+# Copy environment template
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY
+
+# Run
+uv run uvicorn app.main:app --reload
+
+# Open http://localhost:8000
+```
+
+See `DEPLOYMENT.md` for detailed deployment instructions.
+
 ## Documentation
 
 - `memory-bank/` - Project context, patterns, and progress tracking
+- `DEPLOYMENT.md` - Deployment guide for assessors
 - `docs/` - Additional documentation
 
 ## License

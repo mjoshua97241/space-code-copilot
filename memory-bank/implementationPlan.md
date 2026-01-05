@@ -309,29 +309,48 @@ compare_results(dense_results, hybrid_results)
 
 ### Phase 7: Testing + Deployment + Presentation Prep
 
-**Tasks:**
-1. Testing:
-   - Test PDF ingest with sample building code PDF
-   - Test hybrid retrieval (verify BM25 and dense both work)
-   - Test chat endpoint with sample queries
-   - Test frontend end-to-end
+**Status: ✅ Testing + Deployment Setup COMPLETE**
 
-2. Deployment:
-   - Create deployment files (see `memory-bank/deployment.md`)
-   - Deploy to Railway.app or test locally
-   - Verify all endpoints work
+**Completed:**
 
-3. Presentation prep:
-   - Prepare demo data (CSV files, PDF)
-   - Create architecture diagram
-   - Practice demo flow (7 minutes)
-   - Prepare Q&A answers
+1. ✅ **Testing - COMPLETE**:
+   - Created comprehensive end-to-end test suite: `app/tests/test_e2e.py`
+   - **All 16 tests passing** (100% success rate)
+   - Tests cover:
+     - Health endpoint (`GET /health`)
+     - Static files (plan.png, styles.css, overlays.json)
+     - Frontend template (`GET /`)
+     - Issues endpoint (`GET /api/issues`, `GET /api/issues/summary`)
+     - Chat endpoint (`POST /api/chat`) with RAG and citations
+     - PDF ingest (loads 733 chunks from PDF)
+     - Vector store (BM25-only retrieval working)
+     - Compliance checker (checks 4 rooms, 4 doors, finds 10 issues)
+     - Rule extraction (11 total rules: 5 seeded, 6 extracted)
+   - Test documentation:
+     - `app/tests/TEST_RESULTS.md` - Detailed test results
+     - `app/tests/TEST_CHECKLIST.md` - Manual testing checklist
 
-**Deliverable**: Deployed, tested, ready for demo
+2. ✅ **Deployment Setup - COMPLETE**:
+   - Created `backend/.env.example` - Environment variable template
+   - Created `backend/railway.json` - Railway.app configuration (auto-detects Python, sets start command)
+   - Created `backend/Dockerfile` - Docker configuration (multi-stage build with uv)
+   - Created `backend/.dockerignore` - Docker ignore patterns
+   - Created `DEPLOYMENT.md` - Comprehensive deployment guide (Railway.app, Docker, local demo)
+   - Created `DEPLOYMENT_CHECKLIST.md` - Step-by-step deployment checklist
+   - Updated `README.md` - Added deployment section with Railway.app, Docker, and local instructions
+   - **Ready for deployment**: All files created, can deploy to Railway.app immediately
 
-**Estimated effort**: 1 day
+3. ⏳ **Presentation Prep - IN PROGRESS**:
+   - [ ] Prepare demo data (CSV files, PDF) - Already have sample data
+   - [ ] Create architecture diagram
+   - [ ] Practice demo flow (7 minutes)
+   - [ ] Prepare Q&A answers
 
-**Dependencies**: All previous phases
+**Deliverable**: ✅ Testing complete, ✅ Deployment files ready, ⏳ Presentation prep remaining
+
+**Estimated effort**: Testing (completed), Deployment setup (completed), Presentation prep (remaining)
+
+**Dependencies**: All previous phases ✅ Complete
 
 ---
 
@@ -346,7 +365,10 @@ compare_results(dense_results, hybrid_results)
 4. Phase 4: Parent-Child Chunking (optional, 1-2 days) OR skip if behind
 5. Phase 5: Citations + Guardrails (1 day) - Optional
 6. ✅ Phase 6: Frontend Implementation (2 days) - **COMPLETE & TESTED**
-7. Phase 7: Testing + Deployment + Presentation Prep (1 day)
+7. ✅ Phase 7: Testing + Deployment Setup (1 day) - **COMPLETE**
+   - ✅ End-to-end testing: 16/16 tests passing
+   - ✅ Deployment files created (Dockerfile, railway.json, .env.example, etc.)
+   - ⏳ Actual deployment to Railway.app + presentation prep (remaining)
 
 **Total estimated effort**: 8-11 days (with buffer for Phase 4)
 
