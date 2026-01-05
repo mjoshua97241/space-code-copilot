@@ -64,13 +64,18 @@ Current focus:
   - System verified ready for deployment
 - ✅ **Deployment Setup COMPLETE**
   - `backend/.env.example` - Environment variable template (OPENAI_API_KEY, optional Qdrant config)
-  - `backend/railway.json` - Railway.app configuration (auto-detects Python, sets start command)
+  - `backend/railway.json` - Railway.app configuration (auto-detects Python, sets start command with PORT variable expansion fix)
   - `backend/Dockerfile` - Docker configuration (multi-stage build with uv, can deploy to Railway/Render/Fly.io)
   - `backend/.dockerignore` - Docker ignore patterns (excludes cache, venv, .env files)
   - `DEPLOYMENT.md` - Comprehensive deployment guide (Railway.app, Docker, local demo)
   - `DEPLOYMENT_CHECKLIST.md` - Step-by-step deployment checklist
   - `README.md` - Updated with deployment section (Railway.app, Docker, local instructions)
-  - **Next step**: Deploy to Railway.app to get public URL for mentors/cohorts
+  - ✅ **Railway Deployment Fixes Applied**:
+    - Fixed PORT environment variable expansion in `railway.json` (wrapped start command in shell: `sh -c '...'`)
+    - Fixed API endpoint URLs in frontend (`/api/issues` → `/api/issues/`, `/api/chat` → `/api/chat/`) to match router definitions
+    - Resolved 307 Temporary Redirect errors caused by trailing slash mismatch
+    - Resolved Mixed Content errors (side effect of redirects)
+  - ✅ **Deployed to Railway.app** - Public URL available, app working correctly
 
 Recent changes:
 
@@ -191,12 +196,14 @@ Recent changes:
    - Project context filtering (building type, stories, occupancy, classification)
    - Results: Reduced issues from 28 to 3 by filtering irrelevant rules
    - Default context: Single-floor residential detached house
-5. ✅ **Phase 7: Testing + Deployment Setup COMPLETE**
+5. ✅ **Phase 7: Testing + Deployment COMPLETE**
    - End-to-end testing: 16/16 tests passing (100% success rate)
    - Deployment files created: Dockerfile, railway.json, .env.example, .dockerignore
    - Deployment documentation: DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md
    - README.md updated with deployment section
-   - **Next**: Deploy to Railway.app (get public URL) + presentation prep
+   - ✅ **Railway deployment fixes**: PORT variable expansion, API endpoint trailing slashes
+   - ✅ **Deployed to Railway.app** - Public URL working, all endpoints functional
+   - **Next**: Presentation prep
 
 Todo next:
 

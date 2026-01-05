@@ -170,13 +170,17 @@ None yet (project in early setup phase).
 
 6. ✅ Deployment Setup - **COMPLETE**:
    - [x] Created `backend/.env.example` - Environment variable template
-   - [x] Created `backend/railway.json` - Railway.app configuration
+   - [x] Created `backend/railway.json` - Railway.app configuration (fixed PORT variable expansion)
    - [x] Created `backend/Dockerfile` - Docker configuration
    - [x] Created `backend/.dockerignore` - Docker ignore patterns
    - [x] Created `DEPLOYMENT.md` - Deployment guide for assessors
    - [x] Created `DEPLOYMENT_CHECKLIST.md` - Step-by-step deployment checklist
    - [x] Updated `README.md` - Added deployment section
-   - [ ] **Next**: Deploy to Railway.app and get public URL
+   - [x] **Fixed Railway deployment issues**:
+     - Fixed PORT environment variable expansion in `railway.json` (wrapped in shell)
+     - Fixed API endpoint URLs in frontend (added trailing slashes to match router definitions)
+     - Resolved 307 redirects and Mixed Content errors
+   - [x] **Deployed to Railway.app** - Public URL available for mentors/cohorts
 
 7. Prepare for presentation (see `memory-bank/presentation.md`):
    - [ ] Implement metrics tracking (LangSmith setup, metrics endpoint) - Optional
@@ -184,3 +188,24 @@ None yet (project in early setup phase).
    - [ ] Create visual aids (architecture diagram, slides)
    - [ ] Practice 7-minute presentation flow
    - [ ] Prepare for Q&A (technical details, scalability, future enhancements)
+
+## Future Enhancements
+
+### User-Provided API Keys (Post-MVP)
+- **Goal**: Allow users to use their own OpenAI/Gemini API keys instead of server's API key
+- **Benefits**: 
+  - Eliminates server costs for LLM usage
+  - Prevents API key abuse
+  - Allows users to choose their preferred provider (OpenAI or Gemini)
+- **Implementation**:
+  - Update `ChatRequest` model to accept optional `api_key` and `provider` fields
+  - Update `get_llm()` function to accept optional `api_key` parameter
+  - Update chat endpoint to use user-provided API key if provided
+  - Add Gemini support to `app/core/llm.py`
+  - Update frontend to include API key input field (optional)
+  - Add clear instructions for users on where to get API keys
+- **Security considerations**:
+  - Use HTTPS (Railway provides automatically)
+  - Don't log API keys in server logs
+  - Consider rate limiting even with user keys
+  - Make API key optional (fallback to server key) or required (no server costs)
