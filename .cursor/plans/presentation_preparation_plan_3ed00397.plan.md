@@ -337,5 +337,3 @@ flowchart LR
 ## Dependencies
 
 - Railway.app deployment must be working (already complete)
-- Demo data files must exist (verify in `backend/app/data/`)
-- Frontend must be functional (already tested)
