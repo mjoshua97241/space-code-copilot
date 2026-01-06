@@ -4,7 +4,7 @@ overview: Prepare all materials and practice for the 7-minute bootcamp demo pres
 todos:
   - id: create-architecture-diagram
     content: Create architecture diagram in lesson style with color-coded edges (D/P/Q/A), legend, and CAD Add-In context notes. Save to docs/architecture-diagram.md or .png
-    status: pending
+    status: completed
   - id: create-presentation-slides
     content: Create 7 presentation slides covering Title, Problem, Solution (with Add-In context), Architecture, Metrics, Demo, Takeaways. Save to docs/presentation-slides.md or .pptx
     status: pending
