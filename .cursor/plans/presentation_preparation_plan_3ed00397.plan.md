@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: verify-demo-data
     content: Verify demo data files exist and are correct (rooms.csv with R101 violation, doors.csv, code_sample.pdf, overlays.json, plan.png)
-    status: pending
+    status: completed
   - id: precompute-test-results
     content: Run compliance check and chat endpoint tests, document expected results (R101 violation, door violations, sample chat responses) in docs/demo-script.md
     status: pending
@@ -330,5 +330,3 @@ flowchart LR
 - `docs/presentation-timings.md`
 - `docs/qa-preparation.md`
 - (Optional) `docs/langsmith-setup.md`
-- (Optional) `docs/metrics-endpoint.md`
-- (Optional) `app/api/metrics.py`
