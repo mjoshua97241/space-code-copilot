@@ -16,10 +16,10 @@ todos:
     status: completed
   - id: precompute-test-results
     content: Run compliance check and chat endpoint tests, document expected results (R101 violation, door violations, sample chat responses) in docs/demo-script.md
-    status: pending
+    status: completed
   - id: prepare-demo-script
     content: Create step-by-step demo script with Add-In context, timing (2.5 min total), and talking points. Save to docs/demo-script.md
-    status: pending
+    status: completed
   - id: rehearse-presentation
     content: Rehearse all presentation sections with timing (Problem 1min, Solution 1min, Architecture 1.5min, Metrics 1min, Demo 2.5min)
     status: pending
@@ -329,4 +329,3 @@ flowchart LR
 - `docs/demo-script.md`
 - `docs/presentation-timings.md`
 - `docs/qa-preparation.md`
-- (Optional) `docs/langsmith-setup.md`
