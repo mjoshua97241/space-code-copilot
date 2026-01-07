@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: create-presentation-slides
     content: Create 7 presentation slides covering Title, Problem, Solution (with Add-In context), Architecture, Metrics, Demo, Takeaways. Save to docs/presentation-slides.md or .pptx
-    status: pending
+    status: completed
   - id: capture-screenshots
     content: Capture screenshots of building code PDF, frontend UI, plan viewer with highlights, chat interface, and Railway dashboard. Save to docs/screenshots/
     status: pending
@@ -335,5 +335,3 @@ flowchart LR
 - (Optional) Updates to `app/core/llm.py` for LangSmith
 
 ## Dependencies
-
-- Railway.app deployment must be working (already complete)
