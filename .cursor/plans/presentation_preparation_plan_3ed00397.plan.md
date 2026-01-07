@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: capture-screenshots
     content: Capture screenshots of building code PDF, frontend UI, plan viewer with highlights, chat interface, and Railway dashboard. Save to docs/screenshots/
-    status: pending
+    status: completed
   - id: verify-demo-data
     content: Verify demo data files exist and are correct (rooms.csv with R101 violation, doors.csv, code_sample.pdf, overlays.json, plan.png)
     status: pending
@@ -332,6 +332,3 @@ flowchart LR
 - (Optional) `docs/langsmith-setup.md`
 - (Optional) `docs/metrics-endpoint.md`
 - (Optional) `app/api/metrics.py`
-- (Optional) Updates to `app/core/llm.py` for LangSmith
-
-## Dependencies
