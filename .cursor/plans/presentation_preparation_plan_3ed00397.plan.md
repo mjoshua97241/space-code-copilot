@@ -156,8 +156,6 @@ flowchart LR
   class CSV,PDF,DLOAD,PINGEST,EM,VDB,RULES,COMP,RULEX,CHATAPI,ISSUESAPI,FRONT,PLAN,ISSUES,CHAT,LLM,CACHE,LOG,OPENAI,GEMINI box;
 ```
 
-
-
 ## Implementation Tasks
 
 ### 1. Create Visual Aids
