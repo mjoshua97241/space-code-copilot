@@ -305,7 +305,7 @@ body {
 
 .welcome-message p:first-child {
   font-weight: 500;
-  color: #212529;
+  color: rgba(33, 37, 41, 1);
 }
 
 .welcome-message ul {
@@ -465,7 +465,7 @@ body {
 #chat-input {
   background-clip: unset;
   -webkit-background-clip: unset;
-  color: rgba(255, 255, 255, 1);
+  color: rgba(33, 37, 41, 1);
   background-color: rgba(255, 255, 255, 1);
 }
 
