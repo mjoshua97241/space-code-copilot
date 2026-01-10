@@ -11,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
-from app.core.llm import get_llm
+from app.core.llm import get_llm, setup_llm_cache
 from app.models.domain import Rule, ProjectContext
 from app.services.vector_store import VectorStore
 
@@ -19,6 +19,19 @@ from app.services.vector_store import VectorStore
 env_path = Path(__file__).parent.parent.parent / ".env"
 if env_path.exists():
     load_dotenv(env_path)
+
+# ============================================================================
+# LLM Cache Setup (Optional but Recommended)
+# ============================================================================
+
+# Setup LLM cache on module import (only once)
+# This caches LLM responses to avoid redundant API calls
+# Shared with chat endpoint - uses global LangChain cache
+_setup_cache_done = False
+
+if not _setup_cache_done:
+    setup_llm_cache(cache_type="memory")  # Use "sqlite" for production
+    _setup_cache_done = True
 
 def extract_rules_from_pdf(
     pdf_path: str | Path,
