@@ -1,45 +1,41 @@
 ---
-name: Multimodal Blueprint Extraction
-overview: Add multimodal AI capability to extract room and door data from blueprint images (PNG/JPG/PDF), with auto-scale detection, user confirmation, and CSV export. Target >90% accuracy for room areas and >95% for door widths.
+name: Multimodal Blueprint Extraction (Scoped)
+overview: Add multimodal AI capability to extract room-level data (name + approx_area_m2) from curated blueprint images (PNG/JPG/PDF). CSV pipeline remains as ground truth. Preview-only extraction results. Simple scale assumption (1:100 default). Focus on proving concept with curated plans, acknowledge limitations for general use.
 todos:
   - id: vision-llm-support
     content: Add vision LLM support to app/core/llm.py (GPT-4o and Gemini 1.5 Flash Vision)
     status: pending
   - id: blueprint-extractor
-    content: Create app/services/blueprint_extractor.py with extraction logic, scale detection, and validation
+    content: Create app/services/blueprint_extractor.py with room-only extraction (name + approx_area_m2), simple scale assumption, and basic validation
     status: pending
     dependencies:
       - vision-llm-support
   - id: extraction-models
-    content: Add BlueprintExtractionResult and ExtractionConfidence models to app/models/domain.py
-    status: pending
-  - id: csv-writer
-    content: Create app/services/csv_writer.py for saving extracted data to CSV files
+    content: Add BlueprintExtractionResult and ExtractionConfidence models to app/models/domain.py (rooms only, no doors)
     status: pending
   - id: upload-endpoint
-    content: Create POST /api/blueprint/upload endpoint in app/api/blueprint.py
+    content: Create POST /api/blueprint/extract endpoint in app/api/blueprint.py (preview-only, no CSV save)
     status: pending
     dependencies:
       - blueprint-extractor
-      - csv-writer
       - extraction-models
   - id: frontend-upload-ui
-    content: Add file upload UI to app/templates/index.html with drag-and-drop, scale input, and save mode selector
+    content: Add file upload UI to app/templates/index.html with drag-and-drop, optional scale input, and preview display
     status: pending
     dependencies:
       - upload-endpoint
   - id: frontend-js
-    content: Add JavaScript for handling file upload, displaying extraction results, and confirming save
+    content: Add JavaScript for handling file upload, displaying extraction results in preview table
     status: pending
     dependencies:
       - frontend-upload-ui
   - id: validation-logic
-    content: Implement validation and confidence scoring in blueprint_extractor.py
+    content: Implement basic validation (required fields, numeric ranges) and simple confidence scoring in blueprint_extractor.py
     status: pending
     dependencies:
       - blueprint-extractor
-  - id: accuracy-testing
-    content: Create test suite and test on 3-5 different blueprint images to verify >90% area and >95% width accuracy
+  - id: curated-plan-testing
+    content: Test on 2-3 curated blueprint images (known-good plans), document results and limitations
     status: pending
     dependencies:
       - blueprint-extractor
@@ -55,35 +51,46 @@ todos:
 
 ## Overview
 
-Add multimodal AI capability to extract room and door data directly from architectural blueprint images, eliminating manual CSV creation. The system will:
+Add multimodal AI capability to extract **room-level data only** (name + approximate area) from **curated architectural blueprint images** using **geometry understanding with scale**. The Vision LLM analyzes the blueprint's visual geometry (room boundaries, shapes, dimensions) and applies scale to calculate real-world areas - not just text extraction (OCR). This is a proof-of-concept feature that demonstrates the value of vision-based extraction while keeping the CSV pipeline as the reliable ground truth.
 
-1. Accept image uploads (PNG, JPG, PDF)
-2. Use vision LLM to extract structured data
-3. Auto-detect scale with user override option
-4. Validate extracted data
-5. Save to CSV (user chooses overwrite or new file)
-6. Target >90% accuracy for room areas, >95% for door widths
+**Scoped Approach:**
+
+1. Extract **rooms only** (name + approx_area_m2) - no door extraction
+2. Work with **curated plans** (2-3 known-good blueprints) - not general purpose
+3. **Preview-only** extraction results - CSV pipeline remains primary
+4. **Simple scale assumption** (1:100 default, optional manual input) - no complex auto-detection
+5. **Acknowledge limitations** - demo shows concept, not perfection
+
+**Why This Scope:**
+
+- Faster implementation (3-4 days vs 5.5-8.5 days)
+- Lower risk (CSV always works for demo)
+- Honest demo (shows concept, acknowledges limitations)
+- Focused value (proves multimodal extraction without over-engineering)
 
 ## Architecture Flow
 
 ```mermaid
 flowchart TD
-    User[User Uploads Blueprint] --> Upload[POST /api/upload-blueprint]
+    User[User Uploads Blueprint] --> Upload[POST /api/blueprint/extract]
     Upload --> Extract[blueprint_extractor.py]
     Extract --> VisionLLM[Vision LLM GPT-4o/Gemini]
     VisionLLM --> Parse[Parse JSON Response]
-    Parse --> Validate[Validate Room/Door Models]
-    Validate --> Scale[Scale Detection/Confirmation]
-    Scale --> Save[Save to CSV]
-    Save --> Response[Return Extraction Results]
+    Parse --> Validate[Validate Room Models Only]
+    Validate --> Preview[Preview Extracted Data]
+    Preview --> UserReview[User Reviews Results]
+    UserReview -->|Optional| Save[Optional: Save to CSV]
+    UserReview -->|Default| UseCSV[Use Existing CSV Pipeline]
     
-    Scale -->|User Override| UserInput[User Provides Scale]
-    UserInput --> Save
+    Save -.->|Fallback| UseCSV
+    
+    ScaleAssumption[Simple Scale Assumption<br/>1:100 default] --> Extract
+    UserScale[Optional User Scale Input] --> Extract
 ```
 
 ## Implementation Phases
 
-### Phase 1: Core Extraction Service (2-3 days)
+### Phase 1: Core Extraction Service (1-1.5 days)
 
 #### 1.1 Update LLM Client for Vision Support
 
@@ -93,8 +100,8 @@ flowchart TD
 - Support GPT-4o (recommended: cheaper than GPT-4 Vision, accurate) and Gemini 1.5 Flash Vision (very cheap alternative)
 - Use environment variable `VISION_LLM_PROVIDER` (default: "openai")
 - Model selection:
-  - OpenAI: `gpt-4o` (cost: ~$0.005-0.015 per image, accurate)
-  - Gemini: `gemini-1.5-flash` (cost: ~$0.0001-0.001 per image, good accuracy)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - OpenAI: `gpt-4o` (cost: ~$0.005-0.015 per image, accurate)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Gemini: `gemini-1.5-flash` (cost: ~$0.0001-0.001 per image, good accuracy)
 
 **Key changes**:
 
@@ -124,42 +131,111 @@ def get_vision_llm(provider: str = None, model_name: Optional[str] = None) -> Ba
 - Accept image file path (PNG, JPG, PDF)
 - Convert to base64 for LLM API
 - Handle PDF extraction (convert first page to image)
-- Call vision LLM with structured extraction prompt
-- Parse JSON response into Room/Door models
-- Validate extracted data
-- Auto-detect scale from image
-- Apply scale corrections if needed
+- Call vision LLM with structured extraction prompt that instructs **geometry understanding**
+- Parse JSON response into Room models only (no doors)
+- Validate extracted data (basic validation)
+- Use simple scale assumption (1:100 default, optional user input)
+
+**Key capability**: The Vision LLM performs **geometry understanding**, not just text extraction:
+
+- Identifies room boundaries visually (walls, lines, shapes)
+- Measures room dimensions from the visual representation
+- Applies scale (1:100) to convert to real-world units
+- Calculates approximate areas from geometry
+- Also reads room labels/names (text extraction) for identification
 
 **Key functions**:
 
 ```python
-def extract_from_blueprint(
+def extract_rooms_from_blueprint(
     image_path: str | Path,
     scale_override: Optional[float] = None,
     level: int = 1
 ) -> BlueprintExtractionResult:
     """
-    Extract rooms and doors from blueprint image.
+    Extract rooms (name + approx_area_m2) from blueprint image.
     
     Returns:
-        BlueprintExtractionResult with rooms, doors, detected_scale, confidence_scores
+        BlueprintExtractionResult with rooms only, no doors
     """
 ```
 
-**Structured extraction prompt**:
+**Structured extraction prompt** (geometry understanding approach):
 
-- Request JSON output matching Room/Door schema
-- Include scale detection instructions
-- Request confidence scores for each extracted value
-- Specify SI units (m² for areas, mm for widths)
-- Handle room type inference (BR → bedroom, LR → living, etc.)
+```python
+prompt = """
+Analyze this architectural floor plan blueprint and extract room information using GEOMETRY UNDERSTANDING:
 
-**Scale detection strategy**:
+1. **Identify rooms visually**: Look at the room boundaries (walls, lines, shapes) to identify each room
+2. **Read room labels**: Extract room names from text labels (e.g., "BR1", "Bedroom 1", "Living Room")
+3. **Measure geometry**: Measure the room dimensions (length, width) from the visual representation
+4. **Apply scale**: Use the provided scale (1:100) to convert measurements to real-world units
+   - If scale is 1:100, multiply blueprint measurements by 100 to get real-world meters
+5. **Calculate areas**: Calculate approximate area in m² from the room dimensions (length × width)
 
-1. Look for scale indicators in image (e.g., "1:100", "SCALE: 1/4\" = 1'-0\"")
-2. Use known reference dimensions if present
-3. If not found, prompt user for scale input
-4. Apply scale factor to all dimensions
+For each room, provide:
+- id: Unique identifier (e.g., "R101")
+- name: Room name from label or inferred from context (e.g., "Bedroom 1", "Living Room")
+- type: Room type inferred from name/label (bedroom, living, bathroom, kitchen, etc.)
+- area_m2: Approximate area calculated from geometry using the scale
+
+Important:
+- Focus on GEOMETRY MEASUREMENT, not just reading text labels
+- Measure room boundaries visually, not just extract written dimensions
+- Apply scale conversion: blueprint dimensions × scale_factor = real-world dimensions
+- Areas are approximate (geometry-based calculation), not exact measurements
+- If room labels are unclear, infer room type from context and location
+
+Return JSON matching this structure:
+{
+    "rooms": [
+        {
+            "id": "R101",
+            "name": "Bedroom 1",
+            "type": "bedroom",
+            "area_m2": 12.5,
+            "level": 1
+        },
+        ...
+    ]
+}
+"""
+```
+
+**Key points**:
+
+- Instructs LLM to measure geometry, not just read text
+- Explicitly asks for scale application (blueprint → real-world conversion)
+- Requests area calculation from measured dimensions
+- Handles room type inference from labels or context
+- Note: Areas are approximate (geometry-based), not exact
+
+**Scale strategy (simplified)**:
+
+1. **Default assumption**: Use 1:100 scale (common for residential plans)
+
+                                                                                                                                                                                                - Pass scale to LLM in prompt: "Use 1:100 scale (1 cm on blueprint = 1 m in real world)"
+                                                                                                                                                                                                - LLM applies this scale when converting blueprint measurements to real-world dimensions
+
+2. **Optional user input**: If user provides scale, use that instead
+
+                                                                                                                                                                                                - Pass user's scale to LLM in prompt
+                                                                                                                                                                                                - LLM applies user's scale for conversion
+
+3. **No auto-detection**: Skip complex scale detection for MVP
+
+                                                                                                                                                                                                - LLM doesn't need to detect scale from image
+                                                                                                                                                                                                - Scale is provided as input parameter
+
+4. **Warning message**: "Using 1:100 scale assumption. Areas are approximate (geometry-based calculation)."
+
+**How scale is used**:
+
+- Scale is passed to LLM in the extraction prompt
+- LLM measures room dimensions from blueprint geometry
+- LLM applies scale: `real_world_dimension = blueprint_dimension × scale_factor`
+- LLM calculates area: `area_m2 = length_m × width_m`
+- Example: If blueprint shows 5cm × 4cm room at 1:100 scale → 5m × 4m = 20 m²
 
 **PDF handling**:
 
@@ -174,57 +250,55 @@ Add new Pydantic models:
 
 ```python
 class ExtractionConfidence(BaseModel):
-    """Confidence scores for extracted values."""
+    """Confidence scores for extracted values (rooms only)."""
     room_id: str
     area_confidence: float  # 0.0-1.0
-    type_confidence: float
-    # ... for each extracted field
+    name_confidence: float  # 0.0-1.0
+    type_confidence: float  # 0.0-1.0
 
 class BlueprintExtractionResult(BaseModel):
-    """Result of blueprint extraction."""
-    rooms: List[Room]
-    doors: List[Door]
-    detected_scale: Optional[float]  # e.g., 1.0 for 1:100, 0.5 for 1:200
-    scale_source: Literal["auto-detected", "user-provided", "assumed"]
+    """Result of blueprint extraction (rooms only)."""
+    rooms: List[Room]  # Only rooms, no doors
+    scale_used: float  # e.g., 1.0 for 1:100, 0.5 for 1:200
+    scale_source: Literal["user-provided", "assumed"]  # Simplified: no auto-detection
     confidence_scores: List[ExtractionConfidence]
-    warnings: List[str]  # e.g., "Could not detect scale, assuming 1:100"
+    warnings: List[str]  # e.g., "Using 1:100 scale assumption. Areas are approximate."
     extraction_metadata: dict  # Model used, timestamp, etc.
+    note: str = "Extraction is approximate. CSV pipeline remains ground truth."
 ```
 
-### Phase 2: API Endpoint (1 day)
+### Phase 2: API Endpoint (0.5 day)
 
-#### 2.1 Create Upload Endpoint
+#### 2.1 Create Extract Endpoint
 
 **New file**: `backend/app/api/blueprint.py`
 
-**Endpoint**: `POST /api/blueprint/upload`
+**Endpoint**: `POST /api/blueprint/extract`
 
 **Request**:
 
 - `file`: UploadFile (image or PDF)
-- `scale_override`: Optional[float] - User-provided scale if auto-detection fails
-- `level`: int = 1 - Floor level for extracted rooms/doors
-- `save_mode`: Literal["overwrite", "new_file"] - How to save CSV
+- `scale_override`: Optional[float] - User-provided scale (defaults to 1.0 for 1:100)
+- `level`: int = 1 - Floor level for extracted rooms
 
 **Response**:
 
 ```python
-class BlueprintUploadResponse(BaseModel):
+class BlueprintExtractResponse(BaseModel):
     extraction_result: BlueprintExtractionResult
-    csv_files_created: List[str]  # Paths to created CSV files
     validation_errors: List[str]  # Any validation issues
     success: bool
+    note: str = "Extraction is approximate. Use CSV pipeline for accurate compliance checking."
 ```
 
 **Implementation**:
 
 - Accept file upload using FastAPI's `UploadFile`
 - Save uploaded file temporarily
-- Call `blueprint_extractor.extract_from_blueprint()`
-- Validate extracted Room/Door models
-- Save to CSV based on `save_mode`
+- Call `blueprint_extractor.extract_rooms_from_blueprint()`
+- Validate extracted Room models (basic validation)
+- Return extraction results (preview-only, no CSV save)
 - Clean up temporary file
-- Return extraction results
 
 **File handling**:
 
@@ -232,16 +306,7 @@ class BlueprintUploadResponse(BaseModel):
 - Generate unique filename: `blueprint_{timestamp}_{random}.{ext}`
 - Clean up after processing (or keep for debugging)
 
-#### 2.2 CSV Writer Service
-
-**New file**: `backend/app/services/csv_writer.py`
-
-**Function**: `save_extraction_to_csv(rooms, doors, save_mode, output_dir)`
-
-- If `save_mode == "overwrite"`: Write to `rooms.csv` and `doors.csv`
-- If `save_mode == "new_file"`: Create timestamped files
-- Validate data before writing
-- Preserve existing CSV format (headers, column order)
+**Note**: No CSV writer service needed - extraction is preview-only. CSV pipeline remains ground truth.
 
 **Mount router in** `backend/app/main.py`:
 
@@ -250,7 +315,7 @@ from app.api.blueprint import router as blueprint_router
 app.include_router(blueprint_router)
 ```
 
-### Phase 3: Frontend Integration (1-2 days)
+### Phase 3: Frontend Integration (0.5-1 day)
 
 #### 3.1 Update HTML Template
 
@@ -259,40 +324,38 @@ app.include_router(blueprint_router)
 **Add upload section**:
 
 - File input with drag-and-drop support
-- Scale input field (optional, shown if auto-detection fails)
-- Save mode selector (overwrite vs. new file)
+- Optional scale input field (defaults to 1.0 for 1:100)
 - Extraction status indicator (loading, success, error)
-- Preview extracted data in table before confirming
-- "Confirm and Save" button
+- Preview extracted data in table (read-only display)
+- Note: "Extraction is approximate. CSV pipeline remains ground truth."
 
 **UI Flow**:
 
 1. User uploads image
 2. Show loading spinner
-3. Display extraction results with confidence scores
-4. Show warnings (e.g., "Scale not detected, please confirm")
-5. Allow user to edit extracted values if needed
-6. User selects save mode and confirms
-7. Show success message with CSV file paths
+3. Display extraction results in preview table (rooms only)
+4. Show warnings (e.g., "Using 1:100 scale assumption. Areas are approximate.")
+5. Show note: "This is a proof-of-concept. Use CSV pipeline for accurate compliance checking."
+6. No save button - extraction is preview-only
 
 #### 3.2 JavaScript for Upload
 
 **Add to** `backend/app/templates/index.html`:
 
 ```javascript
-async function uploadBlueprint(file, scaleOverride, saveMode) {
+async function extractFromBlueprint(file, scaleOverride = 1.0) {
     const formData = new FormData();
     formData.append('file', file);
-    if (scaleOverride) formData.append('scale_override', scaleOverride);
-    formData.append('save_mode', saveMode);
+    if (scaleOverride !== 1.0) formData.append('scale_override', scaleOverride);
     
-    const response = await fetch('/api/blueprint/upload', {
+    const response = await fetch('/api/blueprint/extract', {
         method: 'POST',
         body: formData
     });
     
     const result = await response.json();
-    // Display results, allow editing, then confirm save
+    // Display results in preview table (read-only)
+    // Show note about approximate extraction
 }
 ```
 
@@ -305,35 +368,38 @@ async function uploadBlueprint(file, scaleOverride, saveMode) {
 - Add confidence score indicators (color-coded)
 - Loading states and error messages
 
-### Phase 4: Validation & Accuracy (1-2 days)
+### Phase 4: Validation & Curated Plan Testing (0.5 day)
 
-#### 4.1 Extraction Validation
+#### 4.1 Basic Validation
 
 **In** `backend/app/services/blueprint_extractor.py`:
 
-- Validate all required fields present
-- Check numeric ranges (areas > 0, widths > 0)
+- Validate all required fields present (room id, name, type, area)
+- Check numeric ranges (areas > 0)
 - Validate room type values (bedroom, living, etc.)
-- Check door room references exist
 - Flag low-confidence extractions (< 0.7)
+- No door validation needed (doors not extracted)
 
-#### 4.2 Accuracy Testing
+#### 4.2 Curated Plan Testing
 
 **Create test suite**: `backend/app/tests/test_blueprint_extraction.py`
 
-- Test on 3-5 different blueprint images
-- Measure accuracy:
-  - Room area accuracy (target: >90%)
-  - Door width accuracy (target: >95%)
-  - Room type inference accuracy
-- Document results and edge cases
+- Test on 2-3 curated blueprint images (known-good plans)
+- Document results and limitations
+- No strict accuracy targets - extraction is approximate
+- Focus on: Does it extract rooms? Are areas reasonable? Are room types inferred correctly?
 
-**Test images**:
+**Curated test images** (select plans that work well):
 
-- Simple residential plan (1 floor, 4-5 rooms)
-- Complex multi-room plan
-- Plan with unclear scale indicators
-- Plan with handwritten annotations
+- Simple residential plan (1 floor, 4-5 rooms, clear labels)
+- Another residential plan with different layout
+- (Optional) One plan that shows limitations
+
+**Documentation**:
+
+- Document which plans work well
+- Document limitations (e.g., "Works best with clear room labels")
+- Note: "For demo, show Plan A working well, acknowledge limitations on other plans"
 
 #### 4.3 Error Handling
 
@@ -385,55 +451,55 @@ GOOGLE_API_KEY=your_key_here
 **Recommended**: GPT-4o (OpenAI)
 
 - Cost: ~$0.005-0.015 per image
-- Accuracy: High (meets >90% area, >95% width targets)
+- Geometry understanding: Excellent (can measure shapes, apply scale, calculate areas)
 - Fast: ~5-15 seconds per image
 - Structured output: Excellent JSON parsing
+- **Why**: Strong spatial reasoning and geometry understanding capabilities
 
 **Alternative**: Gemini 1.5 Flash Vision
 
 - Cost: ~$0.0001-0.001 per image (10x cheaper)
-- Accuracy: Good (may need testing to verify targets)
+- Geometry understanding: Good (can measure shapes, apply scale)
 - Fast: ~3-10 seconds per image
 - Requires: `GOOGLE_API_KEY` environment variable
+- **Why**: Very cost-effective for testing, good geometry understanding
 
-### Scale Detection Strategy
+**Note**: Both models support geometry understanding (measuring shapes, applying scale, calculating areas), not just text extraction (OCR). This is the key differentiator - the LLM analyzes visual geometry, not just reads text labels.
 
-1. **Auto-detect from image**:
+### Scale Strategy (Simplified)
 
-   - Look for text patterns: "1:100", "SCALE 1/4\"", "1/4\" = 1'-0\""
-   - Use LLM to identify scale indicators
-   - Extract numeric scale factor
+1. **Default assumption**: Use 1:100 scale (common for residential plans)
 
-2. **User override**:
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - No auto-detection needed for MVP
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Simple and reliable for curated plans
 
-   - If auto-detection fails or confidence < 0.8, prompt user
-   - Show detected scale with "Confirm" or "Override" option
-   - User can input scale manually (e.g., "1:100" → scale factor 1.0)
+2. **Optional user input**: User can provide scale if known
 
-3. **Default assumption**:
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Input field in UI (optional)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - If provided, use user's scale instead of default
 
-   - If no scale found and user doesn't provide: assume 1:100 (common for residential)
-   - Show warning: "Scale not detected, assuming 1:100. Please verify extracted dimensions."
+3. **Warning message**: Always show "Using 1:100 scale assumption. Areas are approximate."
 
-### CSV Saving Strategy
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Sets expectations that extraction is not exact
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Acknowledges limitation upfront
 
-- **Overwrite mode**: Replace existing `rooms.csv` and `doors.csv`
-  - Backup existing files first (rename to `rooms_backup_{timestamp}.csv`)
-- **New file mode**: Create `rooms_{timestamp}.csv` and `doors_{timestamp}.csv`
-  - User can manually rename/use later
-  - Prevents accidental data loss
+### CSV Strategy (Preview-Only)
+
+- **No automatic CSV save**: Extraction results are preview-only
+- **CSV pipeline remains ground truth**: Existing CSV files continue to work
+- **Optional future enhancement**: Could add "Save to CSV" button later, but not in MVP
+- **Demo approach**: Show extraction preview, then use CSV pipeline for actual compliance checking
 
 ## File Structure
 
 ```
 backend/app/
 ├── api/
-│   └── blueprint.py          # NEW: Upload endpoint
+│   └── blueprint.py          # NEW: Extract endpoint (preview-only)
 ├── services/
-│   ├── blueprint_extractor.py  # NEW: Core extraction logic
-│   └── csv_writer.py           # NEW: CSV saving logic
+│   └── blueprint_extractor.py  # NEW: Core extraction logic (rooms only)
 ├── models/
-│   └── domain.py              # UPDATE: Add extraction models
+│   └── domain.py              # UPDATE: Add extraction models (rooms only)
 ├── core/
 │   └── llm.py                 # UPDATE: Add vision LLM support
 └── data/
@@ -535,57 +601,45 @@ flowchart TD
 **Test cases**:
 
 - **Image conversion**:
-  - Test PNG to base64 conversion
-  - Test JPG to base64 conversion
-  - Test PDF first page extraction (using PyMuPDF)
-  - Test PDF to PNG conversion at 300 DPI
-  - Test unsupported file format raises error
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test PNG to base64 conversion
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test JPG to base64 conversion
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test PDF first page extraction (using PyMuPDF)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test PDF to PNG conversion at 300 DPI
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test unsupported file format raises error
 
 - **LLM interaction** (mock LLM responses):
-  - Test structured prompt includes all required fields
-  - Test JSON response parsing
-  - Test malformed JSON handling
-  - Test missing fields in response handling
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test structured prompt includes all required fields
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test JSON response parsing
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test malformed JSON handling
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test missing fields in response handling
 
 - **Scale detection**:
-  - Test auto-detection of "1:100" scale indicator
-  - Test auto-detection of "SCALE 1/4\"" format
-  - Test auto-detection of "1/4\" = 1'-0\"" format
-  - Test scale factor calculation (1:100 → 1.0, 1:200 → 0.5)
-  - Test user override takes precedence
-  - Test default assumption (1:100) when no scale found
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test auto-detection of "1:100" scale indicator
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test auto-detection of "SCALE 1/4\"" format
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test auto-detection of "1/4\" = 1'-0\"" format
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test scale factor calculation (1:100 → 1.0, 1:200 → 0.5)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test user override takes precedence
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test default assumption (1:100) when no scale found
 
-- **Data extraction**:
-  - Test Room model creation from extracted data
-  - Test Door model creation from extracted data
-  - Test room type inference (BR → bedroom, LR → living)
-  - Test area calculation from dimensions
-  - Test door width extraction in mm
+- **Data extraction** (rooms only, geometry-based):
+                                - Test Room model creation from extracted data
+                                - Test room type inference (BR → bedroom, LR → living)
+                                - Test geometry measurement (LLM measures room dimensions from visual representation)
+                                - Test scale application (blueprint dimensions × scale = real-world dimensions)
+                                - Test approximate area calculation from measured geometry (length × width)
+                                - Verify LLM is doing geometry understanding, not just text extraction
+                                - No door extraction tests (doors not in scope)
 
-- **Validation**:
-  - Test required fields validation
-  - Test numeric range validation (areas > 0, widths > 0)
-  - Test room type validation
-  - Test door room reference validation
-  - Test low-confidence flagging (< 0.7)
+- **Validation** (rooms only):
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test required fields validation (room id, name, type, area)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test numeric range validation (areas > 0)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test room type validation
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Test low-confidence flagging (< 0.7)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - No door validation tests (doors not in scope)
 
-#### 4. `csv-writer` → Unit Tests
+**Note**: No CSV writer service needed - extraction is preview-only. Skip CSV writer tests.
 
-**File**: `backend/app/tests/test_csv_writer.py`
-
-**Write tests immediately after implementation**
-
-**Test cases**:
-
-- Test overwrite mode creates backup files (`rooms_backup_{timestamp}.csv`)
-- Test overwrite mode writes to `rooms.csv` and `doors.csv`
-- Test new file mode creates timestamped files
-- Test CSV format matches existing structure (headers, column order)
-- Test data validation before writing (invalid data rejected)
-- Test file creation in correct directory
-- Test error handling for write failures
-
-#### 5. `upload-endpoint` → Integration Tests
+#### 4. `upload-endpoint` → Integration Tests
 
 **File**: `backend/app/tests/test_blueprint_api.py`
 
@@ -597,16 +651,16 @@ flowchart TD
 - Test file upload accepts JPG files
 - Test file upload accepts PDF files
 - Test invalid file types rejected (e.g., .txt, .docx)
-- Test `scale_override` parameter passed correctly
-- Test `save_mode` parameter ("overwrite" vs "new_file")
+- Test `scale_override` parameter passed correctly (defaults to 1.0)
 - Test `level` parameter defaults to 1
-- Test successful extraction returns `BlueprintUploadResponse`
+- Test successful extraction returns `BlueprintExtractResponse` (preview-only)
 - Test error handling for missing file
 - Test error handling for invalid extraction data
 - Test temporary file cleanup after processing
 - Test file size limits (if implemented)
+- No CSV save tests (preview-only endpoint)
 
-#### 6. `frontend-upload-ui` + `frontend-js` → Integration Tests
+#### 5. `frontend-upload-ui` + `frontend-js` → Integration Tests
 
 **File**: Manual testing + `test_blueprint_api.py` (for API integration)
 
@@ -616,15 +670,14 @@ flowchart TD
 
 - Test drag-and-drop file upload works
 - Test file picker button works
-- Test scale input field appears when auto-detection fails
-- Test save mode selector (overwrite vs new file)
+- Test optional scale input field (defaults to 1.0)
 - Test loading spinner displays during extraction
-- Test extraction results table displays correctly
+- Test extraction results table displays correctly (rooms only)
 - Test confidence scores display with color coding
-- Test warnings display correctly
-- Test "Confirm and Save" button works
-- Test success message displays with CSV file paths
+- Test warnings display correctly ("Using 1:100 scale assumption")
+- Test note displays: "Extraction is approximate. CSV pipeline remains ground truth."
 - Test error messages display correctly
+- No save button tests (preview-only)
 
 **Automated test cases** (API integration):
 
@@ -632,7 +685,7 @@ flowchart TD
 - Test form data includes all required fields
 - Test error handling in JavaScript (network errors, API errors)
 
-#### 7. `validation-logic` → Unit Tests
+#### 6. `validation-logic` → Unit Tests
 
 **File**: `backend/app/tests/test_blueprint_extractor.py` (add to existing file)
 
@@ -640,41 +693,43 @@ flowchart TD
 
 **Test cases**:
 
-- Test validation catches missing required fields
-- Test validation catches invalid numeric ranges
+- Test validation catches missing required fields (rooms only)
+- Test validation catches invalid numeric ranges (areas > 0)
 - Test validation catches invalid room types
-- Test validation catches invalid door room references
 - Test confidence scoring calculation
 - Test low-confidence warnings generated (< 0.7)
 - Test validation errors included in response
+- No door validation tests (doors not in scope)
 
-#### 8. `accuracy-testing` → E2E Accuracy Tests
+#### 7. `curated-plan-testing` → Curated Plan Tests
 
-**File**: `backend/app/tests/test_blueprint_accuracy.py`
+**File**: `backend/app/tests/test_blueprint_curated.py`
 
 **Write tests after all core features are complete**
 
-**Test cases** (test on 3-5 real blueprint images):
+**Test cases** (test on 2-3 curated blueprint images):
 
-- Test simple residential plan (1 floor, 4-5 rooms)
-  - Measure room area accuracy (target: >90%)
-  - Measure door width accuracy (target: >95%)
-  - Measure room type inference accuracy
-- Test complex multi-room plan
-  - Measure accuracy with more rooms/doors
-  - Test scale detection accuracy
-- Test plan with unclear scale indicators
-  - Test fallback to user input
-  - Test default assumption accuracy
-- Test plan with handwritten annotations
-  - Test extraction handles annotations
-  - Measure accuracy impact
+- Test curated Plan A (simple residential, 1 floor, 4-5 rooms, clear labels)
+        - Does it extract rooms? (yes/no)
+        - Does it measure geometry correctly? (identifies room boundaries, measures dimensions)
+        - Does it apply scale correctly? (converts blueprint measurements to real-world)
+        - Are calculated areas reasonable? (not exact, but in right ballpark based on geometry)
+        - Are room types inferred correctly?
+        - Document what works well (geometry understanding vs text extraction)
+- Test curated Plan B (different layout, still clear labels)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Same checks as Plan A
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Document any differences
+- (Optional) Test Plan C that shows limitations
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Document what doesn't work well
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Note: "For demo, show Plan A working, acknowledge limitations"
 
-**Accuracy measurement**:
+**Documentation approach**:
 
-- Calculate percentage error: `|extracted - actual| / actual * 100`
-- Document results in test file
-- Track which extractions fail and why
+- No strict accuracy targets - extraction is approximate (geometry-based)
+- Focus on: Does it measure geometry correctly? Does it apply scale correctly?
+- Document: "Works best with clear room boundaries, standard formats, and known scale"
+- Note: "For demo, show curated plan working well (geometry understanding demonstrated), acknowledge limitations on other plans"
+- Verify: LLM is doing geometry measurement, not just reading text labels (if labels exist)
 
 #### 9. `dependencies-config` → Manual Verification
 
@@ -694,9 +749,8 @@ backend/app/tests/
 ├── test_llm_vision.py           # Unit tests for vision-llm-support
 ├── test_extraction_models.py    # Unit tests for extraction-models
 ├── test_blueprint_extractor.py  # Unit tests for blueprint-extractor + validation-logic
-├── test_csv_writer.py           # Unit tests for csv-writer
-├── test_blueprint_api.py        # Integration tests for upload-endpoint + frontend
-├── test_blueprint_accuracy.py   # E2E accuracy tests (real blueprints)
+├── test_blueprint_api.py        # Integration tests for extract-endpoint + frontend
+├── test_blueprint_curated.py    # Curated plan tests (2-3 known-good plans)
 └── test_blueprint_integration.py # End-to-end integration tests (optional)
 ```
 
@@ -747,58 +801,88 @@ backend/app/tests/
 
 - [ ] All unit tests pass (>90% code coverage for new code)
 - [ ] All integration tests pass
-- [ ] Accuracy tests show >90% room area accuracy
-- [ ] Accuracy tests show >95% door width accuracy
+- [ ] Curated plan tests show extraction works on 2-3 known-good plans
+- [ ] Limitations documented (works best with clear labels, approximate areas)
 - [ ] Error handling tests cover all error scenarios
 - [ ] Test documentation is clear and complete
 
 ## Success Criteria
 
 - [ ] Can upload PNG, JPG, and PDF blueprint images
-- [ ] Extracts rooms with >90% area accuracy
-- [ ] Extracts doors with >95% width accuracy
-- [ ] Auto-detects scale or prompts user for input
-- [ ] Saves extracted data to CSV (overwrite or new file)
+- [ ] Extracts rooms (name + approx_area_m2) from curated plans
+- [ ] Uses simple scale assumption (1:100 default, optional user input)
+- [ ] Shows preview of extracted data (no automatic CSV save)
 - [ ] Shows confidence scores and warnings
 - [ ] Handles errors gracefully
 - [ ] Works with existing compliance checker (no breaking changes)
+- [ ] CSV pipeline remains ground truth (extraction is proof-of-concept)
+- [ ] Demo shows curated plan working well, acknowledges limitations
 
 ## Estimated Timeline
 
-- **Phase 1**: 2-3 days (Core extraction service)
-- **Phase 2**: 1 day (API endpoint)
-- **Phase 3**: 1-2 days (Frontend integration)
-- **Phase 4**: 1-2 days (Validation & testing)
+- **Phase 1**: 1-1.5 days (Core extraction service - rooms only, simplified)
+- **Phase 2**: 0.5 day (API endpoint - preview-only)
+- **Phase 3**: 0.5-1 day (Frontend integration - preview display)
+- **Phase 4**: 0.5 day (Validation & curated plan testing)
 - **Phase 5**: 0.5 day (Dependencies & docs)
 
-**Total**: 5.5-8.5 days
+**Total**: 3-4 days (reduced from 5.5-8.5 days)
 
 ## Risks & Mitigation
 
-1. **Accuracy below targets**:
+1. **Extraction accuracy concerns**:
 
-   - Mitigation: Test early, iterate on prompts, consider fine-tuning
-   - Fallback: Allow manual correction before saving
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mitigation: Use curated plans (known-good blueprints), set expectations (approximate)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Fallback: CSV pipeline always works, extraction is proof-of-concept only
 
 2. **High API costs**:
 
-   - Mitigation: Use Gemini for testing, cache results, batch processing
-   - Fallback: Add rate limiting, require API key for users
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mitigation: Use Gemini for testing (very cheap), cache results
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Fallback: Use GPT-4o only for demo, acknowledge cost in presentation
 
 3. **PDF parsing issues**:
 
-   - Mitigation: Use PyMuPDF (already in dependencies), test on various PDFs
-   - Fallback: Require PNG/JPG conversion for PDFs
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mitigation: Use PyMuPDF (already in dependencies), test on curated PDFs
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Fallback: Require PNG/JPG conversion for PDFs, or skip PDF support for MVP
 
-4. **Scale detection failures**:
+4. **Scale assumption issues**:
 
-   - Mitigation: Multiple detection strategies, clear user prompts
-   - Fallback: Always allow manual override
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mitigation: Use 1:100 default (common), allow user override
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Fallback: Always show warning that areas are approximate
+
+## Demo Strategy
+
+**For presentation/demo:**
+
+1. **Show CSV pipeline working** (ground truth, reliable)
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - "This is our current workflow - CSV files for compliance checking"
+
+2. **Show multimodal extraction** (proof-of-concept)
+
+   - Upload curated Plan A (known-good blueprint)
+   - Show extraction results: "Here's Plan A → tool extracted rooms X, Y, Z"
+   - Explain: "The AI analyzes the blueprint geometry - measures room boundaries, applies scale, calculates areas"
+   - Show approximate areas: "Areas are approximate (geometry-based calculation), using 1:100 scale assumption"
+   - Highlight: "This is geometry understanding, not just text extraction - the AI 'sees' the room shapes and measures them"
+
+3. **Acknowledge limitations** (honest demo)
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - "This works well on curated plans with clear labels"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - "For other plans, extraction may be approximate - this is future work"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - "CSV pipeline remains our ground truth for accurate compliance checking"
+
+4. **Future enhancements** (if asked)
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Door extraction
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Improved scale detection
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Better accuracy with fine-tuning
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Direct CAD integration
 
 ## Next Steps After Implementation
 
-1. Test on multiple blueprint types (residential, commercial, etc.)
-2. Collect accuracy metrics and improve prompts
-3. Add batch processing (multiple images at once)
-4. Add visual preview (overlay extracted rooms on image)
-5. Add interactive correction UI (click to edit extracted values)
+1. Test on more curated plans (expand test set)
+2. Collect feedback on extraction quality
+3. Consider adding door extraction (if time permits)
+4. Consider adding CSV save option (if requested)
+5. Document limitations and best practices for using extraction feature
