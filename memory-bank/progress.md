@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. Ready to proceed with actual deployment to Railway.app and presentation prep.
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. **Deployed to Railway.app** - Public URL working, all endpoints functional. **Presentation preparation ON HOLD** - Deferred to focus on new feature development. **CURRENT FOCUS: Multimodal Blueprint Extraction** - Implementing mentor-suggested feature to extract room/door data from blueprint images using vision LLM (plan created, ready for implementation).
 
 ## What Works
 
@@ -182,12 +182,25 @@ None yet (project in early setup phase).
      - Resolved 307 redirects and Mixed Content errors
    - [x] **Deployed to Railway.app** - Public URL available for mentors/cohorts
 
-7. Prepare for presentation (see `memory-bank/presentation.md`):
+7. ⏸️ Presentation preparation (ON HOLD - see `memory-bank/presentation.md`):
    - [ ] Implement metrics tracking (LangSmith setup, metrics endpoint) - Optional
    - [ ] Prepare demo data and test results
    - [ ] Create visual aids (architecture diagram, slides)
    - [ ] Practice 7-minute presentation flow
    - [ ] Prepare for Q&A (technical details, scalability, future enhancements)
+   - **Status**: Deferred to focus on multimodal blueprint extraction feature
+   - **Plan**: `.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`
+
+8. 🔄 Multimodal Blueprint Extraction (CURRENT FOCUS):
+   - [ ] Phase 1: Core extraction service (vision LLM support, blueprint extractor, extraction models)
+   - [ ] Phase 2: API endpoint (upload endpoint, CSV writer)
+   - [ ] Phase 3: Frontend integration (upload UI, JavaScript)
+   - [ ] Phase 4: Validation & accuracy testing (>90% area, >95% width accuracy)
+   - [ ] Phase 5: Dependencies & configuration
+   - **Plan**: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`
+   - **Target**: Extract room/door data from blueprint images (PNG/JPG/PDF) using vision LLM
+   - **Features**: Auto-scale detection, user confirmation, CSV export
+   - **Timeline**: 5.5-8.5 days estimated
 
 ## Future Enhancements
 

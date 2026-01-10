@@ -203,31 +203,28 @@ Recent changes:
    - README.md updated with deployment section
    - ✅ **Railway deployment fixes**: PORT variable expansion, API endpoint trailing slashes
    - ✅ **Deployed to Railway.app** - Public URL working, all endpoints functional
-   - **Next**: Presentation prep
+6. ⏸️ **Presentation Preparation ON HOLD**
+   - Presentation preparation plan created (`.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`)
+   - Deferred to focus on new feature development
+7. 🔄 **CURRENT FOCUS: Multimodal Blueprint Extraction**
+   - Implementing mentor-suggested feature: Extract room/door data from blueprint images using vision LLM
+   - Plan created: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`
+   - Target: >90% accuracy for room areas, >95% for door widths
+   - Features: Auto-scale detection, user confirmation, CSV export
+   - Status: Planning complete, ready for implementation
 
 Todo next:
 
-- ✅ **RAG Technique Validation COMPLETE**:
-  - Created evaluation notebook: `evaluation/rag_evaluation.py`
-  - Generated golden dataset using RAGAS TestsetGenerator (12 questions from building code PDFs)
-  - Evaluated 4 techniques: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
-  - Used composite scoring (50% relevancy, 20% precision, 20% recall, 10% latency)
-  - **Result: BM25-only is best** (composite score: 0.422)
-  - Results saved to LangSmith dataset and local JSON
-  - Evaluation can be reloaded from LangSmith or local cache
-- ✅ **Frontend HTML template COMPLETE & TESTED** (`app/templates/index.html`):
-  - Plan viewer displaying `plan.png` with header and image wrapper
-  - Issues list fetching `/api/issues` with click handlers, severity badges, code references
-  - Chat panel posting to `/api/chat` with message rendering, citations display, loading states
-  - Modern CSS styling with responsive design, smooth animations, and professional UI
-  - JavaScript for API integration, error handling, and user interactions
-  - **Testing completed** - No issues found in console or terminal
-- ✅ **LLM Rule Extraction COMPLETE** (`app/services/rule_extractor.py`):
-  - Extracts rules from PDFs using LLM with structured output (JSON parsing)
-  - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
-  - Project context filtering via `ProjectContext` model
-  - Filters out commercial, multi-story, fire exit, and accessibility rules when not applicable
-  - ID conflict resolution (renames conflicting rule IDs)
-  - Rule type validation (fixes invalid rule_type assignments)
-  - Integrated into `get_all_rules()` in `rules_seed.py`
-  - **Results**: 10 total rules (4 seeded + 6 extracted), 3 compliance issues (down from 28)
+- ⏸️ **Presentation Preparation ON HOLD**:
+  - Presentation preparation plan exists (`.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`)
+  - Deferred to focus on multimodal blueprint extraction feature
+  - Will resume after blueprint extraction implementation
+
+- 🔄 **CURRENT: Multimodal Blueprint Extraction** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
+  - **Phase 1**: Core extraction service (vision LLM support, blueprint extractor, extraction models)
+  - **Phase 2**: API endpoint (upload endpoint, CSV writer)
+  - **Phase 3**: Frontend integration (upload UI, JavaScript)
+  - **Phase 4**: Validation & accuracy testing (target: >90% area, >95% width accuracy)
+  - **Phase 5**: Dependencies & configuration
+  - **Testing strategy**: Unit tests after each todo, integration tests after related components, accuracy tests after core features complete
+  - **Timeline**: 5.5-8.5 days estimated
