@@ -442,10 +442,315 @@ backend/app/
 
 ## Testing Strategy
 
-1. **Unit tests**: Test extraction parsing, validation, scale detection
-2. **Integration tests**: Test full upload → extract → save flow
-3. **Accuracy tests**: Test on 3-5 real blueprints, measure accuracy
-4. **Error handling**: Test invalid images, API failures, malformed responses
+### Overview
+
+Use a **test-as-you-go** approach: write unit tests immediately after each todo implementation, integration tests after related components are complete, and accuracy tests after all core functionality is done.
+
+### Testing Workflow
+
+```mermaid
+flowchart TD
+    Start[Start Todo] --> Implement[Implement Feature]
+    Implement --> UnitTest[Write Unit Tests]
+    UnitTest --> Pass{All Tests Pass?}
+    Pass -->|No| Fix[Fix Implementation]
+    Fix --> UnitTest
+    Pass -->|Yes| Next[Move to Next Todo]
+    
+    Next --> Integrate{Multiple Components Done?}
+    Integrate -->|Yes| IntegrationTest[Write Integration Tests]
+    IntegrationTest --> Next
+    Integrate -->|No| Start
+    
+    Next --> E2E{Core Features Complete?}
+    E2E -->|Yes| AccuracyTest[Write Accuracy Tests]
+    E2E -->|No| Start
+```
+
+### Test Timing by Todo
+
+| Todo | When to Write Tests | Test Type | Test File |
+
+|------|---------------------|-----------|-----------|
+
+| `vision-llm-support` | Immediately after implementation | Unit | `test_llm_vision.py` |
+
+| `extraction-models` | Immediately after adding models | Unit | `test_extraction_models.py` |
+
+| `blueprint-extractor` | As you implement each function | Unit | `test_blueprint_extractor.py` |
+
+| `csv-writer` | Immediately after implementation | Unit | `test_csv_writer.py` |
+
+| `upload-endpoint` | After endpoint complete | Integration | `test_blueprint_api.py` |
+
+| `frontend-upload-ui` | After UI complete | Integration (manual + automated) | Manual + `test_blueprint_api.py` |
+
+| `frontend-js` | After JS complete | Integration | `test_blueprint_api.py` |
+
+| `validation-logic` | As you implement validation | Unit | `test_blueprint_extractor.py` |
+
+| `accuracy-testing` | After all core features done | E2E Accuracy | `test_blueprint_accuracy.py` |
+
+| `dependencies-config` | After config complete | Manual verification | N/A |
+
+### Detailed Test Plan by Todo
+
+#### 1. `vision-llm-support` → Unit Tests
+
+**File**: `backend/app/tests/test_llm_vision.py`
+
+**Write tests immediately after implementing `get_vision_llm()`**
+
+**Test cases**:
+
+- Test OpenAI provider returns `ChatOpenAI` with correct model (`gpt-4o`)
+- Test Gemini provider returns `ChatGoogleGenerativeAI` with correct model (if implemented)
+- Test environment variable `VISION_LLM_PROVIDER` fallback (defaults to "openai")
+- Test invalid provider raises `ValueError`
+- Test custom model name override works
+- Test temperature parameter is passed correctly
+
+#### 2. `extraction-models` → Unit Tests
+
+**File**: `backend/app/tests/test_extraction_models.py`
+
+**Write tests immediately after adding models to `domain.py`**
+
+**Test cases**:
+
+- Test `ExtractionConfidence` validation (room_id required, confidence scores 0.0-1.0)
+- Test `BlueprintExtractionResult` validation (rooms, doors required)
+- Test `detected_scale` can be None
+- Test `scale_source` accepts only valid literals
+- Test `confidence_scores` list validation
+- Test `warnings` list validation
+- Test `extraction_metadata` dict validation
+
+#### 3. `blueprint-extractor` → Unit Tests
+
+**File**: `backend/app/tests/test_blueprint_extractor.py`
+
+**Write tests as you implement each function**
+
+**Test cases**:
+
+- **Image conversion**:
+  - Test PNG to base64 conversion
+  - Test JPG to base64 conversion
+  - Test PDF first page extraction (using PyMuPDF)
+  - Test PDF to PNG conversion at 300 DPI
+  - Test unsupported file format raises error
+
+- **LLM interaction** (mock LLM responses):
+  - Test structured prompt includes all required fields
+  - Test JSON response parsing
+  - Test malformed JSON handling
+  - Test missing fields in response handling
+
+- **Scale detection**:
+  - Test auto-detection of "1:100" scale indicator
+  - Test auto-detection of "SCALE 1/4\"" format
+  - Test auto-detection of "1/4\" = 1'-0\"" format
+  - Test scale factor calculation (1:100 → 1.0, 1:200 → 0.5)
+  - Test user override takes precedence
+  - Test default assumption (1:100) when no scale found
+
+- **Data extraction**:
+  - Test Room model creation from extracted data
+  - Test Door model creation from extracted data
+  - Test room type inference (BR → bedroom, LR → living)
+  - Test area calculation from dimensions
+  - Test door width extraction in mm
+
+- **Validation**:
+  - Test required fields validation
+  - Test numeric range validation (areas > 0, widths > 0)
+  - Test room type validation
+  - Test door room reference validation
+  - Test low-confidence flagging (< 0.7)
+
+#### 4. `csv-writer` → Unit Tests
+
+**File**: `backend/app/tests/test_csv_writer.py`
+
+**Write tests immediately after implementation**
+
+**Test cases**:
+
+- Test overwrite mode creates backup files (`rooms_backup_{timestamp}.csv`)
+- Test overwrite mode writes to `rooms.csv` and `doors.csv`
+- Test new file mode creates timestamped files
+- Test CSV format matches existing structure (headers, column order)
+- Test data validation before writing (invalid data rejected)
+- Test file creation in correct directory
+- Test error handling for write failures
+
+#### 5. `upload-endpoint` → Integration Tests
+
+**File**: `backend/app/tests/test_blueprint_api.py`
+
+**Write tests after endpoint is complete**
+
+**Test cases**:
+
+- Test file upload accepts PNG files
+- Test file upload accepts JPG files
+- Test file upload accepts PDF files
+- Test invalid file types rejected (e.g., .txt, .docx)
+- Test `scale_override` parameter passed correctly
+- Test `save_mode` parameter ("overwrite" vs "new_file")
+- Test `level` parameter defaults to 1
+- Test successful extraction returns `BlueprintUploadResponse`
+- Test error handling for missing file
+- Test error handling for invalid extraction data
+- Test temporary file cleanup after processing
+- Test file size limits (if implemented)
+
+#### 6. `frontend-upload-ui` + `frontend-js` → Integration Tests
+
+**File**: Manual testing + `test_blueprint_api.py` (for API integration)
+
+**Write tests after frontend is complete**
+
+**Manual test cases**:
+
+- Test drag-and-drop file upload works
+- Test file picker button works
+- Test scale input field appears when auto-detection fails
+- Test save mode selector (overwrite vs new file)
+- Test loading spinner displays during extraction
+- Test extraction results table displays correctly
+- Test confidence scores display with color coding
+- Test warnings display correctly
+- Test "Confirm and Save" button works
+- Test success message displays with CSV file paths
+- Test error messages display correctly
+
+**Automated test cases** (API integration):
+
+- Test frontend JavaScript calls correct API endpoint
+- Test form data includes all required fields
+- Test error handling in JavaScript (network errors, API errors)
+
+#### 7. `validation-logic` → Unit Tests
+
+**File**: `backend/app/tests/test_blueprint_extractor.py` (add to existing file)
+
+**Write tests as you implement validation**
+
+**Test cases**:
+
+- Test validation catches missing required fields
+- Test validation catches invalid numeric ranges
+- Test validation catches invalid room types
+- Test validation catches invalid door room references
+- Test confidence scoring calculation
+- Test low-confidence warnings generated (< 0.7)
+- Test validation errors included in response
+
+#### 8. `accuracy-testing` → E2E Accuracy Tests
+
+**File**: `backend/app/tests/test_blueprint_accuracy.py`
+
+**Write tests after all core features are complete**
+
+**Test cases** (test on 3-5 real blueprint images):
+
+- Test simple residential plan (1 floor, 4-5 rooms)
+  - Measure room area accuracy (target: >90%)
+  - Measure door width accuracy (target: >95%)
+  - Measure room type inference accuracy
+- Test complex multi-room plan
+  - Measure accuracy with more rooms/doors
+  - Test scale detection accuracy
+- Test plan with unclear scale indicators
+  - Test fallback to user input
+  - Test default assumption accuracy
+- Test plan with handwritten annotations
+  - Test extraction handles annotations
+  - Measure accuracy impact
+
+**Accuracy measurement**:
+
+- Calculate percentage error: `|extracted - actual| / actual * 100`
+- Document results in test file
+- Track which extractions fail and why
+
+#### 9. `dependencies-config` → Manual Verification
+
+**No automated tests needed**
+
+**Verification checklist**:
+
+- [ ] `pyproject.toml` includes required dependencies
+- [ ] `.env.example` includes new environment variables
+- [ ] Documentation updated (README.md, memory-bank files)
+- [ ] Environment variables work correctly (test locally)
+
+### Test File Structure
+
+```
+backend/app/tests/
+├── test_llm_vision.py           # Unit tests for vision-llm-support
+├── test_extraction_models.py    # Unit tests for extraction-models
+├── test_blueprint_extractor.py  # Unit tests for blueprint-extractor + validation-logic
+├── test_csv_writer.py           # Unit tests for csv-writer
+├── test_blueprint_api.py        # Integration tests for upload-endpoint + frontend
+├── test_blueprint_accuracy.py   # E2E accuracy tests (real blueprints)
+└── test_blueprint_integration.py # End-to-end integration tests (optional)
+```
+
+### Test Execution Strategy
+
+1. **During development**: Run unit tests after each todo completion
+   ```bash
+   pytest backend/app/tests/test_llm_vision.py -v
+   pytest backend/app/tests/test_blueprint_extractor.py -v
+   ```
+
+2. **Before committing**: Run all tests
+   ```bash
+   pytest backend/app/tests/ -v
+   ```
+
+3. **Before accuracy testing**: Ensure all unit and integration tests pass
+   ```bash
+   pytest backend/app/tests/ --ignore=test_blueprint_accuracy.py -v
+   ```
+
+4. **Accuracy testing**: Run separately (requires real blueprint images and API keys)
+   ```bash
+   pytest backend/app/tests/test_blueprint_accuracy.py -v
+   ```
+
+
+### Test Data Requirements
+
+- **Unit tests**: Use mock LLM responses, sample images (can be simple test images)
+- **Integration tests**: Use sample blueprint images (PNG, JPG, PDF)
+- **Accuracy tests**: Use 3-5 real architectural blueprint images with known ground truth data
+
+### Error Handling Tests
+
+**Test error scenarios**:
+
+- Invalid image formats
+- Corrupted image files
+- LLM API errors (rate limits, timeouts)
+- Malformed JSON responses from LLM
+- Missing required fields in extraction
+- Invalid scale values
+- File write failures
+- Network errors in frontend
+
+### Success Criteria for Testing
+
+- [ ] All unit tests pass (>90% code coverage for new code)
+- [ ] All integration tests pass
+- [ ] Accuracy tests show >90% room area accuracy
+- [ ] Accuracy tests show >95% door width accuracy
+- [ ] Error handling tests cover all error scenarios
+- [ ] Test documentation is clear and complete
 
 ## Success Criteria
 
