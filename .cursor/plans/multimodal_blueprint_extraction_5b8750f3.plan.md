@@ -100,8 +100,8 @@ flowchart TD
 - Support GPT-4o (recommended: cheaper than GPT-4 Vision, accurate) and Gemini 1.5 Flash Vision (very cheap alternative)
 - Use environment variable `VISION_LLM_PROVIDER` (default: "openai")
 - Model selection:
-        - OpenAI: `gpt-4o` (cost: ~$0.005-0.015 per image, accurate)
-        - Gemini: `gemini-1.5-flash` (cost: ~$0.0001-0.001 per image, good accuracy)
+                                                                                                                                - OpenAI: `gpt-4o` (cost: ~$0.005-0.015 per image, accurate)
+                                                                                                                                - Gemini: `gemini-1.5-flash` (cost: ~$0.0001-0.001 per image, good accuracy)
 
 **Key changes**:
 
@@ -214,18 +214,18 @@ Return JSON matching this structure:
 
 1. **Default assumption**: Use 1:100 scale (common for residential plans)
 
-            - Pass scale to LLM in prompt: "Use 1:100 scale (1 cm on blueprint = 1 m in real world)"
-            - LLM applies this scale when converting blueprint measurements to real-world dimensions
+                                                                                                                                                                                                - Pass scale to LLM in prompt: "Use 1:100 scale (1 cm on blueprint = 1 m in real world)"
+                                                                                                                                                                                                - LLM applies this scale when converting blueprint measurements to real-world dimensions
 
 2. **Optional user input**: If user provides scale, use that instead
 
-            - Pass user's scale to LLM in prompt
-            - LLM applies user's scale for conversion
+                                                                                                                                                                                                - Pass user's scale to LLM in prompt
+                                                                                                                                                                                                - LLM applies user's scale for conversion
 
 3. **No auto-detection**: Skip complex scale detection for MVP
 
-            - LLM doesn't need to detect scale from image
-            - Scale is provided as input parameter
+                                                                                                                                                                                                - LLM doesn't need to detect scale from image
+                                                                                                                                                                                                - Scale is provided as input parameter
 
 4. **Warning message**: "Using 1:100 scale assumption. Areas are approximate (geometry-based calculation)."
 
@@ -471,21 +471,21 @@ GOOGLE_API_KEY=your_key_here
 
 1. **Default assumption**: Use 1:100 scale (common for residential plans)
 
-            - Pass scale to LLM in prompt: "Use 1:100 scale (1 cm on blueprint = 1 m in real world)"
-            - LLM applies this scale when converting blueprint measurements to real-world dimensions
-            - No auto-detection needed for MVP
-            - Simple and reliable for curated plans
+                                                                                                                                                                                                - Pass scale to LLM in prompt: "Use 1:100 scale (1 cm on blueprint = 1 m in real world)"
+                                                                                                                                                                                                - LLM applies this scale when converting blueprint measurements to real-world dimensions
+                                                                                                                                                                                                - No auto-detection needed for MVP
+                                                                                                                                                                                                - Simple and reliable for curated plans
 
 2. **Optional user input**: User can provide scale if known
 
-            - Input field in UI (optional)
-            - If provided, use user's scale instead of default
-            - Pass user's scale to LLM in prompt
+                                                                                                                                                                                                - Input field in UI (optional)
+                                                                                                                                                                                                - If provided, use user's scale instead of default
+                                                                                                                                                                                                - Pass user's scale to LLM in prompt
 
 3. **Warning message**: Always show "Using 1:100 scale assumption. Areas are approximate (geometry-based calculation)."
 
-            - Sets expectations that extraction is not exact
-            - Acknowledges limitation upfront
+                                                                                                                                                                                                - Sets expectations that extraction is not exact
+                                                                                                                                                                                                - Acknowledges limitation upfront
 
 **How scale is used**:
 
@@ -611,39 +611,39 @@ flowchart TD
 **Test cases**:
 
 - **Image conversion**:
-        - Test PNG to base64 conversion
-        - Test JPG to base64 conversion
-        - Test PDF first page extraction (using PyMuPDF)
-        - Test PDF to PNG conversion at 300 DPI
-        - Test unsupported file format raises error
+                                                                                                                                - Test PNG to base64 conversion
+                                                                                                                                - Test JPG to base64 conversion
+                                                                                                                                - Test PDF first page extraction (using PyMuPDF)
+                                                                                                                                - Test PDF to PNG conversion at 300 DPI
+                                                                                                                                - Test unsupported file format raises error
 
 - **LLM interaction** (mock LLM responses):
-        - Test structured prompt includes geometry understanding instructions
-        - Test prompt includes scale parameter
-        - Test JSON response parsing
-        - Test malformed JSON handling
-        - Test missing fields in response handling
+                                                                                                                                - Test structured prompt includes geometry understanding instructions
+                                                                                                                                - Test prompt includes scale parameter
+                                                                                                                                - Test JSON response parsing
+                                                                                                                                - Test malformed JSON handling
+                                                                                                                                - Test missing fields in response handling
 
 - **Scale handling**:
-        - Test default scale (1.0 for 1:100) is passed to LLM
-        - Test user override scale is passed to LLM
-        - Test scale is included in prompt instructions
+                                                                                                                                - Test default scale (1.0 for 1:100) is passed to LLM
+                                                                                                                                - Test user override scale is passed to LLM
+                                                                                                                                - Test scale is included in prompt instructions
 
 - **Data extraction** (rooms only, geometry-based):
-        - Test Room model creation from extracted data
-        - Test room type inference (BR → bedroom, LR → living)
-        - Test geometry measurement (verify LLM measures room dimensions from visual representation)
-        - Test scale application (verify LLM converts blueprint dimensions × scale = real-world dimensions)
-        - Test approximate area calculation from measured geometry (length × width)
-        - Verify LLM is doing geometry understanding, not just text extraction
-        - No door extraction tests (doors not in scope)
+                                                                                                                                - Test Room model creation from extracted data
+                                                                                                                                - Test room type inference (BR → bedroom, LR → living)
+                                                                                                                                - Test geometry measurement (verify LLM measures room dimensions from visual representation)
+                                                                                                                                - Test scale application (verify LLM converts blueprint dimensions × scale = real-world dimensions)
+                                                                                                                                - Test approximate area calculation from measured geometry (length × width)
+                                                                                                                                - Verify LLM is doing geometry understanding, not just text extraction
+                                                                                                                                - No door extraction tests (doors not in scope)
 
 - **Validation** (rooms only):
-        - Test required fields validation (room id, name, type, area)
-        - Test numeric range validation (areas > 0)
-        - Test room type validation
-        - Test low-confidence flagging (< 0.7)
-        - No door validation tests (doors not in scope)
+                                                                                                                                - Test required fields validation (room id, name, type, area)
+                                                                                                                                - Test numeric range validation (areas > 0)
+                                                                                                                                - Test room type validation
+                                                                                                                                - Test low-confidence flagging (< 0.7)
+                                                                                                                                - No door validation tests (doors not in scope)
 
 #### 4. `upload-endpoint` → Integration Tests
 
@@ -716,18 +716,18 @@ flowchart TD
 **Test cases** (test on 2-3 curated blueprint images):
 
 - Test curated Plan A (simple residential, 1 floor, 4-5 rooms, clear labels)
-        - Does it extract rooms? (yes/no)
-        - Does it measure geometry correctly? (identifies room boundaries, measures dimensions)
-        - Does it apply scale correctly? (converts blueprint measurements to real-world)
-        - Are calculated areas reasonable? (not exact, but in right ballpark based on geometry)
-        - Are room types inferred correctly?
-        - Document what works well (geometry understanding vs text extraction)
+                                                                                                                                - Does it extract rooms? (yes/no)
+                                                                                                                                - Does it measure geometry correctly? (identifies room boundaries, measures dimensions)
+                                                                                                                                - Does it apply scale correctly? (converts blueprint measurements to real-world)
+                                                                                                                                - Are calculated areas reasonable? (not exact, but in right ballpark based on geometry)
+                                                                                                                                - Are room types inferred correctly?
+                                                                                                                                - Document what works well (geometry understanding vs text extraction)
 - Test curated Plan B (different layout, still clear labels)
-        - Same checks as Plan A
-        - Document any differences
+                                                                                                                                - Same checks as Plan A
+                                                                                                                                - Document any differences
 - (Optional) Test Plan C that shows limitations
-        - Document what doesn't work well
-        - Note: "For demo, show Plan A working, acknowledge limitations"
+                                                                                                                                - Document what doesn't work well
+                                                                                                                                - Note: "For demo, show Plan A working, acknowledge limitations"
 
 **Documentation approach**:
 
@@ -839,28 +839,28 @@ backend/app/tests/
 
 1. **Extraction accuracy concerns**:
 
-            - Mitigation: Use curated plans (known-good blueprints), set expectations (approximate)
-            - Fallback: CSV pipeline always works, extraction is proof-of-concept only
+                                                                                                                                                                                                - Mitigation: Use curated plans (known-good blueprints), set expectations (approximate)
+                                                                                                                                                                                                - Fallback: CSV pipeline always works, extraction is proof-of-concept only
 
 2. **High API costs**:
 
-            - Mitigation: Use Gemini for testing (very cheap), cache results
-            - Fallback: Use GPT-4o only for demo, acknowledge cost in presentation
+                                                                                                                                                                                                - Mitigation: Use Gemini for testing (very cheap), cache results
+                                                                                                                                                                                                - Fallback: Use GPT-4o only for demo, acknowledge cost in presentation
 
 3. **PDF parsing issues**:
 
-            - Mitigation: Use PyMuPDF (already in dependencies), test on curated PDFs
-            - Fallback: Require PNG/JPG conversion for PDFs, or skip PDF support for MVP
+                                                                                                                                                                                                - Mitigation: Use PyMuPDF (already in dependencies), test on curated PDFs
+                                                                                                                                                                                                - Fallback: Require PNG/JPG conversion for PDFs, or skip PDF support for MVP
 
 4. **Scale assumption issues**:
 
-            - Mitigation: Use 1:100 default (common), allow user override
-            - Fallback: Always show warning that areas are approximate
+                                                                                                                                                                                                - Mitigation: Use 1:100 default (common), allow user override
+                                                                                                                                                                                                - Fallback: Always show warning that areas are approximate
 
 5. **Geometry understanding limitations**:
 
-            - Mitigation: Test on curated plans with clear boundaries, use clear prompts
-            - Fallback: Acknowledge limitations, show it works on curated plans
+                                                                                                                                                                                                - Mitigation: Test on curated plans with clear boundaries, use clear prompts
+                                                                                                                                                                                                - Fallback: Acknowledge limitations, show it works on curated plans
 
 ## Demo Strategy
 
@@ -868,28 +868,28 @@ backend/app/tests/
 
 1. **Show CSV pipeline working** (ground truth, reliable)
 
-            - "This is our current workflow - CSV files for compliance checking"
+                                                                                                                                                                                                - "This is our current workflow - CSV files for compliance checking"
 
 2. **Show multimodal extraction** (proof-of-concept)
 
-            - Upload curated Plan A (known-good blueprint)
-            - Show extraction results: "Here's Plan A → tool extracted rooms X, Y, Z"
-            - Explain: "The AI analyzes the blueprint geometry - measures room boundaries, applies scale, calculates areas"
-            - Show approximate areas: "Areas are approximate (geometry-based calculation), using 1:100 scale assumption"
-            - Highlight: "This is geometry understanding, not just text extraction - the AI 'sees' the room shapes and measures them"
+                                                                                                                                                                                                - Upload curated Plan A (known-good blueprint)
+                                                                                                                                                                                                - Show extraction results: "Here's Plan A → tool extracted rooms X, Y, Z"
+                                                                                                                                                                                                - Explain: "The AI analyzes the blueprint geometry - measures room boundaries, applies scale, calculates areas"
+                                                                                                                                                                                                - Show approximate areas: "Areas are approximate (geometry-based calculation), using 1:100 scale assumption"
+                                                                                                                                                                                                - Highlight: "This is geometry understanding, not just text extraction - the AI 'sees' the room shapes and measures them"
 
 3. **Acknowledge limitations** (honest demo)
 
-            - "This works well on curated plans with clear boundaries"
-            - "For other plans, extraction may be approximate - this is future work"
-            - "CSV pipeline remains our ground truth for accurate compliance checking"
+                                                                                                                                                                                                - "This works well on curated plans with clear boundaries"
+                                                                                                                                                                                                - "For other plans, extraction may be approximate - this is future work"
+                                                                                                                                                                                                - "CSV pipeline remains our ground truth for accurate compliance checking"
 
 4. **Future enhancements** (if asked)
 
-            - Door extraction
-            - Improved scale detection
-            - Better accuracy with fine-tuning
-            - Direct CAD integration
+                                                                                                                                                                                                - Door extraction
+                                                                                                                                                                                                - Improved scale detection
+                                                                                                                                                                                                - Better accuracy with fine-tuning
+                                                                                                                                                                                                - Direct CAD integration
 
 ## Next Steps After Implementation
 
