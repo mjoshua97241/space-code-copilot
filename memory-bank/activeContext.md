@@ -207,10 +207,14 @@ Recent changes:
    - Presentation preparation plan created (`.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`)
    - Deferred to focus on new feature development
 7. 🔄 **CURRENT FOCUS: Multimodal Blueprint Extraction**
-   - Implementing mentor-suggested feature: Extract room/door data from blueprint images using vision LLM
+   - Implementing mentor-suggested feature: Extract structured room data from blueprint images using vision LLM
    - Plan created: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`
-   - Target: >90% accuracy for room areas, >95% for door widths
-   - Features: Auto-scale detection, user confirmation, CSV export
+   - **Scoped approach**: Room-only extraction (name, type, area) from curated plans, preview-only results
+   - **Key differentiator**: Semantic understanding and structured extraction (not just OCR)
+   - **Features**: Vision LLM support (GPT-4o, Gemini 1.5 Flash), semantic room classification, dimension-aware inference, structured JSON output
+   - **VLM capabilities**: Reads room labels, classifies types, associates dimensions with rooms, applies scale
+   - **Integration**: Extracted data feeds into existing compliance checking pipeline
+   - **Evaluation**: Phase 6 includes VLM metrics framework (similar to RAGAS pattern)
    - Status: Planning complete, ready for implementation
 
 Todo next:
@@ -221,10 +225,12 @@ Todo next:
   - Will resume after blueprint extraction implementation
 
 - 🔄 **CURRENT: Multimodal Blueprint Extraction** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
-  - **Phase 1**: Core extraction service (vision LLM support, blueprint extractor, extraction models)
-  - **Phase 2**: API endpoint (upload endpoint, CSV writer)
-  - **Phase 3**: Frontend integration (upload UI, JavaScript)
-  - **Phase 4**: Validation & accuracy testing (target: >90% area, >95% width accuracy)
-  - **Phase 5**: Dependencies & configuration
-  - **Testing strategy**: Unit tests after each todo, integration tests after related components, accuracy tests after core features complete
-  - **Timeline**: 5.5-8.5 days estimated
+  - **Phase 1**: Core extraction service (1.5-2 days) - Vision LLM support, blueprint extractor with semantic understanding, extraction models
+  - **Phase 2**: API endpoint (0.5 day) - POST /api/blueprint/extract (preview-only, no CSV save)
+  - **Phase 3**: Frontend integration (1 day) - File upload UI, drag-and-drop, preview table
+  - **Phase 4**: Validation & curated plan testing (1 day) - Basic validation, test on 2-3 curated plans
+  - **Phase 5**: Dependencies & configuration (0.5 day) - Vision LLM dependencies, env config, documentation
+  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - Custom metrics (area_accuracy, recall, precision, type_match_rate, semantic_understanding_score), golden dataset, evaluation script following RAGAS pattern
+  - **Scoped approach**: Room-only extraction (name, type, approx_area_m2), curated plans, preview-only, simple scale assumption (1:100 default)
+  - **Key focus**: Semantic understanding over geometry - VLM reads labels, classifies types, associates dimensions, produces structured JSON
+  - **Timeline**: 5.5-7 days estimated (reduced from original 5.5-8.5 days due to scoped approach)

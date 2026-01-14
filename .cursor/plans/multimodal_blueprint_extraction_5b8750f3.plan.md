@@ -84,9 +84,9 @@ The **VLM is the differentiator** in Path B, performing semantic understanding a
 1. Extract **rooms only** (name, type, approx_area_m2) - no door extraction
 2. **Semantic extraction focus**:
 
-   - Read room labels and classify into rule types (office, meeting, bedroom, living, etc.)
-   - Read scattered dimension annotations and associate with rooms
-   - Produce structured JSON matching Room model schema
+            - Read room labels and classify into rule types (office, meeting, bedroom, living, etc.)
+            - Read scattered dimension annotations and associate with rooms
+            - Produce structured JSON matching Room model schema
 
 3. Work with **curated plans** (2-3 known-good blueprints) - not general purpose
 4. **Preview-only** extraction results - CSV pipeline remains primary ground truth
@@ -369,54 +369,54 @@ Following the RAGAS evaluation pattern, create a comprehensive metrics framework
 
 1. **Area Accuracy** (`calculate_area_accuracy`)
 
-   - Mean Absolute Percentage Error (MAPE) for room areas
-   - Matches extracted rooms to ground truth by name/id
-   - Returns accuracy score: `1.0 - MAPE` (clamped to [0, 1])
-   - Target: >85% accuracy for curated plans
+            - Mean Absolute Percentage Error (MAPE) for room areas
+            - Matches extracted rooms to ground truth by name/id
+            - Returns accuracy score: `1.0 - MAPE` (clamped to [0, 1])
+            - Target: >85% accuracy for curated plans
 
 2. **Name Match Rate** (`calculate_name_match_rate`)
 
-   - Percentage of extracted rooms with matching names (exact or fuzzy)
-   - Uses string matching with fuzzy fallback
-   - Returns: `matched_count / total_ground_truth_rooms`
+            - Percentage of extracted rooms with matching names (exact or fuzzy)
+            - Uses string matching with fuzzy fallback
+            - Returns: `matched_count / total_ground_truth_rooms`
 
 3. **Type Match Rate** (`calculate_type_match_rate`)
 
-   - Percentage of extracted rooms with matching types
-   - Compares room.type field (bedroom, living, etc.)
-   - Returns: `matched_count / total_ground_truth_rooms`
+            - Percentage of extracted rooms with matching types
+            - Compares room.type field (bedroom, living, etc.)
+            - Returns: `matched_count / total_ground_truth_rooms`
 
 4. **Recall** (`calculate_recall`)
 
-   - Percentage of ground truth rooms that were found
-   - Formula: `matched_rooms / total_ground_truth_rooms`
-   - Measures completeness of extraction
+            - Percentage of ground truth rooms that were found
+            - Formula: `matched_rooms / total_ground_truth_rooms`
+            - Measures completeness of extraction
 
 5. **Precision** (`calculate_precision`)
 
-   - Percentage of extracted rooms that are valid (match ground truth)
-   - Formula: `matched_rooms / total_extracted_rooms`
-   - Measures quality of extraction (fewer false positives)
+            - Percentage of extracted rooms that are valid (match ground truth)
+            - Formula: `matched_rooms / total_extracted_rooms`
+            - Measures quality of extraction (fewer false positives)
 
 6. **Semantic Understanding Score** (`calculate_semantic_understanding_score`)
 
-   - Evaluates if LLM used semantic understanding vs just text extraction
-   - Measures: room type classification accuracy, dimension association with rooms, structured reasoning
-   - Heuristic: semantic extraction produces reasonable type classifications and dimension associations
-   - Text-only extraction would miss type classification or mis-associate dimensions
-   - Returns score based on semantic reasoning quality
+            - Evaluates if LLM used semantic understanding vs just text extraction
+            - Measures: room type classification accuracy, dimension association with rooms, structured reasoning
+            - Heuristic: semantic extraction produces reasonable type classifications and dimension associations
+            - Text-only extraction would miss type classification or mis-associate dimensions
+            - Returns score based on semantic reasoning quality
 
 7. **Confidence Calibration** (`calculate_confidence_calibration`)
 
-   - Measures how well confidence scores correlate with actual accuracy
-   - Compares `ExtractionConfidence` scores to actual extraction errors
-   - Uses correlation coefficient or calibration error metric
+            - Measures how well confidence scores correlate with actual accuracy
+            - Compares `ExtractionConfidence` scores to actual extraction errors
+            - Uses correlation coefficient or calibration error metric
 
 8. **Composite Score** (`calculate_composite_score`)
 
-   - Weighted combination of all metrics
-   - Weights: area_accuracy (25%), recall (20%), precision (20%), type_match_rate (15%), semantic_understanding (10%), confidence_calibration (5%), latency (5%)
-   - Provides single score for model comparison
+            - Weighted combination of all metrics
+            - Weights: area_accuracy (25%), recall (20%), precision (20%), type_match_rate (15%), semantic_understanding (10%), confidence_calibration (5%), latency (5%)
+            - Provides single score for model comparison
 
 **Key functions**:
 
@@ -540,31 +540,31 @@ def create_golden_dataset_from_csvs(
 
 1. **Load/Create Golden Dataset**
 
-   - Load from `evaluation/data/vlm_golden_dataset.csv` if exists
-   - Otherwise, create from `backend/app/data/floor-plans/` and CSV files
-   - Convert Room objects to/from JSON for CSV serialization
+            - Load from `evaluation/data/vlm_golden_dataset.csv` if exists
+            - Otherwise, create from `backend/app/data/floor-plans/` and CSV files
+            - Convert Room objects to/from JSON for CSV serialization
 
 2. **Evaluation Function** (`evaluate_vlm_extraction`)
 
-   - Takes extractor function, golden dataset, model name
-   - Runs extraction on each blueprint in dataset
-   - Calculates metrics for each extraction
-   - Aggregates metrics across all blueprints
-   - Returns results dictionary
+            - Takes extractor function, golden dataset, model name
+            - Runs extraction on each blueprint in dataset
+            - Calculates metrics for each extraction
+            - Aggregates metrics across all blueprints
+            - Returns results dictionary
 
 3. **Model Comparison**
 
-   - Evaluate multiple models (GPT-4o, Gemini 1.5 Flash)
-   - Compare metrics side-by-side
-   - Calculate composite scores
-   - Save results to JSON/CSV
+            - Evaluate multiple models (GPT-4o, Gemini 1.5 Flash)
+            - Compare metrics side-by-side
+            - Calculate composite scores
+            - Save results to JSON/CSV
 
 4. **Results Display**
 
-   - Print comparison table
-   - Show per-image metrics
-   - Highlight best model by composite score
-   - Save results to `evaluation/results/vlm_evaluation_results.json`
+            - Print comparison table
+            - Show per-image metrics
+            - Highlight best model by composite score
+            - Save results to `evaluation/results/vlm_evaluation_results.json`
 
 **Key function**:
 
@@ -642,29 +642,29 @@ evaluation/
 
 1. **Metrics calculation tests** (`test_vlm_extraction_metrics.py`)
 
-   - Test `match_rooms()` with various room name patterns
-   - Test `calculate_area_accuracy()` with known errors
-   - Test `calculate_recall()` and `calculate_precision()`
-   - Test `calculate_semantic_understanding_score()` heuristic
-   - Test `calculate_composite_score()` weighting
+            - Test `match_rooms()` with various room name patterns
+            - Test `calculate_area_accuracy()` with known errors
+            - Test `calculate_recall()` and `calculate_precision()`
+            - Test `calculate_semantic_understanding_score()` heuristic
+            - Test `calculate_composite_score()` weighting
 
 2. **Golden dataset creation tests**
 
-   - Test matching PDFs to CSVs by filename
-   - Test CSV loading and Room object creation
-   - Test serialization/deserialization of Room objects
+            - Test matching PDFs to CSVs by filename
+            - Test CSV loading and Room object creation
+            - Test serialization/deserialization of Room objects
 
 3. **Evaluation script tests**
 
-   - Test `evaluate_vlm_extraction()` with mock extractor
-   - Test metrics aggregation
-   - Test results saving/loading
+            - Test `evaluate_vlm_extraction()` with mock extractor
+            - Test metrics aggregation
+            - Test results saving/loading
 
 4. **Integration tests**
 
-   - Test full evaluation pipeline on curated plans
-   - Verify metrics match expected values
-   - Compare results across models
+            - Test full evaluation pipeline on curated plans
+            - Verify metrics match expected values
+            - Compare results across models
 
 ### 6.6 Expected Results
 

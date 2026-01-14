@@ -9,13 +9,15 @@ Backend patterns:
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
   - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, and post-processing to fix LLM citations
+  - `app/api/blueprint.py` - Blueprint extraction endpoint (`POST /api/blueprint/extract`) - **Status**: 🔄 **IN PROGRESS** - Accepts blueprint image upload, extracts room data using VLM, returns preview-only results
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ **COMPLETE** - Enhanced with page number extraction (PDF + document pages), section extraction, and metadata preservation
   - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
   - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: ✅ **COMPLETE** - Integrated with project context filtering, uses BM25-only retrieval (default, validated best)
-- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, no changes needed
+  - blueprint_extractor (image → structured room data via VLM) - **Status**: 🔄 **IN PROGRESS** - Semantic understanding extraction from blueprint images, room-only (name, type, area), preview-only results
+- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, vision LLM support added (get_vision_llm() for GPT-4o and Gemini 1.5 Flash Vision)
 
 AI patterns:
 
@@ -33,6 +35,12 @@ AI patterns:
   - summarizing issues
   - answering questions via RAG (handles multiple code documents)
   - extracting rules from PDFs (MVP core feature) - **COMPLETE** - automatically processes multiple code PDFs with project context filtering
+  - extracting structured data from blueprint images (VLM) - **IN PROGRESS** - semantic understanding of room labels, type classification, dimension association, structured JSON output
+- Use Vision LLM (VLM) for:
+  - blueprint image analysis (semantic understanding, not just OCR)
+  - room label reading and type classification
+  - dimension annotation association with rooms
+  - structured extraction (blueprint → Room models → compliance checking)
 - **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing
 
 Frontend patterns:
@@ -140,8 +148,9 @@ PDFs require more sophisticated caching due to expensive operations:
 
 **Do use lessons for:**
 - `app/services/vector_store.py` - RAG/vector DB patterns (Qdrant setup, embedding pipelines)
-- `app/core/llm.py` - Multi-provider LLM abstraction (OpenAI/Gemini/Claude switching)
+- `app/core/llm.py` - Multi-provider LLM abstraction (OpenAI/Gemini/Claude switching), vision LLM support (GPT-4o, Gemini 1.5 Flash Vision)
 - `app/services/rule_extractor.py` - LLM-based extraction patterns (structured output, prompt engineering)
+- `app/services/blueprint_extractor.py` - VLM-based extraction patterns (semantic understanding, structured output from images)
 - `app/services/pdf_ingest.py` - PDF chunking patterns (if complex chunking strategies needed)
 - LangGraph agent orchestration (if we add agent workflows)
 
@@ -205,10 +214,15 @@ PDFs require more sophisticated caching due to expensive operations:
    - Evaluation notebook: `evaluation/rag_evaluation.py`
    - Results: BM25-only outperformed hybrid, dense-only, and parent-document
    - Saved to LangSmith dataset and local JSON
-2. **High**: LangSmith setup (automatic tracing, no code changes needed)
-3. **Medium**: Performance middleware (simple, useful for monitoring)
-4. **Low**: Metrics endpoint (optional, for presentation/monitoring)
-5. **Low**: Cache statistics (optional, for optimization insights)
+2. 🔄 **In Progress**: VLM Extraction Metrics Framework - Similar to RAGAS pattern
+   - Evaluation framework: `evaluation/vlm_extraction_metrics.py` (custom metrics)
+   - Evaluation script: `evaluation/vlm_evaluation.py` (following RAGAS pattern)
+   - Golden dataset: `evaluation/data/vlm_golden_dataset.csv` (matching floor plans to CSV ground truth)
+   - Metrics: area_accuracy, recall, precision, type_match_rate, semantic_understanding_score, confidence_calibration, composite_score
+3. **High**: LangSmith setup (automatic tracing, no code changes needed)
+4. **Medium**: Performance middleware (simple, useful for monitoring)
+5. **Low**: Metrics endpoint (optional, for presentation/monitoring)
+6. **Low**: Cache statistics (optional, for optimization insights)
 
 ### RAG Technique Validation (COMPLETE)
 

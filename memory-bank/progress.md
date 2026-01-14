@@ -192,15 +192,18 @@ None yet (project in early setup phase).
    - **Plan**: `.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`
 
 8. 🔄 Multimodal Blueprint Extraction (CURRENT FOCUS):
-   - [ ] Phase 1: Core extraction service (vision LLM support, blueprint extractor, extraction models)
-   - [ ] Phase 2: API endpoint (upload endpoint, CSV writer)
-   - [ ] Phase 3: Frontend integration (upload UI, JavaScript)
-   - [ ] Phase 4: Validation & accuracy testing (>90% area, >95% width accuracy)
-   - [ ] Phase 5: Dependencies & configuration
+   - [ ] Phase 1: Core extraction service (1.5-2 days) - Vision LLM support (GPT-4o, Gemini 1.5 Flash), blueprint extractor with semantic understanding, extraction models (BlueprintExtractionResult, ExtractionConfidence)
+   - [ ] Phase 2: API endpoint (0.5 day) - POST /api/blueprint/extract (preview-only, no CSV save)
+   - [ ] Phase 3: Frontend integration (1 day) - File upload UI with drag-and-drop, optional scale input, preview table
+   - [ ] Phase 4: Validation & curated plan testing (1 day) - Basic validation logic, test on 2-3 curated blueprint images
+   - [ ] Phase 5: Dependencies & configuration (0.5 day) - Vision LLM dependencies (langchain-openai, langchain-google-genai, pillow, PyMuPDF), env config, documentation
+   - [ ] Phase 6: VLM Metrics & Evaluation Framework (1-1.5 days) - Custom metrics framework (area_accuracy, recall, precision, type_match_rate, semantic_understanding_score, confidence_calibration), golden dataset creation, evaluation script following RAGAS pattern
    - **Plan**: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`
-   - **Target**: Extract room/door data from blueprint images (PNG/JPG/PDF) using vision LLM
-   - **Features**: Auto-scale detection, user confirmation, CSV export
-   - **Timeline**: 5.5-8.5 days estimated
+   - **Scoped approach**: Room-only extraction (name, type, approx_area_m2) from curated plans, preview-only results, CSV pipeline remains ground truth
+   - **Key differentiator**: Semantic understanding and structured extraction - VLM reads room labels, classifies types, associates dimensions with rooms, produces structured JSON
+   - **VLM capabilities**: Room semantic extraction, dimension-aware inference, structured JSON output, integration with compliance engine
+   - **Target metrics**: Area accuracy >85%, recall >80%, precision >85%, type match rate >90%, semantic understanding score >0.7
+   - **Timeline**: 5.5-7 days estimated (reduced from 5.5-8.5 days due to scoped approach)
 
 ## Future Enhancements
 
