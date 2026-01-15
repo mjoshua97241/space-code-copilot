@@ -9,19 +9,17 @@ Key capabilities:
 - Calculates areas from dimensions using scale
 - Produces structured JSON matching Room model schema
 """
-from ast import Import
 import base64
 import io
 import json
 import os
 from pathlib import Path
 from typing import List, Optional, Union, Dict, Any
-import tempfile
 
-# Import processing libraries
+# Image processing libraries
 try:
-    from PIL import image
-    import fitz # PyMuPDF
+    from PIL import Image 
+    import fitz  # PyMuPDF
 except ImportError:
     raise ImportError(
         "Required packages missing. Install: pip install pillow PyMuPDF"
@@ -185,34 +183,36 @@ def _parse_llm_response(response_text: str) -> Dict[str, Any]:
         Parsed JSON dictionary
     
     Explanation:
-        LLM sometimes wrap JSON in``` blocks or add extra text.
+        LLMs sometimes wrap JSON in ```json``` blocks or add extra text.
         This function extracts the actual JSON content.
     """
     # Remove markdown code blocks if present
     text = response_text.strip()
     
     # Try to extract JSON from markdown code blocks
-    if "" in text:
-        # Extract content between and ```
-        start = text.find("") + 7
+    if "```json" in text:
+        # Extract content between ```json and ```
+        start = text.find("```json") + 7
         end = text.find("```", start)
         if end != -1:
             text = text[start:end].strip()
-    elif "" in text:
-        # Generated code block
-        start = text.find("")
-        end = text.find("", start)
+    elif "```" in text:
+        # Generic code block
+        start = text.find("```") + 3
+        end = text.find("```", start)
         if end != -1:
             text = text[start:end].strip()
-            # Parse JSON
-            try:
-                return json.loads(text)
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Failed to parse LLM response as JSON: {e}\n"
-                                 f"Response text: {response_text[:500]}"
-                                 )
+    
+    # Parse JSON
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Failed to parse LLM response as JSON: {e}\n"
+            f"Response text: {response_text[:500]}"
+        )
                 
-def validate_and_convert_rooms(
+def _validate_and_convert_rooms(
     raw_rooms: List[Dict[str, Any]]
 ) -> List[Room]:
     """
@@ -251,12 +251,12 @@ def validate_and_convert_rooms(
                 room_dict["level"] = 1
                 
             if "area_m2" not in room_dict:
-                # Skip rooms without area (can't validated)
+                # Skip rooms without area (can't validate)
                 continue
             
             # Validate area is positive
             if room_dict["area_m2"] <= 0:
-                continue # Skip invalid areas
+                continue  # Skip invalid areas
             
             # Create Room model (Pydantic validates automatically)
             room = Room(
@@ -271,12 +271,12 @@ def validate_and_convert_rooms(
         
         except Exception as e:
             # Skip invalid rooms, log error
-            print(f"⚠️ Skipping invalid room {room_dict.get('id', idx)}: {e}")
+            print(f"⚠ Skipping invalid room {room_dict.get('id', idx)}: {e}")
             continue
-        
-        return validated_rooms
+    
+    return validated_rooms
 
-def calculate_confidence_scores(
+def _calculate_confidence_scores(
     rooms: List[Room],
     raw_response: Dict[str, Any]
 ) -> Dict[str, float]:
@@ -406,7 +406,7 @@ def extract_rooms_from_blueprint(
     
     # Step 5: Create message with image + text prompt
     # LangChain HumanMessage supports images via content list
-    HumanMessage(
+    message = HumanMessage(
         content=[
             {
                 "type": "image_url",
@@ -414,10 +414,10 @@ def extract_rooms_from_blueprint(
                     "url": base64_image
                 }
             },
-                {
-                    "type": "text",
-                    "text": prompt
-                }
+            {
+                "type": "text",
+                "text": prompt
+            }
         ]
     )
     
@@ -440,12 +440,12 @@ def extract_rooms_from_blueprint(
         raise ValueError("No rooms extracted from blueprint")
     
     # Step 9: Validate and convert to Room models
-    validated_rooms = validate_and_convert_rooms(raw_rooms)
+    validated_rooms = _validate_and_convert_rooms(raw_rooms)
     if not validated_rooms:
         raise ValueError("No valid rooms extracted after validation")
     
     # Step 10: Calculate confidence scores
-    confidence = calculate_confidence_scores(validated_rooms, parsed_response)
+    confidence = _calculate_confidence_scores(validated_rooms, parsed_response)
     
     # Step 11: Build result dictionary
     # TODO: Once ExtractionConfidence and BlueprintExtractionResult models exist, import them and return BlueprintExtractionResult instead of dict
