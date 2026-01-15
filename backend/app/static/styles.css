@@ -125,6 +125,242 @@ body {
   }
 }
 
+/* ====================================================================
+   Blueprint Extraction Panel
+   ==================================================================== */
+
+.extraction-panel {
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+.extraction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #e9ecef;
+  cursor: pointer;
+  user-select: none;
+}
+
+.extraction-header:hover {
+  background: #dee2e6;
+}
+
+.extraction-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.extraction-content {
+  padding: 16px;
+}
+
+.extraction-content.collapsed {
+  display: none;
+}
+
+.upload-zone {
+  border: 2px dashed #adb5bd;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: #0d6efd;
+  background: #e7f3ff;
+}
+
+.upload-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.upload-zone p {
+  margin: 4px 0;
+  color: #495057;
+  font-size: 13px;
+}
+
+.upload-hint {
+  color: #6c757d !important;
+  font-size: 12px !important;
+}
+
+.scale-input {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scale-input label {
+  font-size: 13px;
+  color: #495057;
+  font-weight: 500;
+}
+
+.scale-input input {
+  width: 80px;
+  padding: 6px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.scale-input input:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+}
+
+.scale-hint {
+  color: #6c757d;
+  font-size: 11px;
+}
+
+.extract-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.extract-btn:hover:not(:disabled) {
+  background: #0b5ed7;
+}
+
+.extract-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.extraction-status {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.status-info {
+  background: #cfe2ff;
+  color: #084298;
+}
+
+.status-success {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-error {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.status-loading {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.extraction-results {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #dee2e6;
+}
+
+.extraction-results h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.preview-note {
+  color: #856404;
+  background: #fff3cd;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.confidence-scores {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.confidence-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: #495057;
+}
+
+.confidence-value {
+  font-weight: 600;
+  color: #198754;
+}
+
+.rooms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rooms-table th,
+.rooms-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.rooms-table th {
+  background: #e9ecef;
+  font-weight: 600;
+  color: #495057;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.rooms-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rooms-table tr:hover td {
+  background: #f8f9fa;
+}
+
 /* Issues Panel */
 .issues-panel {
   height: 300px;
