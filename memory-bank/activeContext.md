@@ -215,7 +215,11 @@ Recent changes:
    - **VLM capabilities**: Reads room labels, classifies types, associates dimensions with rooms, applies scale
    - **Integration**: Extracted data feeds into existing compliance checking pipeline
    - **Evaluation**: Phase 6 includes VLM metrics framework (similar to RAGAS pattern)
-   - Status: Planning complete, ready for implementation
+   - **Status**: Phase 1 IN PROGRESS
+     - ✅ Vision LLM support added to `app/core/llm.py` (`get_vision_llm()` function)
+     - ✅ Blueprint extractor created: `app/services/blueprint_extractor.py` with semantic room extraction
+     - ✅ Unit tests created and passing: `app/tests/test_blueprint_extractor.py` (13/13 tests pass)
+     - ⏳ Next: Add `BlueprintExtractionResult` and `ExtractionConfidence` models to `app/models/domain.py`
 
 Todo next:
 
@@ -225,12 +229,16 @@ Todo next:
   - Will resume after blueprint extraction implementation
 
 - 🔄 **CURRENT: Multimodal Blueprint Extraction** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
-  - **Phase 1**: Core extraction service (1.5-2 days) - Vision LLM support, blueprint extractor with semantic understanding, extraction models
+  - **Phase 1**: Core extraction service (1.5-2 days) - **IN PROGRESS**
+    - ✅ Vision LLM support (`app/core/llm.py` - `get_vision_llm()`)
+    - ✅ Blueprint extractor (`app/services/blueprint_extractor.py`)
+    - ✅ Unit tests (`app/tests/test_blueprint_extractor.py` - 13/13 passing)
+    - ⏳ Extraction models (`BlueprintExtractionResult`, `ExtractionConfidence` in `domain.py`)
   - **Phase 2**: API endpoint (0.5 day) - POST /api/blueprint/extract (preview-only, no CSV save)
   - **Phase 3**: Frontend integration (1 day) - File upload UI, drag-and-drop, preview table
   - **Phase 4**: Validation & curated plan testing (1 day) - Basic validation, test on 2-3 curated plans
   - **Phase 5**: Dependencies & configuration (0.5 day) - Vision LLM dependencies, env config, documentation
-  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - Custom metrics (area_accuracy, recall, precision, type_match_rate, semantic_understanding_score), golden dataset, evaluation script following RAGAS pattern
+  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - Custom metrics, golden dataset, evaluation script
   - **Scoped approach**: Room-only extraction (name, type, approx_area_m2), curated plans, preview-only, simple scale assumption (1:100 default)
   - **Key focus**: Semantic understanding over geometry - VLM reads labels, classifies types, associates dimensions, produces structured JSON
-  - **Timeline**: 5.5-7 days estimated (reduced from original 5.5-8.5 days due to scoped approach)
+  - **Timeline**: 5.5-7 days estimated

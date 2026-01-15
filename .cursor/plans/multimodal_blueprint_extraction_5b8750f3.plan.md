@@ -12,7 +12,7 @@ todos:
       - vision-llm-support
   - id: extraction-models
     content: Add BlueprintExtractionResult and ExtractionConfidence models to app/models/domain.py (rooms only, no doors)
-    status: pending
+    status: in_progress
   - id: upload-endpoint
     content: Create POST /api/blueprint/extract endpoint in app/api/blueprint.py (preview-only, no CSV save)
     status: pending
