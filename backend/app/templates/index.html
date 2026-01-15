@@ -21,6 +21,46 @@
             </div>
           </div>
         </div>
+        
+        <!-- Blueprint Extraction Panel -->
+        <div class="extraction-panel" id="extraction-panel">
+          <div class="extraction-header" onclick="toggleExtractionPanel()">
+            <h3>🔍 Blueprint Extraction (Preview)</h3>
+            <button class="toggle-btn" id="toggle-extraction">▼</button>
+          </div>
+          <div class="extraction-content" id="extraction-content">
+            <div class="upload-zone" id="upload-zone">
+              <div class="upload-icon">📄</div>
+              <p>Drag & drop blueprint image (PNG, JPG, PDF)</p>
+              <p class="upload-hint">or click to select file</p>
+              <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.pdf" hidden />
+            </div>
+            <div class="scale-input">
+              <label for="scale-value">Scale (optional):</label>
+              <input type="number" id="scale-value" placeholder="1.0" step="0.1" min="0.1" max="10" />
+              <span class="scale-hint">1.0 = 1:100 scale</span>
+            </div>
+            <button class="extract-btn" id="extract-btn" disabled>Extract Rooms</button>
+            <div class="extraction-status" id="extraction-status"></div>
+            <div class="extraction-results" id="extraction-results" style="display: none;">
+              <h4>Extracted Rooms (Preview)</h4>
+              <p class="preview-note">⚠️ Preview only - CSV pipeline remains ground truth</p>
+              <div class="confidence-scores" id="confidence-scores"></div>
+              <table class="rooms-table" id="rooms-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Area (m²)</th>
+                    <th>Level</th>
+                  </tr>
+                </thead>
+                <tbody id="rooms-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
         <div class="issues-panel">
           <div class="issues-header">
             <h3>Compliance Issues</h3>
@@ -433,6 +473,167 @@
       }
 
       // ====================================================================
+      // Blueprint Extraction
+      // ====================================================================
+
+      let selectedFile = null;
+
+      function initExtraction() {
+        const uploadZone = document.getElementById("upload-zone");
+        const fileInput = document.getElementById("file-input");
+        const extractBtn = document.getElementById("extract-btn");
+
+        // Click to select file
+        uploadZone.addEventListener("click", () => fileInput.click());
+
+        // Drag and drop
+        uploadZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          uploadZone.classList.add("dragover");
+        });
+
+        uploadZone.addEventListener("dragleave", () => {
+          uploadZone.classList.remove("dragover");
+        });
+
+        uploadZone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          uploadZone.classList.remove("dragover");
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            handleFileSelect(files[0]);
+          }
+        });
+
+        // File input change
+        fileInput.addEventListener("change", (e) => {
+          if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+          }
+        });
+
+        // Extract button
+        extractBtn.addEventListener("click", extractBlueprint);
+      }
+
+      function toggleExtractionPanel() {
+        const content = document.getElementById("extraction-content");
+        const toggleBtn = document.getElementById("toggle-extraction");
+        content.classList.toggle("collapsed");
+        toggleBtn.textContent = content.classList.contains("collapsed") ? "▶" : "▼";
+      }
+
+      function handleFileSelect(file) {
+        const allowedExtensions = [".png", ".jpg", ".jpeg", ".pdf"];
+        const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+        
+        if (!allowedExtensions.includes(ext)) {
+          showExtractionStatus(`Invalid file type: ${ext}. Allowed: PNG, JPG, PDF`, "error");
+          return;
+        }
+
+        selectedFile = file;
+        document.getElementById("upload-zone").innerHTML = `
+          <div class="upload-icon">✅</div>
+          <p><strong>${escapeHtml(file.name)}</strong></p>
+          <p class="upload-hint">${(file.size / 1024).toFixed(1)} KB - Click to change</p>
+          <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.pdf" hidden />
+        `;
+        // Re-attach event listener to new file input
+        document.getElementById("file-input").addEventListener("change", (e) => {
+          if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+        });
+        document.getElementById("extract-btn").disabled = false;
+        showExtractionStatus("File selected. Click 'Extract Rooms' to process.", "info");
+      }
+
+      async function extractBlueprint() {
+        if (!selectedFile) return;
+
+        const extractBtn = document.getElementById("extract-btn");
+        const scaleInput = document.getElementById("scale-value");
+        const resultsDiv = document.getElementById("extraction-results");
+
+        extractBtn.disabled = true;
+        extractBtn.textContent = "Extracting...";
+        showExtractionStatus("Processing blueprint with Vision LLM...", "loading");
+        resultsDiv.style.display = "none";
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        if (scaleInput.value) {
+          formData.append("scale", scaleInput.value);
+        }
+
+        try {
+          const res = await fetch("/api/blueprint/extract/", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(errorData.detail || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          displayExtractionResults(data);
+          showExtractionStatus(`✅ Extracted ${data.rooms.length} rooms`, "success");
+        } catch (e) {
+          console.error("Extraction error:", e);
+          showExtractionStatus(`❌ Error: ${e.message}`, "error");
+        } finally {
+          extractBtn.disabled = false;
+          extractBtn.textContent = "Extract Rooms";
+        }
+      }
+
+      function displayExtractionResults(data) {
+        const resultsDiv = document.getElementById("extraction-results");
+        const tbody = document.getElementById("rooms-tbody");
+        const confidenceDiv = document.getElementById("confidence-scores");
+
+        // Show confidence scores
+        const conf = data.confidence;
+        confidenceDiv.innerHTML = `
+          <div class="confidence-item">
+            <span>Overall:</span>
+            <span class="confidence-value">${(conf.overall * 100).toFixed(0)}%</span>
+          </div>
+          <div class="confidence-item">
+            <span>Names:</span>
+            <span class="confidence-value">${(conf.name_confidence * 100).toFixed(0)}%</span>
+          </div>
+          <div class="confidence-item">
+            <span>Types:</span>
+            <span class="confidence-value">${(conf.type_confidence * 100).toFixed(0)}%</span>
+          </div>
+          <div class="confidence-item">
+            <span>Areas:</span>
+            <span class="confidence-value">${(conf.area_confidence * 100).toFixed(0)}%</span>
+          </div>
+        `;
+
+        // Show rooms table
+        tbody.innerHTML = data.rooms.map(room => `
+          <tr>
+            <td>${escapeHtml(room.name)}</td>
+            <td>${escapeHtml(room.type)}</td>
+            <td>${room.area_m2.toFixed(1)}</td>
+            <td>${room.level}</td>
+          </tr>
+        `).join("");
+
+        resultsDiv.style.display = "block";
+      }
+
+      function showExtractionStatus(message, type) {
+        const statusDiv = document.getElementById("extraction-status");
+        statusDiv.className = `extraction-status status-${type}`;
+        statusDiv.textContent = message;
+      }
+
+      // ====================================================================
       // Event Listeners
       // ====================================================================
 
@@ -442,6 +643,9 @@
         
         // Fetch issues on page load
         fetchIssues();
+
+        // Initialize blueprint extraction
+        initExtraction();
 
         // Chat form submission
         const form = document.getElementById("chat-form");
