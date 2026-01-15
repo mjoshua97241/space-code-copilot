@@ -15,18 +15,18 @@ todos:
     status: completed
   - id: upload-endpoint
     content: Create POST /api/blueprint/extract endpoint in app/api/blueprint.py (preview-only, no CSV save)
-    status: in_progress
+    status: completed
     dependencies:
       - blueprint-extractor
       - extraction-models
   - id: frontend-upload-ui
     content: Add file upload UI to app/templates/index.html with drag-and-drop, optional scale input, and preview display
-    status: pending
+    status: completed
     dependencies:
       - upload-endpoint
   - id: frontend-js
     content: Add JavaScript for handling file upload, displaying extraction results in preview table
-    status: pending
+    status: completed
     dependencies:
       - frontend-upload-ui
   - id: validation-logic
@@ -200,11 +200,44 @@ def extract_rooms_from_blueprint(
 
 **Prompt strategy**: Emphasize semantic understanding:
 
-- "Analyze this architectural blueprint. Identify all rooms by reading their labels (e.g., 'Office 101', 'Meeting Room')."
-- "Classify each room into types: office, meeting, bedroom, living, bathroom, etc."
-- "Read dimension annotations scattered throughout the plan and associate them with the correct rooms."
-- "Calculate room areas from dimensions, applying the scale factor provided."
-- "Output structured JSON matching this schema: [Room model]"
+```python
+prompt = """Analyze this architectural blueprint image and extract room information using GEOMETRY UNDERSTANDING:
+
+1. **Identify rooms visually**: Look at the room boundaries (walls, lines, shapes) to identify each room
+2. **Read room labels**: Extract room names from text labels (e.g., "BR1", "Bedroom 1", "Living Room")
+3. **Measure geometry**: Measure the room dimensions (length, width) from the visual representation
+4. **Apply scale**: Use the provided scale (1:100) to convert measurements to real-world units
+   - If scale is 1:100, multiply blueprint measurements by 100 to get real-world meters
+5. **Calculate areas**: Calculate approximate area in m² from the room dimensions (length × width)
+
+For each room, provide:
+- id: Unique identifier (e.g., "R101")
+- name: Room name from label or inferred from context (e.g., "Bedroom 1", "Living Room")
+- type: Room type inferred from name/label (bedroom, living, bathroom, kitchen, etc.)
+- area_m2: Approximate area calculated from geometry using the scale
+
+Important:
+- Focus on GEOMETRY MEASUREMENT, not just reading text labels
+- Measure room boundaries visually, not just extract written dimensions
+- Apply scale conversion: blueprint dimensions × scale_factor = real-world dimensions
+- Areas are approximate (geometry-based calculation), not exact measurements
+- If room labels are unclear, infer room type from context and location
+
+Return JSON matching this structure:
+{
+    "rooms": [
+        {
+            "id": "R101",
+            "name": "Office 101",
+            "type": "office",
+            "area_m2": 12.5,
+            "level": 1
+        },
+        ...
+    ]
+}
+"""
+```
 
 ### 1.3 Create Extraction Result Models
 
@@ -364,54 +397,54 @@ Following the RAGAS evaluation pattern, create a comprehensive metrics framework
 
 1. **Area Accuracy** (`calculate_area_accuracy`)
 
-- Mean Absolute Percentage Error (MAPE) for room areas
-- Matches extracted rooms to ground truth by name/id
-- Returns accuracy score: `1.0 - MAPE` (clamped to [0, 1])
-- Target: >85% accuracy for curated plans
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mean Absolute Percentage Error (MAPE) for room areas
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Matches extracted rooms to ground truth by name/id
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Returns accuracy score: `1.0 - MAPE` (clamped to [0, 1])
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Target: >85% accuracy for curated plans
 
 2. **Name Match Rate** (`calculate_name_match_rate`)
 
-- Percentage of extracted rooms with matching names (exact or fuzzy)
-- Uses string matching with fuzzy fallback
-- Returns: `matched_count / total_ground_truth_rooms`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Percentage of extracted rooms with matching names (exact or fuzzy)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Uses string matching with fuzzy fallback
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Returns: `matched_count / total_ground_truth_rooms`
 
 3. **Type Match Rate** (`calculate_type_match_rate`)
 
-- Percentage of extracted rooms with matching types
-- Compares room.type field (bedroom, living, etc.)
-- Returns: `matched_count / total_ground_truth_rooms`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Percentage of extracted rooms with matching types
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Compares room.type field (bedroom, living, etc.)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Returns: `matched_count / total_ground_truth_rooms`
 
 4. **Recall** (`calculate_recall`)
 
-- Percentage of ground truth rooms that were found
-- Formula: `matched_rooms / total_ground_truth_rooms`
-- Measures completeness of extraction
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Percentage of ground truth rooms that were found
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Formula: `matched_rooms / total_ground_truth_rooms`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Measures completeness of extraction
 
 5. **Precision** (`calculate_precision`)
 
-- Percentage of extracted rooms that are valid (match ground truth)
-- Formula: `matched_rooms / total_extracted_rooms`
-- Measures quality of extraction (fewer false positives)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Percentage of extracted rooms that are valid (match ground truth)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Formula: `matched_rooms / total_extracted_rooms`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Measures quality of extraction (fewer false positives)
 
 6. **Semantic Understanding Score** (`calculate_semantic_understanding_score`)
 
-- Evaluates if LLM used semantic understanding vs just text extraction
-- Measures: room type classification accuracy, dimension association with rooms, structured reasoning
-- Heuristic: semantic extraction produces reasonable type classifications and dimension associations
-- Text-only extraction would miss type classification or mis-associate dimensions
-- Returns score based on semantic reasoning quality
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Evaluates if LLM used semantic understanding vs just text extraction
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Measures: room type classification accuracy, dimension association with rooms, structured reasoning
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Heuristic: semantic extraction produces reasonable type classifications and dimension associations
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Text-only extraction would miss type classification or mis-associate dimensions
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Returns score based on semantic reasoning quality
 
 7. **Confidence Calibration** (`calculate_confidence_calibration`)
 
-- Measures how well confidence scores correlate with actual accuracy
-- Compares `ExtractionConfidence` scores to actual extraction errors
-- Uses correlation coefficient or calibration error metric
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Measures how well confidence scores correlate with actual accuracy
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Compares `ExtractionConfidence` scores to actual extraction errors
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Uses correlation coefficient or calibration error metric
 
 8. **Composite Score** (`calculate_composite_score`)
 
-- Weighted combination of all metrics
-- Weights: area_accuracy (25%), recall (20%), precision (20%), type_match_rate (15%), semantic_understanding (10%), confidence_calibration (5%), latency (5%)
-- Provides single score for model comparison
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Weighted combination of all metrics
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Weights: area_accuracy (25%), recall (20%), precision (20%), type_match_rate (15%), semantic_understanding (10%), confidence_calibration (5%), latency (5%)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Provides single score for model comparison
 
 **Key functions**:
 
@@ -476,8 +509,8 @@ def create_golden_dataset_from_csvs(
     Create golden dataset by matching floor plan PDFs to CSV ground truth.
     
     Matches by filename pattern:
- - PDF: example_plan_01.pdf
- - CSV: example_plan_01_rooms.csv (or rooms.csv in subdirectory)
+    - PDF: example_plan_01.pdf
+    - CSV: example_plan_01_rooms.csv (or rooms.csv in subdirectory)
     
     Uses existing CSV loader: app.services.design_loader.load_rooms()
     """
@@ -523,8 +556,6 @@ def create_golden_dataset_from_csvs(
     return pd.DataFrame(golden_data)
 ```
 
-**Note**: For serialization, convert `List[Room]` to JSON string when saving to CSV, parse back when loading.
-
 ### 6.3 Create VLM Evaluation Script
 
 **New file**: `evaluation/vlm_evaluation.py`
@@ -535,31 +566,31 @@ def create_golden_dataset_from_csvs(
 
 1. **Load/Create Golden Dataset**
 
-- Load from `evaluation/data/vlm_golden_dataset.csv` if exists
-- Otherwise, create from `backend/app/data/floor-plans/` and CSV files
-- Convert Room objects to/from JSON for CSV serialization
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Load from `evaluation/data/vlm_golden_dataset.csv` if exists
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Otherwise, create from `backend/app/data/floor-plans/` and CSV files
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Convert Room objects to/from JSON for CSV serialization
 
 2. **Evaluation Function** (`evaluate_vlm_extraction`)
 
-- Takes extractor function, golden dataset, model name
-- Runs extraction on each blueprint in dataset
-- Calculates metrics for each extraction
-- Aggregates metrics across all blueprints
-- Returns results dictionary
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Takes extractor function, golden dataset, model name
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Runs extraction on each blueprint in dataset
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Calculates metrics for each extraction
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Aggregates metrics across all blueprints
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Returns results dictionary
 
 3. **Model Comparison**
 
-- Evaluate multiple models (GPT-4o, Gemini 1.5 Flash)
-- Compare metrics side-by-side
-- Calculate composite scores
-- Save results to JSON/CSV
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Evaluate multiple models (GPT-4o, Gemini 1.5 Flash)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Compare metrics side-by-side
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Calculate composite scores
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Save results to JSON/CSV
 
 4. **Results Display**
 
-- Print comparison table
-- Show per-image metrics
-- Highlight best model by composite score
-- Save results to `evaluation/results/vlm_evaluation_results.json`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Print comparison table
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Show per-image metrics
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Highlight best model by composite score
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Save results to `evaluation/results/vlm_evaluation_results.json`
 
 **Key function**:
 
@@ -616,7 +647,7 @@ results_gpt4o = evaluate_vlm_extraction(
 evaluation/
 ├── rag_evaluation.py          # Existing RAG evaluation
 ├── vlm_evaluation.py          # NEW: VLM extraction evaluation
-├── vlm_extraction_metrics.py # NEW: Custom metrics
+├── vlm_extraction_metrics.py  # NEW: Custom metrics
 ├── data/
 │   ├── golden_dataset.csv           # Existing RAG golden dataset
 │   └── vlm_golden_dataset.csv       # NEW: VLM golden dataset
@@ -699,3 +730,87 @@ evaluation/
 - **6.4 Testing**: 0.25 day (unit tests for metrics)
 
 **Total**: 1-1.5 days
+
+## Testing Strategy
+
+### Unit Tests
+
+**File**: `backend/app/tests/test_blueprint_extractor.py`
+
+**Run**: `cd backend && PYTHONPATH=. pytest app/tests/test_blueprint_extractor.py -v`
+
+**Tests**:
+
+- `_parse_llm_response()` - JSON parsing with markdown code blocks
+- `_validate_and_convert_rooms()` - Room validation and conversion
+- `_build_extraction_prompt()` - Prompt generation with scale
+- `_calculate_confidence_scores()` - Confidence calculation
+- `extract_rooms_from_blueprint()` - Integration test with mocked LLM
+
+### Integration Tests
+
+Test full extraction pipeline on curated plans.
+
+## Technical Decisions
+
+### Model Selection
+
+- **GPT-4o**: Primary model for demo (best vision understanding)
+- **Gemini 1.5 Flash**: Faster/cheaper alternative for testing
+
+### Scale Strategy
+
+- **Default**: 1.0 (assumes 1:100 scale)
+- **User override**: Optional manual input
+- **Future**: Auto-detection from scale bar (post-MVP)
+
+## Success Criteria
+
+- Extract rooms with >85% area accuracy on curated plans
+- Correct room type classification >90%
+- Recall >80%, Precision >85%
+- Semantic understanding score >0.7
+- Composite score >0.75
+
+## Timeline
+
+- **Phase 1**: 1.5-2 days (core extraction service) ✅
+- **Phase 2**: 0.5 day (API endpoint) ✅
+- **Phase 3**: 1 day (frontend integration) 🔄
+- **Phase 4**: 1 day (validation & testing)
+- **Phase 5**: 0.5 day (dependencies & config)
+- **Phase 6**: 1-1.5 days (VLM metrics framework)
+
+**Total**: 5.5-7 days
+
+## Risks & Mitigation
+
+1. **Geometry understanding limitations**
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mitigation: Use curated plans, acknowledge limitations in demo
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Focus on semantic understanding, not perfect geometry
+
+2. **LLM cost**
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mitigation: Use Gemini 1.5 Flash for testing, GPT-4o for demo
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Cache results where possible
+
+3. **Scale detection**
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Mitigation: Simple default (1:100), allow manual override
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                - Auto-detection is future enhancement
+
+## Demo Strategy
+
+**Show**:
+
+1. Upload curated blueprint image
+2. VLM extracts rooms with names, types, areas
+3. Preview results in table with confidence scores
+4. Note: "Preview only - CSV pipeline remains ground truth"
+
+**Acknowledge**:
+
+- Areas are approximate
+- Works best with clear, labeled blueprints
+- Future work: auto-scale detection, door extraction, more plan types
