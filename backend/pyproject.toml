@@ -28,6 +28,7 @@ dependencies = [
   "nest-asyncio>=1.6.0",
   "ragas>=0.4.2",
   "rapidfuzz>=3.14.3",
+  "pillow>=12.1.0",
 ]
 
 [project.optional-dependencies]
