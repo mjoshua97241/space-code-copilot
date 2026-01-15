@@ -29,6 +29,7 @@ dependencies = [
   "ragas>=0.4.2",
   "rapidfuzz>=3.14.3",
   "pillow>=12.1.0",
+  "pytest>=8.4.2",
 ]
 
 [project.optional-dependencies]
