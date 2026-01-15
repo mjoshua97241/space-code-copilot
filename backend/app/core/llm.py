@@ -50,6 +50,73 @@ def get_llm(
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
+def get_vision_llm(
+    provider: Optional[str] = None,
+    model_name: Optional[str] = None
+) -> BaseChatModel:
+    """
+    Get vision-capable LLM for image processing.
+    
+    Vision LLMs can process images (blueprints, diagrams) in addition to text.
+    This function returns a Langchain chat model that supports multimodal input.
+    
+    Pattern adapted from get_llm() but specifically for vision models:
+    - GPT-4o: OpenAI's multimodal model (text + images)
+    - Gemini 1.5 Flahs: Google's fast multimodal model (text + images)
+    
+    Args:
+        provider: "openai" or "gemini" (defaults to VISION_LLM_PROVIDER env var, or "openai")
+        model_name: Override default model name
+            - OpenAI: "gpt-4o" (default), "gpt-4o-mini", etc.
+            - Gemini: "gemini-1.5-flash" (default), "gemini-1.5-pro", etc.
+            
+    Returns:
+        LangChain chat model instance with vision capabilities
+        
+    Example:
+        llm = get_vision_llm(provider="openai", model_name="gpt-4o")
+        # Can now send images + text messages to this LLM
+    """
+    # Use provider from parameter, or environment variable, or default to "openai"
+    provider = provider or os.getenv("VISION_LLM_PROVIDER", "openai")
+    provider = provider.lower()
+    
+    if provider == "openai":
+        # Get API key from environment (required)
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable not set")
+        
+        # GPT-4o is OpenAI's multimodal model (can process images)
+        # Default to "gpt-4o" if no model_name provided
+        model = model_name or "gpt-4o"
+        
+        # ChatOpenAI already supports vision when using gpt-4o model
+        # LangChain automatically handles image inputs for vision-capable models
+        return ChatOpenAI(model=model, temperature=0.0, api_key=api_key)
+    
+    elif provider == "gemini":
+        # Import here to avoid dependency if not using Gemini
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        
+        # Get API key from environment (required)
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable not set")
+        
+        # Gemini 1.5 Flash is Google's fast multimodal model
+        # Default to "gemini-1.5-flash" if no model_name provided
+        model = model_name or "gemini-1.5-flash"
+        
+        # ChatGoogleGenerativeAI supports vision for Gemini models
+        return ChatGoogleGenerativeAI(
+            model=model,
+            temperature=0.0,
+            google_api_key=api_key
+        )
+    
+    else:
+        raise ValueError(f"Unsupported vision LLM provider: {provider}")
 
 # LLM response caching (from day_12 lesson pattern)
 def setup_llm_cache(cache_type: str = "memory", cache_path: Optional[str] = None):
