@@ -9,14 +9,14 @@ Backend patterns:
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
   - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, and post-processing to fix LLM citations
-  - `app/api/blueprint.py` - Blueprint extraction endpoint (`POST /api/blueprint/extract`) - **Status**: 🔄 **IN PROGRESS** - Accepts blueprint image upload, extracts room data using VLM, returns preview-only results
+  - `app/api/blueprint.py` - Blueprint extraction endpoint (`POST /api/blueprint/extract`) - **Status**: ✅ **COMPLETE** - Accepts blueprint image upload (PNG/JPG/PDF), extracts room data using VLM, returns preview-only results, supports multi-page PDFs with optional page_index parameter
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ **COMPLETE** - Enhanced with page number extraction (PDF + document pages), section extraction, and metadata preservation
   - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
   - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: ✅ **COMPLETE** - Integrated with project context filtering, uses BM25-only retrieval (default, validated best)
-  - blueprint_extractor (image → structured room data via VLM) - **Status**: 🔄 **IN PROGRESS** - Semantic understanding extraction from blueprint images, room-only (name, type, area), preview-only results
+  - blueprint_extractor (image → structured room data via VLM) - **Status**: ✅ **Phase 4 COMPLETE** - Semantic understanding extraction from blueprint images, room-only (name, type, area), preview-only results, multi-page PDF support, tested on 3 curated plans with ground truth CSVs
 - LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, vision LLM support added (get_vision_llm() for GPT-4o and Gemini 1.5 Flash Vision)
 
 AI patterns:
@@ -214,7 +214,14 @@ PDFs require more sophisticated caching due to expensive operations:
    - Evaluation notebook: `evaluation/rag_evaluation.py`
    - Results: BM25-only outperformed hybrid, dense-only, and parent-document
    - Saved to LangSmith dataset and local JSON
-2. 🔄 **In Progress**: VLM Extraction Metrics Framework - Similar to RAGAS pattern
+2. ✅ **Phase 4 Complete**: Curated Plan Testing - Quantitative evaluation completed
+   - **Test Script**: `backend/app/tests/test_curated_plans.py` - Handles multi-page PDFs, ground truth comparison, JSON export
+   - **Ground Truth CSVs**: `backend/app/data/floor-plans/example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv` (manually created)
+   - **Results Documentation**: `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` (297 lines, comprehensive analysis)
+   - **Results JSON**: `backend/app/tests/curated_plan_results/*.json` (per-plan results + summary.json)
+   - **Metrics Evaluated**: Recall (45.56%), Precision (55.79%), Area accuracy (65.38%), Type match rate (100%)
+   - **Key Findings**: Type classification excellent, recall needs improvement (room splitting, missing small rooms), area accuracy good for matched rooms
+3. 🔄 **In Progress**: VLM Extraction Metrics Framework - Similar to RAGAS pattern (Phase 6)
    - Evaluation framework: `evaluation/vlm_extraction_metrics.py` (custom metrics)
    - Evaluation script: `evaluation/vlm_evaluation.py` (following RAGAS pattern)
    - Golden dataset: `evaluation/data/vlm_golden_dataset.csv` (matching floor plans to CSV ground truth)

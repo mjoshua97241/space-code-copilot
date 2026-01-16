@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. **Deployed to Railway.app** - Public URL working, all endpoints functional. **Presentation preparation ON HOLD** - Deferred to focus on new feature development. **CURRENT FOCUS: Multimodal Blueprint Extraction** - Implementing mentor-suggested feature to extract room/door data from blueprint images using vision LLM (plan created, ready for implementation).
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. **Deployed to Railway.app** - Public URL working, all endpoints functional. **Presentation preparation ON HOLD** - Deferred to focus on new feature development. **CURRENT FOCUS: Multimodal Blueprint Extraction** - **Phase 4 COMPLETE** ✅ - Tested on 3 curated blueprint images with ground truth CSVs, quantitative evaluation completed (recall 45.56%, precision 55.79%, area accuracy 65.38%, type match rate 100%), results documented, test files created.
 
 ## What Works
 
@@ -85,11 +85,32 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 - LLM wrapper (`app/core/llm.py`):
   - `get_llm()` - Provider abstraction (OpenAI, with placeholders for Gemini/Claude)
   - `setup_llm_cache()` - In-memory or SQLite caching for LLM responses
+- Blueprint extraction (`app/services/blueprint_extractor.py`):
+  - `extract_rooms_from_blueprint()` - Extracts room data from blueprint images using VLM semantic understanding
+  - Multi-page PDF support (combines all pages vertically into single image, or extracts specific page)
+  - Room type normalization (handles abbreviations like "T & B" → "bathroom")
+  - Floor level normalization (infers from plan titles like "GROUND FLOOR PLAN" → level 1)
+  - Enhanced validation (required fields, numeric ranges, type validation, confidence scoring)
+  - Tested on 3 curated plans with ground truth CSVs
+- Blueprint extraction API (`app/api/blueprint.py`):
+  - `POST /api/blueprint/extract` - Accepts blueprint image upload (PNG/JPG/PDF), extracts room data, returns preview-only results
+  - Supports multi-page PDFs with optional `page_index` parameter
+  - Returns `BlueprintExtractionResult` with extracted rooms, confidence scores, and metadata
+- Blueprint extraction testing:
+  - Test script: `backend/app/tests/test_curated_plans.py` - Handles multi-page PDFs, ground truth comparison, JSON export
+  - Ground truth CSVs: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv` (manually created)
+  - Results documentation: `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` (297 lines, comprehensive analysis)
+  - Results JSON: `backend/app/tests/curated_plan_results/*.json` (per-plan results + summary.json)
+  - Metrics evaluated: Recall (45.56%), Precision (55.79%), Area accuracy (65.38%), Type match rate (100%)
 - Dependencies:
   - All required packages installed via `uv`
   - `jinja2` added for template rendering
   - `langchain-community>=0.3.0` for BM25Retriever
   - `rank-bm25>=0.2.2` for BM25 implementation
+  - `pillow` for image processing (blueprint extraction)
+  - `PyMuPDF` for PDF handling (blueprint extraction)
+  - `langchain-openai` for GPT-4o vision support
+  - `langchain-google-genai` for Gemini 1.5 Flash Vision support
 
 ## What's Left to Build
 
@@ -192,21 +213,33 @@ None yet (project in early setup phase).
    - **Plan**: `.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`
 
 8. 🔄 Multimodal Blueprint Extraction (CURRENT FOCUS):
-   - [x] Phase 1: Core extraction service - **IN PROGRESS**
-     - [x] Vision LLM support (`app/core/llm.py` - `get_vision_llm()` for GPT-4o, Gemini 1.5 Flash)
-     - [x] Blueprint extractor (`app/services/blueprint_extractor.py` - semantic room extraction, JSON output, validation)
+   - [x] Phase 1: Core extraction service - ✅ **COMPLETE**
+     - [x] Vision LLM support (`app/core/llm.py` - `get_vision_llm()` for GPT-4o, Gemini 1.5 Flash Vision)
+     - [x] Blueprint extractor (`app/services/blueprint_extractor.py` - semantic room extraction, multi-page PDF support, normalization functions)
+     - [x] Extraction models (`BlueprintExtractionResult`, `ExtractionConfidence` in `app/models/domain.py`)
      - [x] Unit tests (`app/tests/test_blueprint_extractor.py` - 13/13 tests passing)
-     - [ ] Extraction models (`BlueprintExtractionResult`, `ExtractionConfidence` in `app/models/domain.py`)
-   - [ ] Phase 2: API endpoint (0.5 day) - POST /api/blueprint/extract (preview-only, no CSV save)
-   - [ ] Phase 3: Frontend integration (1 day) - File upload UI with drag-and-drop, optional scale input, preview table
-   - [ ] Phase 4: Validation & curated plan testing (1 day) - Basic validation logic, test on 2-3 curated blueprint images
-   - [ ] Phase 5: Dependencies & configuration (0.5 day) - Vision LLM dependencies, env config, documentation
-   - [ ] Phase 6: VLM Metrics & Evaluation Framework (1-1.5 days) - Custom metrics framework, golden dataset creation, evaluation script
+   - [x] Phase 2: API endpoint (0.5 day) - ✅ **COMPLETE** - POST /api/blueprint/extract (preview-only, no CSV save, multi-page PDF support with optional page_index)
+   - [x] Phase 3: Frontend integration (1 day) - ✅ **COMPLETE** - File upload UI with drag-and-drop, optional scale input, preview table, JavaScript handling
+   - [x] Phase 4: Validation & curated plan testing (1 day) - ✅ **COMPLETE**
+     - [x] Enhanced validation logic (required fields, numeric ranges, type validation against VALID_ROOM_TYPES, confidence scoring with heuristics)
+     - [x] Tested on 3 curated blueprint images with ground truth CSVs
+     - [x] Quantitative evaluation completed with comprehensive metrics
+     - [x] Results documented in `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` (297 lines)
+     - [x] Ground truth CSVs created: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv` (manually created in `backend/app/data/floor-plans/`)
+     - [x] Test script: `backend/app/tests/test_curated_plans.py` (handles multi-page PDFs, ground truth comparison, JSON export)
+     - [x] Results JSON files: `backend/app/tests/curated_plan_results/*.json` (per-plan results + summary.json)
+     - **Test Results Summary**:
+       - **Average Metrics**: Recall 45.56% (target: >80% ❌), Precision 55.79% (target: >85% ❌), Area accuracy 65.38% (target: >85% ❌), Type match rate 100% (target: >90% ✅)
+       - **Strengths**: Type classification excellent (100%), area accuracy good for matched rooms (95.48% for plan 01a), multi-page PDF support working
+       - **Limitations**: Room splitting (combined labels split into separate rooms), missing small rooms (bathrooms, utility, halls, closets), multi-level extraction issues (plan 02 level 2 rooms missed), name matching needs fuzzy logic
+       - **Files Created**: 3 ground truth CSVs, 1 test script, 1 results documentation, 5 JSON result files
+   - [ ] Phase 5: Dependencies & configuration (0.5 day) - ⏳ **PENDING** - Vision LLM dependencies, env config, documentation
+   - [ ] Phase 6: VLM Metrics & Evaluation Framework (1-1.5 days) - ⏳ **PENDING** - Custom metrics framework, golden dataset creation, evaluation script
    - **Plan**: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`
    - **Scoped approach**: Room-only extraction (name, type, approx_area_m2) from curated plans, preview-only results, CSV pipeline remains ground truth
    - **Key differentiator**: Semantic understanding and structured extraction - VLM reads room labels, classifies types, associates dimensions with rooms, produces structured JSON
-   - **Target metrics**: Area accuracy >85%, recall >80%, precision >85%, type match rate >90%, semantic understanding score >0.7
-   - **Timeline**: 5.5-7 days estimated
+   - **Current Metrics**: Area accuracy 65.38%, recall 45.56%, precision 55.79%, type match rate 100% (excellent)
+   - **Timeline**: 5.5-7 days estimated (Phases 1-4 complete, ~3.5 days remaining)
 
 ## Future Enhancements
 

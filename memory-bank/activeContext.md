@@ -215,11 +215,20 @@ Recent changes:
    - **VLM capabilities**: Reads room labels, classifies types, associates dimensions with rooms, applies scale
    - **Integration**: Extracted data feeds into existing compliance checking pipeline
    - **Evaluation**: Phase 6 includes VLM metrics framework (similar to RAGAS pattern)
-   - **Status**: Phase 1 IN PROGRESS
-     - ✅ Vision LLM support added to `app/core/llm.py` (`get_vision_llm()` function)
-     - ✅ Blueprint extractor created: `app/services/blueprint_extractor.py` with semantic room extraction
-     - ✅ Unit tests created and passing: `app/tests/test_blueprint_extractor.py` (13/13 tests pass)
-     - ⏳ Next: Add `BlueprintExtractionResult` and `ExtractionConfidence` models to `app/models/domain.py`
+   - **Status**: Phase 4 COMPLETE ✅
+     - ✅ Phase 1: Vision LLM support (`app/core/llm.py` - `get_vision_llm()`), blueprint extractor (`app/services/blueprint_extractor.py`), extraction models (`BlueprintExtractionResult`, `ExtractionConfidence`), unit tests (13/13 passing)
+     - ✅ Phase 2: API endpoint (`POST /api/blueprint/extract` - preview-only, no CSV save)
+     - ✅ Phase 3: Frontend integration (file upload UI, drag-and-drop, preview table, JavaScript handling)
+     - ✅ Phase 4: Validation & curated plan testing - **COMPLETE**
+       - ✅ Enhanced validation logic (required fields, numeric ranges, type validation, confidence scoring)
+       - ✅ Tested on 3 curated blueprint images with ground truth CSVs
+       - ✅ Quantitative evaluation completed with metrics (recall, precision, area accuracy, type match rate)
+       - ✅ Results documented in `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md`
+       - ✅ Ground truth CSVs created: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv`
+       - ✅ Test script: `backend/app/tests/test_curated_plans.py` (handles multi-page PDFs, ground truth comparison)
+       - ✅ Results JSON files: `curated_plan_results/*.json` (per-plan results + summary)
+       - **Key findings**: Type classification excellent (100%), recall needs improvement (45.56%), area accuracy moderate (65.38%), room splitting and missing small rooms are main issues
+     - ⏳ Next: Phase 5 (dependencies & configuration) or Phase 6 (VLM metrics framework)
 
 Todo next:
 
@@ -229,16 +238,24 @@ Todo next:
   - Will resume after blueprint extraction implementation
 
 - 🔄 **CURRENT: Multimodal Blueprint Extraction** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
-  - **Phase 1**: Core extraction service (1.5-2 days) - **IN PROGRESS**
-    - ✅ Vision LLM support (`app/core/llm.py` - `get_vision_llm()`)
-    - ✅ Blueprint extractor (`app/services/blueprint_extractor.py`)
+  - **Phase 1**: Core extraction service (1.5-2 days) - ✅ **COMPLETE**
+    - ✅ Vision LLM support (`app/core/llm.py` - `get_vision_llm()` for GPT-4o, Gemini 1.5 Flash)
+    - ✅ Blueprint extractor (`app/services/blueprint_extractor.py` - semantic room extraction, multi-page PDF support)
+    - ✅ Extraction models (`BlueprintExtractionResult`, `ExtractionConfidence` in `domain.py`)
     - ✅ Unit tests (`app/tests/test_blueprint_extractor.py` - 13/13 passing)
-    - ⏳ Extraction models (`BlueprintExtractionResult`, `ExtractionConfidence` in `domain.py`)
-  - **Phase 2**: API endpoint (0.5 day) - POST /api/blueprint/extract (preview-only, no CSV save)
-  - **Phase 3**: Frontend integration (1 day) - File upload UI, drag-and-drop, preview table
-  - **Phase 4**: Validation & curated plan testing (1 day) - Basic validation, test on 2-3 curated plans
-  - **Phase 5**: Dependencies & configuration (0.5 day) - Vision LLM dependencies, env config, documentation
-  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - Custom metrics, golden dataset, evaluation script
+  - **Phase 2**: API endpoint (0.5 day) - ✅ **COMPLETE** - POST /api/blueprint/extract (preview-only, no CSV save, multi-page PDF support)
+  - **Phase 3**: Frontend integration (1 day) - ✅ **COMPLETE** - File upload UI, drag-and-drop, optional scale input, preview table, JavaScript handling
+  - **Phase 4**: Validation & curated plan testing (1 day) - ✅ **COMPLETE**
+    - ✅ Enhanced validation logic (required fields, numeric ranges, type validation, confidence scoring with heuristics)
+    - ✅ Tested on 3 curated blueprint images with ground truth CSVs
+    - ✅ Quantitative evaluation: Average recall 45.56%, precision 55.79%, area accuracy 65.38%, type match rate 100%
+    - ✅ Results documented: `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` (297 lines, comprehensive analysis)
+    - ✅ Ground truth CSVs created: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv` (manually created)
+    - ✅ Test script: `backend/app/tests/test_curated_plans.py` (handles multi-page PDFs, ground truth comparison, JSON results export)
+    - ✅ Results JSON files: `curated_plan_results/*.json` (per-plan results + summary.json)
+    - **Key findings**: Type classification excellent (100%), recall needs improvement (room splitting, missing small rooms), area accuracy good for matched rooms, multi-level extraction needs work
+  - **Phase 5**: Dependencies & configuration (0.5 day) - ⏳ **PENDING** - Vision LLM dependencies, env config, documentation
+  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - ⏳ **PENDING** - Custom metrics, golden dataset, evaluation script
   - **Scoped approach**: Room-only extraction (name, type, approx_area_m2), curated plans, preview-only, simple scale assumption (1:100 default)
   - **Key focus**: Semantic understanding over geometry - VLM reads labels, classifies types, associates dimensions, produces structured JSON
-  - **Timeline**: 5.5-7 days estimated
+  - **Timeline**: 5.5-7 days estimated (Phases 1-4 complete, ~3.5 days remaining)
