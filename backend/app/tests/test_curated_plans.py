@@ -31,18 +31,23 @@ def find_ground_truth_for_plan(plan_name: str) -> Optional[Path]:
     Try to find ground truth CSV for a plan.
     
     Checks multiple patterns:
+    - {plan_name}.csv (direct match)
     - {plan_name}_rooms.csv
     - {plan_name}/rooms.csv
-    - rooms.csv (only if it matches plan.png, not floor-plans)
     
     Returns:
         Path to CSV if found, None otherwise
     """
     csv_candidates = [
-        DATA_DIR / f"{plan_name}_rooms.csv",
-        DATA_DIR / plan_name / "rooms.csv",
+        # Direct match (e.g., example_plan_02.csv)
+        FLOOR_PLANS_DIR / f"{plan_name}.csv",
+        DATA_DIR / f"{plan_name}.csv",
+        # With _rooms suffix (e.g., example_plan_02_rooms.csv)
         FLOOR_PLANS_DIR / f"{plan_name}_rooms.csv",
+        DATA_DIR / f"{plan_name}_rooms.csv",
+        # In subdirectory
         FLOOR_PLANS_DIR / plan_name / "rooms.csv",
+        DATA_DIR / plan_name / "rooms.csv",
     ]
     
     for candidate in csv_candidates:

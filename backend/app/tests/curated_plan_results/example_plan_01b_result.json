@@ -1,0 +1,335 @@
+{
+  "plan_name": "example_plan_01b",
+  "plan_path": "/home/mj/workspace/space-code-copilot/backend/app/data/floor-plans/example_plan_01b.pdf",
+  "ground_truth_csv": "/home/mj/workspace/space-code-copilot/backend/app/data/floor-plans/example_plan_01b.csv",
+  "has_ground_truth": true,
+  "page_index": null,
+  "extraction_result": {
+    "rooms": [
+      {
+        "id": "R201",
+        "name": "Bedroom 3A",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 14.0
+      },
+      {
+        "id": "R202",
+        "name": "Bedroom 3B",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 14.0
+      },
+      {
+        "id": "R203",
+        "name": "Kitchen 3",
+        "type": "kitchen",
+        "level": 2,
+        "area_m2": 5.25
+      },
+      {
+        "id": "R204",
+        "name": "Dining Area 3",
+        "type": "living",
+        "level": 2,
+        "area_m2": 10.0
+      },
+      {
+        "id": "R205",
+        "name": "Living Area 3",
+        "type": "living",
+        "level": 2,
+        "area_m2": 10.0
+      },
+      {
+        "id": "R206",
+        "name": "Laundry Area",
+        "type": "other",
+        "level": 2,
+        "area_m2": 3.0
+      },
+      {
+        "id": "R207",
+        "name": "Bedroom 4A",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 14.0
+      },
+      {
+        "id": "R208",
+        "name": "Bedroom 4B",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 14.0
+      },
+      {
+        "id": "R209",
+        "name": "Kitchen 4",
+        "type": "kitchen",
+        "level": 2,
+        "area_m2": 5.25
+      },
+      {
+        "id": "R210",
+        "name": "Dining Area 4",
+        "type": "living",
+        "level": 2,
+        "area_m2": 10.0
+      },
+      {
+        "id": "R211",
+        "name": "Living Area 4",
+        "type": "living",
+        "level": 2,
+        "area_m2": 10.0
+      }
+    ],
+    "confidence": {
+      "overall": 0.9854545454545456,
+      "name_confidence": 1.0,
+      "type_confidence": 0.9636363636363636,
+      "area_confidence": 1.0
+    },
+    "scale_used": 1.0,
+    "scale_source": "user_input",
+    "metadata": {
+      "model_used": "gpt-4o",
+      "provider": "openai",
+      "total_rooms_extracted": 11,
+      "raw_rooms_count": 11
+    }
+  },
+  "timestamp": "2026-01-16T18:50:18.752843",
+  "ground_truth": [
+    {
+      "id": "R201",
+      "name": "Bedroom 3A",
+      "type": "bedroom",
+      "level": 2,
+      "area_m2": 24.0
+    },
+    {
+      "id": "R202",
+      "name": "Bedroom 3B",
+      "type": "bedroom",
+      "level": 2,
+      "area_m2": 17.52
+    },
+    {
+      "id": "R203",
+      "name": "Living Area 3",
+      "type": "living",
+      "level": 2,
+      "area_m2": 17.48
+    },
+    {
+      "id": "R204",
+      "name": "Kitchen 3 + Living Area 3",
+      "type": "kitchen",
+      "level": 2,
+      "area_m2": 21.0
+    },
+    {
+      "id": "R205",
+      "name": "T & B 3",
+      "type": "bathroom",
+      "level": 2,
+      "area_m2": 3.0
+    },
+    {
+      "id": "R206",
+      "name": "Bedroom 4A",
+      "type": "bedroom",
+      "level": 2,
+      "area_m2": 14.0
+    },
+    {
+      "id": "R207",
+      "name": "Bedroom 4B",
+      "type": "bedroom",
+      "level": 2,
+      "area_m2": 17.52
+    },
+    {
+      "id": "R208",
+      "name": "Living Area 4",
+      "type": "living",
+      "level": 2,
+      "area_m2": 17.48
+    },
+    {
+      "id": "R209",
+      "name": "Kitchen 4 + Living Area 4",
+      "type": "kitchen",
+      "level": 2,
+      "area_m2": 21.0
+    },
+    {
+      "id": "R210",
+      "name": "T & B 4",
+      "type": "bathroom",
+      "level": 2,
+      "area_m2": 3.0
+    }
+  ],
+  "comparison": {
+    "total_ground_truth": 10,
+    "total_extracted": 11,
+    "matched_count": 6,
+    "recall": 0.6,
+    "precision": 0.5454545454545454,
+    "area_accuracy": 0.7209452681734114,
+    "avg_area_error_pct": 27.905473182658852,
+    "type_match_rate": 1.0,
+    "matched_pairs": [
+      {
+        "extracted": {
+          "id": "R201",
+          "name": "Bedroom 3A",
+          "type": "bedroom",
+          "area_m2": 14.0
+        },
+        "ground_truth": {
+          "id": "R201",
+          "name": "Bedroom 3A",
+          "type": "bedroom",
+          "area_m2": 24.0
+        },
+        "area_error_pct": 41.66666666666667
+      },
+      {
+        "extracted": {
+          "id": "R202",
+          "name": "Bedroom 3B",
+          "type": "bedroom",
+          "area_m2": 14.0
+        },
+        "ground_truth": {
+          "id": "R202",
+          "name": "Bedroom 3B",
+          "type": "bedroom",
+          "area_m2": 17.52
+        },
+        "area_error_pct": 20.091324200913242
+      },
+      {
+        "extracted": {
+          "id": "R205",
+          "name": "Living Area 3",
+          "type": "living",
+          "area_m2": 10.0
+        },
+        "ground_truth": {
+          "id": "R203",
+          "name": "Living Area 3",
+          "type": "living",
+          "area_m2": 17.48
+        },
+        "area_error_pct": 42.79176201372998
+      },
+      {
+        "extracted": {
+          "id": "R207",
+          "name": "Bedroom 4A",
+          "type": "bedroom",
+          "area_m2": 14.0
+        },
+        "ground_truth": {
+          "id": "R206",
+          "name": "Bedroom 4A",
+          "type": "bedroom",
+          "area_m2": 14.0
+        },
+        "area_error_pct": 0.0
+      },
+      {
+        "extracted": {
+          "id": "R208",
+          "name": "Bedroom 4B",
+          "type": "bedroom",
+          "area_m2": 14.0
+        },
+        "ground_truth": {
+          "id": "R207",
+          "name": "Bedroom 4B",
+          "type": "bedroom",
+          "area_m2": 17.52
+        },
+        "area_error_pct": 20.091324200913242
+      },
+      {
+        "extracted": {
+          "id": "R211",
+          "name": "Living Area 4",
+          "type": "living",
+          "area_m2": 10.0
+        },
+        "ground_truth": {
+          "id": "R208",
+          "name": "Living Area 4",
+          "type": "living",
+          "area_m2": 17.48
+        },
+        "area_error_pct": 42.79176201372998
+      }
+    ],
+    "unmatched_extracted": [
+      {
+        "id": "R203",
+        "name": "Kitchen 3",
+        "type": "kitchen",
+        "area_m2": 5.25
+      },
+      {
+        "id": "R204",
+        "name": "Dining Area 3",
+        "type": "living",
+        "area_m2": 10.0
+      },
+      {
+        "id": "R206",
+        "name": "Laundry Area",
+        "type": "other",
+        "area_m2": 3.0
+      },
+      {
+        "id": "R209",
+        "name": "Kitchen 4",
+        "type": "kitchen",
+        "area_m2": 5.25
+      },
+      {
+        "id": "R210",
+        "name": "Dining Area 4",
+        "type": "living",
+        "area_m2": 10.0
+      }
+    ],
+    "unmatched_ground_truth": [
+      {
+        "id": "R204",
+        "name": "Kitchen 3 + Living Area 3",
+        "type": "kitchen",
+        "area_m2": 21.0
+      },
+      {
+        "id": "R205",
+        "name": "T & B 3",
+        "type": "bathroom",
+        "area_m2": 3.0
+      },
+      {
+        "id": "R209",
+        "name": "Kitchen 4 + Living Area 4",
+        "type": "kitchen",
+        "area_m2": 21.0
+      },
+      {
+        "id": "R210",
+        "name": "T & B 4",
+        "type": "bathroom",
+        "area_m2": 3.0
+      }
+    ]
+  }
+}
