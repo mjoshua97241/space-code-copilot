@@ -202,39 +202,42 @@ class ExtractionConfidence(BaseModel):
         description="Area calculation confidence"
     )
     
-    class BlueprintExtractionResult(BaseModel):
-        """
-        Result of VLM blueprint extraction.
-        
-        Contains extracted rooms, confidence scores, and metadata.
-        Used as response from /api/blueprint/extract endpoint.
-        
-        Note: This is preview-only. CSV pipeline remains ground truth.
-        """
-        rooms: List[Room] = Field(
-            ...,
-            description="Extracted rooms from blueprint"
-        )
-        confidence: ExtractionConfidence = Field(
-            ...,
-            description="Extraction confidence score"
-        )
-        scale_used: float = Field(
-            ...,
-            description="Scale factor applied (e.g., 1.0 for 1:100)"
-        )
-        scale_source: Literal["default", "user_input", "auto_detected"] = Field(
-            ...,
-            description="Source of scale value"
-        )
-        extraction_metadata: Dict[str, Any] = Field(
-            default_factory=dict,
-            description="Additional extraction metadata (model, provider, etc.)"
-        )
-        note: str = Field(
-            default="Extraction is approximate. CSV pipeline remains ground truth.",
-            description="User-facing note about extraction limitations"
-        )
-        
-        class Config:
-            frozen = False
+    class Config:
+        frozen = False
+
+class BlueprintExtractionResult(BaseModel):
+    """
+    Result of VLM blueprint extraction.
+    
+    Contains extracted rooms, confidence scores, and metadata.
+    Used as response from /api/blueprint/extract endpoint.
+    
+    Note: This is preview-only. CSV pipeline remains ground truth.
+    """
+    rooms: List[Room] = Field(
+        ...,
+        description="Extracted rooms from blueprint"
+    )
+    confidence: ExtractionConfidence = Field(
+        ...,
+        description="Extraction confidence score"
+    )
+    scale_used: float = Field(
+        ...,
+        description="Scale factor applied (e.g., 1.0 for 1:100)"
+    )
+    scale_source: Literal["default", "user_input", "auto_detected"] = Field(
+        ...,
+        description="Source of scale value"
+    )
+    extraction_metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional extraction metadata (model, provider, etc.)"
+    )
+    note: str = Field(
+        default="Extraction is approximate. CSV pipeline remains ground truth.",
+        description="User-facing note about extraction limitations"
+    )
+    
+    class Config:
+        frozen = False

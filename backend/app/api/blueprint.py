@@ -1,6 +1,5 @@
 """Blueprint extraction API endpoint"""
 
-from sys import prefix
 import tempfile
 import os
 from pathlib import Path
@@ -9,15 +8,15 @@ from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from app.services.blueprint_extractor import extract_rooms_from_blueprint
-from app.models.domain import BluePrintExtractionResult, ExtractionConfidence
+from app.models.domain import BlueprintExtractionResult
 
 router = APIRouter(prefix="/api/blueprint", tags=["blueprint"])
 
-@router.post("/extract", response_model=BluePrintExtractionResult)
+@router.post("/extract", response_model=BlueprintExtractionResult)
 async def extract_blueprint(
     file: UploadFile = File(..., description="Blueprint image (PNG/JPG) or PDF"),
     scale: Optional[float] = Form(None, description="Scale factor (default: 1.0 for 1:100)")
-) -> BluePrintExtractionResult:
+) -> BlueprintExtractionResult:
     """
     Extract room data from blueprint image using VLM.
     
@@ -28,7 +27,7 @@ async def extract_blueprint(
         scale: Optional scale override (1.0 = 1:100 scale)
         
     Returns:
-        BluePrintExtractionResult with extracted rooms and confidence scores
+        BlueprintExtractionResult with extracted rooms and confidence scores
     """
     # Validate file type
     allowed_extensions = {".png", ".jpg", ".jpeg", ".pdf"}
@@ -50,27 +49,10 @@ async def extract_blueprint(
         raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
     
     try:
-        # Extract rooms from blueprint
-        result_dict = extract_rooms_from_blueprint(
+        # Extract rooms from blueprint (returns BlueprintExtractionResult directly)
+        result = extract_rooms_from_blueprint(
             image_path=tmp_path,
             scale_override=scale
-        )
-        
-        # Convert dict to BluePrintExtractionResult
-        confidence = ExtractionConfidence(
-            overall=result_dict["confidence"]["overall"],
-            name_confidence=result_dict["confidence"]["name_confidence"],
-            type_confidence=result_dict["confidence"]["type_confidence"],
-            area_confidence=result_dict["confidence"]["area_confidence"]
-        )
-        
-        result = BluePrintExtractionResult(
-            rooms=result_dict["rooms"],
-            confidence=confidence,
-            scale_used=result_dict["scale_used"],
-            scale_source=result_dict["scale_source"],
-            extraction_metadata=result_dict["extraction_metadata"],
-            note=result_dict["note"]
         )
         
         return result

@@ -31,7 +31,7 @@ from langchain_core.output_parsers import JsonOutputParser
 
 # Project imports
 from app.core.llm import get_vision_llm
-from app.models.domain import Room
+from app.models.domain import Room, ExtractionConfidence, BlueprintExtractionResult
 
 VALID_ROOM_TYPES = {
     "bedroom", "living", "kitchen", "bathroom", "office", "meeting", "corridor", "storage", "other"
@@ -120,7 +120,7 @@ def _build_extraction_prompt(scale: float) -> str:
     - Look for text labels inside or near room boundaries
     - Some labels may be scattered or abbreviated
     
-2. **Classify room types**: For each room, classify i into one of these types:
+2. **Classify room types**: For each room, classify it into one of these types:
     - "bedroom" (sleeping rooms)
     - "living" (living room, family room)
     - "kitchen" (cooking areas)
@@ -228,8 +228,11 @@ def _validate_and_convert_rooms(
     
     Validates:
         - Required fields: id, name, type, level, area_m2
-        - Numeric ranges: area_m2 > 0, level >= 1
-        - Type values: Must be valid room type
+        - Numeric ranges: 
+            - area_m2: 2.0 to 500.0 m² (reasonable bounds)
+            - level: >= 1 (enforced by Pydantic)
+        - Type values: Must be in VALID_ROOM_TYPES set
+        - Name validation: Non-empty, not just whitespace
     
     Args:
         raw_rooms: List of room dictionaries from LLM
@@ -238,47 +241,88 @@ def _validate_and_convert_rooms(
         List of validated Room Pydantic models
     
     Explanation:
-        Pydantic models automatically validate data types and constraints.
-        This ensures extracted rooms match the Room schema exactly.
+        This function performs multi-layer validation:
+        1. Field presence check (required fields exist)
+        2. Type validation (room type is in allowed set)
+        3. Range validation (area is within reasonable bounds)
+        4. Pydantic validation (automatic type conversion and constraint checking)
+        
+        Rooms that fail validation are skipped (not included in result).
+        This ensures only valid rooms proceed to confidence scoring.
     """
     validated_rooms = []
     for idx, room_dict in enumerate(raw_rooms):
         try:
-            # Generate ID if missing
+            # Step 1: Generate ID if missing
             if "id" not in room_dict or not room_dict["id"]:
                 room_dict["id"] = f"R{100 + idx + 1}"
             
-            # Ensure required fields exist
-            if "name" not in room_dict:
+            # Step 2: Validate and set name
+            if "name" not in room_dict or not room_dict.get("name", "").strip():
+                # Generate default name if missing or empty
                 room_dict["name"] = f"Room {room_dict.get('id', idx + 1)}"
+            else:
+                # Ensure name is not just whitespace
+                room_dict["name"] = str(room_dict["name"]).strip()
             
-            if "type" not in room_dict:
+            # Step 3: Validate room type
+            room_type = room_dict.get("type", "").lower().strip()
+            if not room_type or room_type not in VALID_ROOM_TYPES:
+                # Default to "other" if invalid type
                 room_dict["type"] = "other"
-                
+            else:
+                room_dict["type"] = room_type
+            
+            # Step 4: Validate level
             if "level" not in room_dict:
                 room_dict["level"] = 1
+            else:
+                # Ensure level is positive integer
+                try:
+                    level = int(room_dict["level"])
+                    if level < 1:
+                        room_dict["level"] = 1
+                    else:
+                        room_dict["level"] = level
+                except (ValueError, TypeError):
+                    room_dict["level"] = 1
                 
+            # Step 5: Validate area_m2 (CRITICAL - skip if invalid)
             if "area_m2" not in room_dict:
                 # Skip rooms without area (can't validate)
                 continue
             
-            # Validate area is positive
-            if room_dict["area_m2"] <= 0:
-                continue  # Skip invalid areas
+            try:
+                area = float(room_dict["area_m2"])
+            except (ValueError, TypeError):
+                # Skip rooms with non-numeric area
+                continue
             
-            # Create Room model (Pydantic validates automatically)
+            # Range validation: area must be within reasonable bounds
+            if area < MIN_ROOM_AREA_M2:
+                # Too small - likely measurement error
+                continue
+            if area > MAX_ROOM_AREA_M2:
+                # Too large - likely measurement error or unit confusion
+                continue
+            
+            # Step 6: Create Room model (Pydantic validates automatically)
+            # Pydantic will enforce:
+            #   - level >= 1 (ge=1 constraint)
+            #   - area_m2 > 0 (gt=0 constraint)
+            #   - Type conversion (str, int, float)
+            
             room = Room(
                 id=str(room_dict["id"]),
                 name=str(room_dict["name"]),
                 type=str(room_dict["type"]),
                 level=int(room_dict["level"]),
-                area_m2=float(room_dict["area_m2"])
+                area_m2=float(area)
             )
-            
             validated_rooms.append(room)
-        
+            
         except Exception as e:
-            # Skip invalid rooms, log error
+            # Skip invalid rooms, log error for debugging
             print(f"⚠ Skipping invalid room {room_dict.get('id', idx)}: {e}")
             continue
     
@@ -291,47 +335,117 @@ def _calculate_confidence_scores(
     """
     Calculate confidence scores for extraction quality.
     
-    Heuristics:
-        - Overall: Based on number of rooms extracted and validation success
-        - Name: All rooms have names (1.0) or some missing (lower)
-        - Type: All rooms have valid types (1.0) or some "other" (lower)
-        - Area: All rooms have areas (1.0) or some missing (lower)
+    Enhanced heuristics:
+        - Overall: Weighted combination of all sub-scores
+        - Name confidence: Based on name quality (non-empty, not generic)
+        - Type confidence: Based on type classification accuracy (fewer "other" = better)
+        - Area confidence: Based on area reasonableness and consistency
     
     Args:
-        rooms: Validated Room models
-        raw_response: Raw JSON response from LLM
+        rooms: Validated Room models (already passed validation)
+        raw_response: Raw JSON response from LLM (for metadata)
     
     Returns:
-        Dictionary with confidence scores (0.0 to 1.0)
+        Dictionary with confidence scores (0.0 to 1.0):
+        {
+            "overall": float,
+            "name_confidence": float,
+            "type_confidence": float,
+            "area_confidence": float,
+        }
     
     Explanation:
-        Simple heuristics for MVP. More sophisticated scoring can be added later (e.g., based on LLM confidence tokens, extraction quality metrics)
+        Confidence scoring uses heuristics because:
+        1. LLMs don't always provide confidence tokens
+        2. We can infer quality from extraction patterns
+        
+        Scoring factors:
+        - Name quality: Generic names ("Room 1") = lower confidence
+        - Type accuracy: More "other" types = lower confidence (LLM couldn't classify)
+        - Area reasonableness: Area near bounds = lower confidence (might be errors)
+        - Extraction completeness: More rooms extracted = higher confidence (if reasonable)
     """
     if not rooms:
+        # No rooms extracted = zero confidence
         return {
             "overall": 0.0,
             "name_confidence": 0.0,
             "type_confidence": 0.0,
-            "area_confidence": 0.0
+            "area_confidence": 0.0,
         }
     total_rooms = len(rooms)
     
-    # Name confidence: All rooms have non-empty names
-    name_confidence = 1.0 if all(r.name and r.name.strip() for r in rooms) else 0.8
+    # ============================================================
+    # Name Confidence Calculation
+    # ============================================================
+    # Check if names are generic (e.g., "Room 1", "Room 2")
+    generic_name_patterns = ["room", "r", "space"]
+    generic_count = 0
     
-    # Type confidence: Fewer "other" types = higher confidence
+    for room in rooms:
+        name_lower = room.name.lower().strip()
+        # Check if name matches generic pattern
+        is_generic = any(
+            name_lower.startswith(pattern) and (len(name_lower) <= len(pattern) + 3) # "Room 1" = 6 chars
+            for pattern in generic_name_patterns
+        )
+        if is_generic:
+            generic_count += 1
+
+    # Name confidence: Lower if many generic names
+    # Formula: 1.0 if all specific, 0.7 if all generic
+    name_confidence = 1.0 - (generic_count / total_rooms * 0.3)
+    name_confidence = max(0.7, name_confidence)  # Floor at 0.7 (even generic names are extracted)
+    
+    # ============================================================
+    # Type Confidence Calculation
+    # ============================================================
+    # Count "other" types (LLM couldn't classify)
     other_count = sum(1 for r in rooms if r.type == "other")
-    type_confidence = 1.0 - (other_count / total_rooms * 0.3) # Penalize "other" types
     
-    # Area confidence: All rooms have positive areas (already validated)
-    area_confidence = 1.0
+    # Type confidence: Penalize "other" types
+    # Formula: 1.0 if no "other", 0.6 if all "other"
+    type_confidence = 1.0 - (other_count / total_rooms * 0.4)
+    type_confidence = max(0.6, type_confidence) # Floor at 0.6
     
-    # Overall: Weighted average
+    # ============================================================
+    # Area Confidence Calculation
+    # ============================================================
+    # Check if areas are reasonable (not near bounds)
+    # Areas near MIN or MAX might indicate measurement errors
+    near_min_count = sum(1 for r in rooms if r.area_m2 < MIN_ROOM_AREA_M2 * 1.5)
+    near_max_count = sum(1 for r in rooms if r.area_m2 > MAX_ROOM_AREA_M2 * 0.8)
+    
+    # Area confidence: Lower if many areas near bounds
+    # Formula: 1.0 if all areas in middle range, 0.8 if many near bounds
+    area_penalty = (near_min_count + near_max_count) / total_rooms * 0.2
+    area_confidence = 1.0 - area_penalty
+    area_confidence = max(0.8, area_confidence) # Floor at 0.8 (areas passed validation)
+    
+    # Additional check: Area consistency
+    # If all rooms have very similar areas, might indicate extraction issue
+    if total_rooms > 1:
+        areas = [r.area_m2 for r in rooms]
+        area_variance = max(areas) / min(areas) if min(areas) > 0 else 1.0
+        if area_variance < 1.2:  # All areas within 20% of each other
+            area_confidence *= 0.9  # Slight penalty for suspicious uniformity
+
+    # ============================================================
+    # Overall Confidence Calculation
+    # ============================================================
+    # Weighted average of all sub-scores
+    # Weights reflect importance:
+    #   - Type (40%): Most important (affects compliance checking)
+    #   - Area (30%): Important (affects compliance checking)
+    #   - Name (30%): Less critical (mainly for display)
     overall = (
-        name_confidence * 0.3 +
+        name_confidence * 0.3 + 
         type_confidence * 0.4 +
         area_confidence * 0.3
     )
+    
+    # Clamp to [0.0, 1.0] (safety check)
+    overall = max(0.0, min(1.0, overall))
     
     return {
         "overall": overall,
@@ -340,12 +454,13 @@ def _calculate_confidence_scores(
         "area_confidence": area_confidence
     }
 
+
 def extract_rooms_from_blueprint(
     image_path: Union[str, Path],
     scale_override: Optional[float] = None,
     model_name: str = "gpt-4o",
     provider: Optional[str] = None
-) -> Dict[str, Any]:
+) -> BlueprintExtractionResult:
     """
     Extract room data from blueprint image using VLM semantic understanding.
     
@@ -368,23 +483,7 @@ def extract_rooms_from_blueprint(
         provider: LLM provider ("openai", "gemini") - defaults to env var
     
     Returns:
-        Dictionary with structure:
-        {
-            "rooms": List[Room],
-            "confidence": {
-                "overall": float,
-                "name_confidence": float,
-                "type_confidence": float,
-                "area_confidence": float
-            },
-            "scale_used": float,
-            "scale_source": str,
-            "extraction_metadata": Dict[str, Any],
-            "note": str
-        }
-        
-        Note:
-            Returns dict instead of BluePrintExtractionResult until models are created. Once ExtractionConfidence and BluePrintExtractionResult models exist, change return type and wrap result BluePrintExtractionResult.
+        BlueprintExtractionResult with validated rooms and confidence scores.
     
     Example:
         result = extract_rooms_from_blueprint(
@@ -392,15 +491,15 @@ def extract_rooms_from_blueprint(
             scale_override=1.0,
             model_name="gpt-4o"
         )
-        rooms = result["rooms"] # List[Room]
-        confidence = result["confidence"] # Dict[str, float]
+        rooms = result.rooms  # List[Room]
+        confidence = result.confidence  # ExtractionConfidence
     """
     
     # Step 1: Determine scale
     scale = scale_override if scale_override is not None else 1.0
-    scale_scource = "user_input" if scale_override is not None else "default"
+    scale_source = "user_input" if scale_override is not None else "default"
     
-    # Step 2: Load iamge and convert to base64
+    # Step 2: Load image and convert to base64
     try:
         base64_image = _load_image_as_base64(image_path)
     except Exception as e:
@@ -434,7 +533,7 @@ def extract_rooms_from_blueprint(
         response = llm.invoke([message])
         response_text = response.content
     except Exception as e:
-        raise RuntimeError(f"LLM call field: {e}")
+        raise RuntimeError(f"LLM call failed: {e}")
     
     # Step 7: Parse JSON response
     try:
@@ -455,20 +554,21 @@ def extract_rooms_from_blueprint(
     # Step 10: Calculate confidence scores
     confidence = _calculate_confidence_scores(validated_rooms, parsed_response)
     
-    # Step 11: Build result dictionary
-    # TODO: Once ExtractionConfidence and BlueprintExtractionResult models exist, import them and return BlueprintExtractionResult instead of dict
-    result = {
-        "rooms": validated_rooms,
-        "confidence": confidence,
-        "scale_used": scale,
-        "scale_source": scale_scource,
-        "extraction_metadata": {
+    # Step 11: Build result using Pydantic models
+    confidence_obj = ExtractionConfidence(**confidence)
+    
+    result = BlueprintExtractionResult(
+        rooms=validated_rooms,
+        confidence=confidence_obj,
+        scale_used=scale,
+        scale_source=scale_source,
+        extraction_metadata={
             "model_used": model_name,
             "provider": provider or os.getenv("VISION_LLM_PROVIDER", "openai"),
             "total_rooms_extracted": len(validated_rooms),
             "raw_rooms_count": len(raw_rooms)
         },
-        "note": "Extraction is approximate. CSV pipeline remains ground truth."
-    }
+        note="Extraction is approximate. CSV pipeline remains ground truth."
+    )
     
     return result
