@@ -69,6 +69,7 @@ backend/.env.local
 backend/.env.*.local
 *.env
 .env.local
+backend/.env.example
 
 # Database
 *.db
