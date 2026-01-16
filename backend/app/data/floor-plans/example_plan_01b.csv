@@ -1,11 +1,11 @@
 id,name,type,level,area_m2
-R101,Bedroom 1A,bedroom,1,14.0
-R102,Bedroom 1B,bedroom,1,17.52
-R103,Living Area 1,living,1,17.48
-R104,Kitchen 1 + Living Area 1,kitchen,1,21
-R105,T & B 1,bathroom,1,3
-R106,Bedroom 2A,bedroom,1,14.0
-R107,Bedroom 2B,bedroom,1,17.52
-R108,Living Area 2,living,1,17.48
-R109,Kitchen 2 + Living Area 2,kitchen,1,21
-R110,T & B 2,bathroom,1,3
+R201,Bedroom 3A,bedroom,2,24.0
+R202,Bedroom 3B,bedroom,2,17.52
+R203,Living Area 3,living,2,17.48
+R204,Kitchen 3 + Living Area 3,kitchen,2,21
+R205,T & B 3,bathroom,2,3
+R206,Bedroom 4A,bedroom,2,14.0
+R207,Bedroom 4B,bedroom,2,17.52
+R208,Living Area 4,living,2,17.48
+R209,Kitchen 4 + Living Area 4,kitchen,2,21
+R210,T & B 4,bathroom,2,3
