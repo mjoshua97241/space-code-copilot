@@ -36,7 +36,7 @@ todos:
       - blueprint-extractor
   - id: curated-plan-testing
     content: Test on 2-3 curated blueprint images (known-good plans), document results and limitations
-    status: in_progress
+    status: completed
     dependencies:
       - blueprint-extractor
       - validation-logic
