@@ -1,0 +1,13 @@
+id,name,type,level,area_m2
+R101,Office/Bedroom,bedroom,1,15.4
+R102,Living room - Dining room,living,1,15.4
+R103,Kitchen,kitchen,1,16.0
+R104,Hall,other,1,12.3
+R105,Bathroom,bathroom,1,7.4
+R106,Utility,other,1,6.0
+R207,Bedroom 1,bedroom,2,24.4
+R208,Closet,other,2,6.4
+R209,Bedroom 2,bedroom,2,17.0
+R210,Hall,other,2,16.9
+R211,Bedroom 3,bedroom,2,15.4
+R212,Bathroom 1,bathroom,2,15.4
