@@ -202,7 +202,7 @@ class ExtractionConfidence(BaseModel):
         description="Area calculation confidence"
     )
     
-    class BluePrintExtractionResult(BaseModel):
+    class BlueprintExtractionResult(BaseModel):
         """
         Result of VLM blueprint extraction.
         
