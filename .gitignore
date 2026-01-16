@@ -105,14 +105,11 @@ backend/**/cache/
 # Test results (generated)
 **/curated_plan_results/*.json
 **/curated_plan_results/*.csv
-backend/app/tests/curated_plan_results/*.json
 backend/app/tests/curated_plan_results/*.csv
 
 # Evaluation results (generated)
 **/evaluation/results/*.json
 **/evaluation/results/*.csv
-evaluation/results/*.json
-evaluation/results/*.csv
 
 # Marimo session files
 **/__marimo__/
