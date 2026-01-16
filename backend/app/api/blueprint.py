@@ -15,7 +15,8 @@ router = APIRouter(prefix="/api/blueprint", tags=["blueprint"])
 @router.post("/extract", response_model=BlueprintExtractionResult)
 async def extract_blueprint(
     file: UploadFile = File(..., description="Blueprint image (PNG/JPG) or PDF"),
-    scale: Optional[float] = Form(None, description="Scale factor (default: 1.0 for 1:100)")
+    scale: Optional[float] = Form(None, description="Scale factor (default: 1.0 for 1:100)"),
+    page_index: Optional[int] = Form(None, description="PDF page index (0-based). If None, extracts all pages combined.")
 ) -> BlueprintExtractionResult:
     """
     Extract room data from blueprint image using VLM.
@@ -25,6 +26,7 @@ async def extract_blueprint(
     Args:
         file: Blueprint image (PNG, JPG) or PDF
         scale: Optional scale override (1.0 = 1:100 scale)
+        page_index: Optional PDF page index (0-based). If None, all pages are combined vertically.
         
     Returns:
         BlueprintExtractionResult with extracted rooms and confidence scores
@@ -52,7 +54,8 @@ async def extract_blueprint(
         # Extract rooms from blueprint (returns BlueprintExtractionResult directly)
         result = extract_rooms_from_blueprint(
             image_path=tmp_path,
-            scale_override=scale
+            scale_override=scale,
+            page_index=page_index
         )
         
         return result

@@ -13,6 +13,7 @@ import base64
 import io
 import json
 import os
+import re
 from pathlib import Path
 from typing import List, Optional, Union, Dict, Any
 
@@ -41,53 +42,85 @@ VALID_ROOM_TYPES = {
 MIN_ROOM_AREA_M2 = 2.0 # Minimum reasonable room area (e.g., small closet)
 MAX_ROOM_AREA_M2 = 500.0 # Maximum reasonable room area (e.g., large hall)
 
-def _load_image_as_base64(image_path: Union[str, Path]) -> str:
+def _load_image_as_base64(image_path: Union[str, Path], page_index: Optional[int] = None) -> str:
     """
     Load image file and convert to base64 string for VLM.
     
     Handles:
     - PNG/JPG images: Direct conversion
-    - PDF files: Extracts first page as image
+    - PDF files: Extracts all pages (or specific page if page_index provided) and combines them
     
     Args:
         image_path: Path to image or PDF file
+        page_index: Optional page index (0-based) for PDFs. If None, extracts all pages.
+                    For multi-page PDFs, pages are combined vertically into a single image.
     
     Returns:
         Base64-encoded image string (data URI format)
         
     Explanation:
         Vision LLMs need images in base64 format. LangChain expects a data URI format: "data:image/png;base64,{base64_string}"
+        For multi-page PDFs, all pages are combined vertically to preserve the full blueprint context.
     """
     image_path = Path(image_path)
     
     if not image_path.exists():
         raise FileNotFoundError(f"Image file not found: {image_path}")
     
-    # Handle PDF files (extract first page as image)
+    # Handle PDF files
     if image_path.suffix.lower() == '.pdf':
         doc = fitz.open(str(image_path))
         if len(doc) == 0:
             raise ValueError(f"PDF has no pages: {image_path}")
         
-        # Get first page
-        page = doc[0]
+        # Determine which pages to extract
+        if page_index is not None:
+            if page_index < 0 or page_index >= len(doc):
+                doc.close()
+                raise ValueError(f"Page index {page_index} out of range (0-{len(doc)-1})")
+            pages_to_extract = [page_index]
+        else:
+            # Extract all pages
+            pages_to_extract = list(range(len(doc)))
         
-        # Convert page to image (PNG format)
-        # zoom=2.0 increases resolution for better VLM reading
-        mat = fitz.Matrix(2.0, 2.0) # 2x zoom
-        pix = page.get_pixmap(matrix=mat)
+        # Convert pages to images and combine them
+        page_images = []
+        mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better VLM reading
         
-        # Convert to PIL Image
-        img_data = pix.tobytes("png")
-        img = Image.open(io.BytesIO(img_data))
+        for page_num in pages_to_extract:
+            page = doc[page_num]
+            pix = page.get_pixmap(matrix=mat)
+            img_data = pix.tobytes("png")
+            page_img = Image.open(io.BytesIO(img_data))
+            page_images.append(page_img)
+        
         doc.close()
+        
+        # Combine pages vertically if multiple pages
+        if len(page_images) == 1:
+            img = page_images[0]
+        else:
+            # Calculate combined dimensions
+            total_width = max(img.width for img in page_images)
+            total_height = sum(img.height for img in page_images)
+            
+            # Create combined image
+            combined_img = Image.new('RGB', (total_width, total_height), color='white')
+            y_offset = 0
+            for page_img in page_images:
+                # Center page horizontally if narrower than total width
+                x_offset = (total_width - page_img.width) // 2
+                combined_img.paste(page_img, (x_offset, y_offset))
+                y_offset += page_img.height
+            
+            img = combined_img
     else:
         # Load regular image file (PNG, JPG, etc.)
         img = Image.open(image_path)
-        
+    
     # Convert PIL Image to base64
     buffer = io.BytesIO()
-    img.save(buffer, format="PNG") # Save as PNG for consistency
+    img.save(buffer, format="PNG")  # Save as PNG for consistency
     img_bytes = buffer.getvalue()
     
     # Encode to base64
@@ -121,15 +154,21 @@ def _build_extraction_prompt(scale: float) -> str:
     - Some labels may be scattered or abbreviated
     
 2. **Classify room types**: For each room, classify it into one of these types:
-    - "bedroom" (sleeping rooms)
-    - "living" (living room, family room)
-    - "kitchen" (cooking areas)
-    - "bathroom" (WC, toilet, shower)
-    - "office" (work spaces, study rooms)
-    - "meeting" (conference rooms, meeting spaces)
-    - "corridor" (hallways, passages)
-    - "storage" (closets, storage areas)
+    - "bedroom" (sleeping rooms, BR, Bedroom)
+    - "living" (living room, family room, Living Area)
+    - "kitchen" (cooking areas, Kitchen)
+    - "bathroom" (WC, toilet, shower, T&B, Toilet & Bath, Bath, Bathroom, CR, Comfort Room)
+    - "office" (work spaces, study rooms, Office)
+    - "meeting" (conference rooms, meeting spaces, Meeting Room)
+    - "corridor" (hallways, passages, Corridor, Hallway)
+    - "storage" (closets, storage areas, Storage, Closet)
     - "other" (any other room type)
+    
+    **Important abbreviations to recognize:**
+    - "T&B" or "T & B" = bathroom (Toilet & Bath)
+    - "WC" = bathroom (Water Closet)
+    - "CR" = bathroom (Comfort Room)
+    - "BR" = bedroom
     
 3. **Read dimensions**: Find dimension annotations scattered throughout the plan:
     - Look for numbers with units (e.g., "3.0", "4.0", "3.5m")
@@ -142,10 +181,18 @@ def _build_extraction_prompt(scale: float) -> str:
     - Apply scale factor: {scale} (this means 1 unit on blueprint = {scale} meters in reality)
     - Convert all areas to square meters (m²)
     
-5. **Assign floor level**: Determine which floor level this plan represents (default to 1 if unclear)
+5. **Assign floor level**: Determine which floor level this plan represents by reading plan titles:
+    - "GROUND FLOOR PLAN" or "GROUND FLOOR" or "FIRST FLOOR PLAN" = level 1
+    - "SECOND FLOOR PLAN" or "2ND FLOOR PLAN" = level 2
+    - "THIRD FLOOR PLAN" or "3RD FLOOR PLAN" = level 3
+    - "FOURTH FLOOR PLAN" or "4TH FLOOR PLAN" = level 4
+    - And so on for higher floors
+    - Look for floor level labels in plan titles or headers
+    - If no clear label is found, default to level 1
 
 **Output format**: Return a JSON object with this exact structure:
 {{
+    "plan_title": "GROUND FLOOR PLAN",
     "rooms": [
         {{
             "id": "R101",
@@ -163,6 +210,8 @@ def _build_extraction_prompt(scale: float) -> str:
         }}
     ]
 }}
+
+**Note**: Include "plan_title" field if you can read it from the blueprint (e.g., "GROUND FLOOR PLAN", "SECOND FLOOR PLAN"). This helps determine the correct floor level.
 
 **Important**:
 - Extract ALL rooms visible in the blueprint
@@ -220,8 +269,145 @@ def _parse_llm_response(response_text: str) -> Dict[str, Any]:
             f"Response text: {response_text[:500]}"
         )
                 
+def _normalize_room_type(room_type: str, room_name: str = "") -> str:
+    """
+    Normalize room type by handling common abbreviations and variations.
+    
+    Args:
+        room_type: Room type string from LLM
+        room_name: Optional room name for additional context
+    
+    Returns:
+        Normalized room type (must be in VALID_ROOM_TYPES)
+    
+    Explanation:
+        Handles common abbreviations:
+        - T&B, T & B, TB -> bathroom
+        - WC, CR, Comfort Room -> bathroom
+        - BR -> bedroom
+        Also checks room name for additional context.
+    """
+    if not room_type:
+        return "other"
+    
+    # Normalize: lowercase, strip, remove special chars
+    normalized = room_type.lower().strip()
+    name_lower = room_name.lower().strip() if room_name else ""
+    
+    # Bathroom variations
+    bathroom_keywords = ["t&b", "t & b", "tb", "wc", "water closet", "cr", "comfort room", 
+                         "toilet", "bath", "bathroom", "restroom", "lavatory"]
+    if any(keyword in normalized or keyword in name_lower for keyword in bathroom_keywords):
+        return "bathroom"
+    
+    # Bedroom variations
+    bedroom_keywords = ["br", "bedroom", "bed room"]
+    if any(keyword in normalized or keyword in name_lower for keyword in bedroom_keywords):
+        return "bedroom"
+    
+    # Living room variations
+    living_keywords = ["living", "family room", "familyroom", "dining", "living/dining"]
+    if any(keyword in normalized or keyword in name_lower for keyword in living_keywords):
+        return "living"
+    
+    # Kitchen variations
+    kitchen_keywords = ["kitchen", "cooking"]
+    if any(keyword in normalized or keyword in name_lower for keyword in kitchen_keywords):
+        return "kitchen"
+    
+    # Office variations
+    office_keywords = ["office", "study", "work"]
+    if any(keyword in normalized or keyword in name_lower for keyword in office_keywords):
+        return "office"
+    
+    # Meeting room variations
+    meeting_keywords = ["meeting", "conference", "boardroom"]
+    if any(keyword in normalized or keyword in name_lower for keyword in meeting_keywords):
+        return "meeting"
+    
+    # Corridor variations
+    corridor_keywords = ["corridor", "hallway", "hall", "passage"]
+    if any(keyword in normalized or keyword in name_lower for keyword in corridor_keywords):
+        return "corridor"
+    
+    # Storage variations
+    storage_keywords = ["storage", "closet", "pantry"]
+    if any(keyword in normalized or keyword in name_lower for keyword in storage_keywords):
+        return "storage"
+    
+    # If it matches a valid type directly, return it
+    if normalized in VALID_ROOM_TYPES:
+        return normalized
+    
+    # Default to "other" if no match
+    return "other"
+
+def _normalize_floor_level(level: Any, plan_title: str = "") -> int:
+    """
+    Normalize floor level by parsing plan titles and labels.
+    
+    Args:
+        level: Floor level from LLM (int, str, or None)
+        plan_title: Optional plan title/header text for context
+    
+    Returns:
+        Normalized floor level (1-based integer)
+    
+    Explanation:
+        Handles common floor level labels:
+        - "GROUND FLOOR PLAN" -> 1
+        - "SECOND FLOOR PLAN" -> 2
+        - "2ND FLOOR PLAN" -> 2
+        - etc.
+        Also validates numeric level values.
+    """
+    # First, try to parse level as integer
+    if level is not None:
+        try:
+            level_int = int(level)
+            if level_int >= 1:
+                return level_int
+        except (ValueError, TypeError):
+            pass
+    
+    # If level is invalid or missing, try to infer from plan title
+    if plan_title:
+        title_upper = plan_title.upper()
+        
+        # Ground/First floor
+        if any(keyword in title_upper for keyword in ["GROUND FLOOR", "GROUND", "FIRST FLOOR", "1ST FLOOR"]):
+            return 1
+        
+        # Second floor
+        if any(keyword in title_upper for keyword in ["SECOND FLOOR", "2ND FLOOR", "2ND"]):
+            return 2
+        
+        # Third floor
+        if any(keyword in title_upper for keyword in ["THIRD FLOOR", "3RD FLOOR", "3RD"]):
+            return 3
+        
+        # Fourth floor
+        if any(keyword in title_upper for keyword in ["FOURTH FLOOR", "4TH FLOOR", "4TH"]):
+            return 4
+        
+        # Fifth floor
+        if any(keyword in title_upper for keyword in ["FIFTH FLOOR", "5TH FLOOR", "5TH"]):
+            return 5
+        
+        # Try to extract number from title (e.g., "FLOOR 2", "LEVEL 3")
+        floor_match = re.search(r'(?:FLOOR|LEVEL|FL)\s*(\d+)', title_upper)
+        if floor_match:
+            try:
+                return int(floor_match.group(1))
+            except ValueError:
+                pass
+    
+    # Default to level 1 if nothing found
+    return 1
+
 def _validate_and_convert_rooms(
-    raw_rooms: List[Dict[str, Any]]
+    raw_rooms: List[Dict[str, Any]],
+    plan_title: str = ""
 ) -> List[Room]:
     """
     Validate and convert raw room dictionaries to Room models.
@@ -236,6 +422,7 @@ def _validate_and_convert_rooms(
     
     Args:
         raw_rooms: List of room dictionaries from LLM
+        plan_title: Optional plan title/header text for floor level inference
     
     Returns:
         List of validated Room Pydantic models
@@ -265,27 +452,18 @@ def _validate_and_convert_rooms(
                 # Ensure name is not just whitespace
                 room_dict["name"] = str(room_dict["name"]).strip()
             
-            # Step 3: Validate room type
-            room_type = room_dict.get("type", "").lower().strip()
-            if not room_type or room_type not in VALID_ROOM_TYPES:
-                # Default to "other" if invalid type
-                room_dict["type"] = "other"
-            else:
-                room_dict["type"] = room_type
+            # Step 3: Normalize and validate room type
+            room_type_raw = room_dict.get("type", "")
+            room_name = room_dict.get("name", "")
+            room_dict["type"] = _normalize_room_type(room_type_raw, room_name)
             
-            # Step 4: Validate level
-            if "level" not in room_dict:
-                room_dict["level"] = 1
-            else:
-                # Ensure level is positive integer
-                try:
-                    level = int(room_dict["level"])
-                    if level < 1:
-                        room_dict["level"] = 1
-                    else:
-                        room_dict["level"] = level
-                except (ValueError, TypeError):
-                    room_dict["level"] = 1
+            # Ensure normalized type is in valid set (should always be after normalization)
+            if room_dict["type"] not in VALID_ROOM_TYPES:
+                room_dict["type"] = "other"
+            
+            # Step 4: Normalize and validate level
+            level_raw = room_dict.get("level", None)
+            room_dict["level"] = _normalize_floor_level(level_raw, plan_title)
                 
             # Step 5: Validate area_m2 (CRITICAL - skip if invalid)
             if "area_m2" not in room_dict:
@@ -459,13 +637,14 @@ def extract_rooms_from_blueprint(
     image_path: Union[str, Path],
     scale_override: Optional[float] = None,
     model_name: str = "gpt-4o",
-    provider: Optional[str] = None
+    provider: Optional[str] = None,
+    page_index: Optional[int] = None
 ) -> BlueprintExtractionResult:
     """
     Extract room data from blueprint image using VLM semantic understanding.
     
     This is the main function that orchestrates the extraction pipeline:
-        1. Load image (handle PDF by extracting first page)
+        1. Load image (handle PDF by extracting all pages or specific page)
         2. Convert to base64 for VLM
         3. Build prompt emphasizing semantic understanding
         4. Call vision LLM
@@ -481,6 +660,8 @@ def extract_rooms_from_blueprint(
             - 0.5 = 1:200 scale (1 unit on blueprint = 0.5 meters)
         model_name: VLM model to use ("gpt-4o", "gemini-1.5-flash". etc.)
         provider: LLM provider ("openai", "gemini") - defaults to env var
+        page_index: Optional page index (0-based) for PDFs. If None, extracts all pages.
+                    For multi-page PDFs, all pages are combined vertically into a single image.
     
     Returns:
         BlueprintExtractionResult with validated rooms and confidence scores.
@@ -501,7 +682,7 @@ def extract_rooms_from_blueprint(
     
     # Step 2: Load image and convert to base64
     try:
-        base64_image = _load_image_as_base64(image_path)
+        base64_image = _load_image_as_base64(image_path, page_index=page_index)
     except Exception as e:
         raise ValueError(f"Failed to load image: {e}")
     
@@ -541,13 +722,16 @@ def extract_rooms_from_blueprint(
     except Exception as e:
         raise ValueError(f"Failed to parse LLM response: {e}")
     
-    # Step 8: Extract rooms from response
+    # Step 8: Extract rooms and plan metadata from response
     raw_rooms = parsed_response.get("rooms", [])
     if not raw_rooms:
         raise ValueError("No rooms extracted from blueprint")
     
+    # Extract plan title if available (for floor level inference)
+    plan_title = parsed_response.get("plan_title", "") or parsed_response.get("title", "")
+    
     # Step 9: Validate and convert to Room models
-    validated_rooms = _validate_and_convert_rooms(raw_rooms)
+    validated_rooms = _validate_and_convert_rooms(raw_rooms, plan_title=plan_title)
     if not validated_rooms:
         raise ValueError("No valid rooms extracted after validation")
     

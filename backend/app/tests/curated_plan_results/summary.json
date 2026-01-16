@@ -1,0 +1,153 @@
+{
+  "timestamp": "2026-01-16T14:01:40.496285",
+  "total_tests": 2,
+  "successful": 2,
+  "failed": 0,
+  "with_ground_truth": 0,
+  "without_ground_truth": 2,
+  "results": [
+    {
+      "plan_name": "example_plan_01",
+      "plan_path": "/home/mj/workspace/space-code-copilot/backend/app/data/floor-plans/example_plan_01.pdf",
+      "ground_truth_csv": null,
+      "has_ground_truth": false,
+      "page_index": null,
+      "extraction_result": {
+        "rooms": [
+          {
+            "id": "R101",
+            "name": "Bedroom",
+            "type": "bedroom",
+            "level": 1,
+            "area_m2": 12.0
+          },
+          {
+            "id": "R102",
+            "name": "Living Area",
+            "type": "living",
+            "level": 1,
+            "area_m2": 25.5
+          },
+          {
+            "id": "R103",
+            "name": "Kitchen",
+            "type": "kitchen",
+            "level": 1,
+            "area_m2": 10.0
+          },
+          {
+            "id": "R104",
+            "name": "Bathroom",
+            "type": "bathroom",
+            "level": 1,
+            "area_m2": 5.0
+          }
+        ],
+        "confidence": {
+          "overall": 1.0,
+          "name_confidence": 1.0,
+          "type_confidence": 1.0,
+          "area_confidence": 1.0
+        },
+        "scale_used": 1.0,
+        "scale_source": "user_input",
+        "metadata": {
+          "model_used": "gpt-4o",
+          "provider": "openai",
+          "total_rooms_extracted": 4,
+          "raw_rooms_count": 4
+        }
+      },
+      "timestamp": "2026-01-16T14:01:08.463554"
+    },
+    {
+      "plan_name": "example_plan_02",
+      "plan_path": "/home/mj/workspace/space-code-copilot/backend/app/data/floor-plans/example_plan_02.pdf",
+      "ground_truth_csv": null,
+      "has_ground_truth": false,
+      "page_index": null,
+      "extraction_result": {
+        "rooms": [
+          {
+            "id": "R101",
+            "name": "Office / Bedroom",
+            "type": "office",
+            "level": 1,
+            "area_m2": 15.4
+          },
+          {
+            "id": "R102",
+            "name": "Living room - Dining room",
+            "type": "living",
+            "level": 1,
+            "area_m2": 37.4
+          },
+          {
+            "id": "R103",
+            "name": "Kitchen",
+            "type": "kitchen",
+            "level": 1,
+            "area_m2": 16.0
+          },
+          {
+            "id": "R201",
+            "name": "Bedroom 1",
+            "type": "bedroom",
+            "level": 2,
+            "area_m2": 24.4
+          },
+          {
+            "id": "R202",
+            "name": "Closet",
+            "type": "storage",
+            "level": 2,
+            "area_m2": 6.4
+          },
+          {
+            "id": "R203",
+            "name": "Bedroom 2",
+            "type": "bedroom",
+            "level": 2,
+            "area_m2": 17.0
+          },
+          {
+            "id": "R204",
+            "name": "Bedroom 3",
+            "type": "bedroom",
+            "level": 2,
+            "area_m2": 15.4
+          },
+          {
+            "id": "R205",
+            "name": "Bathroom 1",
+            "type": "bathroom",
+            "level": 2,
+            "area_m2": 15.4
+          },
+          {
+            "id": "R206",
+            "name": "Hall",
+            "type": "corridor",
+            "level": 2,
+            "area_m2": 16.9
+          }
+        ],
+        "confidence": {
+          "overall": 1.0,
+          "name_confidence": 1.0,
+          "type_confidence": 1.0,
+          "area_confidence": 1.0
+        },
+        "scale_used": 1.0,
+        "scale_source": "user_input",
+        "metadata": {
+          "model_used": "gpt-4o",
+          "provider": "openai",
+          "total_rooms_extracted": 9,
+          "raw_rooms_count": 11
+        }
+      },
+      "timestamp": "2026-01-16T14:01:40.495578"
+    }
+  ]
+}
