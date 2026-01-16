@@ -33,6 +33,14 @@ from langchain_core.output_parsers import JsonOutputParser
 from app.core.llm import get_vision_llm
 from app.models.domain import Room
 
+VALID_ROOM_TYPES = {
+    "bedroom", "living", "kitchen", "bathroom", "office", "meeting", "corridor", "storage", "other"
+}
+
+# Reasonable area bounds (in m²) for validation
+MIN_ROOM_AREA_M2 = 2.0 # Minimum reasonable room area (e.g., small closet)
+MAX_ROOM_AREA_M2 = 500.0 # Maximum reasonable room area (e.g., large hall)
+
 def _load_image_as_base64(image_path: Union[str, Path]) -> str:
     """
     Load image file and convert to base64 string for VLM.
