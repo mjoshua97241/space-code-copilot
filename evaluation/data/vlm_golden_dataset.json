@@ -1,0 +1,285 @@
+[
+  {
+    "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01a.pdf",
+    "ground_truth_rooms": [
+      {
+        "id": "R101",
+        "name": "Bedroom 1A",
+        "type": "bedroom",
+        "level": 1,
+        "area_m2": 14.0
+      },
+      {
+        "id": "R102",
+        "name": "Bedroom 1B",
+        "type": "bedroom",
+        "level": 1,
+        "area_m2": 17.52
+      },
+      {
+        "id": "R103",
+        "name": "Living Area 1",
+        "type": "living",
+        "level": 1,
+        "area_m2": 17.48
+      },
+      {
+        "id": "R104",
+        "name": "Kitchen 1 + Living Area 1",
+        "type": "kitchen",
+        "level": 1,
+        "area_m2": 21.0
+      },
+      {
+        "id": "R105",
+        "name": "T & B 1",
+        "type": "bathroom",
+        "level": 1,
+        "area_m2": 3.0
+      },
+      {
+        "id": "R106",
+        "name": "Bedroom 2A",
+        "type": "bedroom",
+        "level": 1,
+        "area_m2": 14.0
+      },
+      {
+        "id": "R107",
+        "name": "Bedroom 2B",
+        "type": "bedroom",
+        "level": 1,
+        "area_m2": 17.52
+      },
+      {
+        "id": "R108",
+        "name": "Living Area 2",
+        "type": "living",
+        "level": 1,
+        "area_m2": 17.48
+      },
+      {
+        "id": "R109",
+        "name": "Kitchen 2 + Living Area 2",
+        "type": "kitchen",
+        "level": 1,
+        "area_m2": 21.0
+      },
+      {
+        "id": "R110",
+        "name": "T & B 2",
+        "type": "bathroom",
+        "level": 1,
+        "area_m2": 3.0
+      },
+      {
+        "id": "R111",
+        "name": "Porch 1",
+        "type": "other",
+        "level": 1,
+        "area_m2": 17.5
+      },
+      {
+        "id": "R112",
+        "name": "Porch 2",
+        "type": "other",
+        "level": 1,
+        "area_m2": 17.5
+      },
+      {
+        "id": "R113",
+        "name": "Laundry Area",
+        "type": "other",
+        "level": 1,
+        "area_m2": 13.125
+      }
+    ],
+    "scale": 1.0,
+    "plan_name": "example_plan_01a",
+    "csv_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01a.csv"
+  },
+  {
+    "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01b.pdf",
+    "ground_truth_rooms": [
+      {
+        "id": "R201",
+        "name": "Bedroom 3A",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 24.0
+      },
+      {
+        "id": "R202",
+        "name": "Bedroom 3B",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 17.52
+      },
+      {
+        "id": "R203",
+        "name": "Living Area 3",
+        "type": "living",
+        "level": 2,
+        "area_m2": 17.48
+      },
+      {
+        "id": "R204",
+        "name": "Kitchen 3 + Living Area 3",
+        "type": "kitchen",
+        "level": 2,
+        "area_m2": 21.0
+      },
+      {
+        "id": "R205",
+        "name": "T & B 3",
+        "type": "bathroom",
+        "level": 2,
+        "area_m2": 3.0
+      },
+      {
+        "id": "R206",
+        "name": "Bedroom 4A",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 14.0
+      },
+      {
+        "id": "R207",
+        "name": "Bedroom 4B",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 17.52
+      },
+      {
+        "id": "R208",
+        "name": "Living Area 4",
+        "type": "living",
+        "level": 2,
+        "area_m2": 17.48
+      },
+      {
+        "id": "R209",
+        "name": "Kitchen 4 + Living Area 4",
+        "type": "kitchen",
+        "level": 2,
+        "area_m2": 21.0
+      },
+      {
+        "id": "R210",
+        "name": "T & B 4",
+        "type": "bathroom",
+        "level": 2,
+        "area_m2": 3.0
+      },
+      {
+        "id": "R211",
+        "name": "Balcony3",
+        "type": "other",
+        "level": 2,
+        "area_m2": 8.76
+      },
+      {
+        "id": "R212",
+        "name": "Balcony4",
+        "type": "other",
+        "level": 2,
+        "area_m2": 8.76
+      }
+    ],
+    "scale": 1.0,
+    "plan_name": "example_plan_01b",
+    "csv_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01b.csv"
+  },
+  {
+    "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_02.pdf",
+    "ground_truth_rooms": [
+      {
+        "id": "R101",
+        "name": "Office/Bedroom",
+        "type": "bedroom",
+        "level": 1,
+        "area_m2": 15.4
+      },
+      {
+        "id": "R102",
+        "name": "Living room - Dining room",
+        "type": "living",
+        "level": 1,
+        "area_m2": 15.4
+      },
+      {
+        "id": "R103",
+        "name": "Kitchen",
+        "type": "kitchen",
+        "level": 1,
+        "area_m2": 16.0
+      },
+      {
+        "id": "R104",
+        "name": "Hall",
+        "type": "other",
+        "level": 1,
+        "area_m2": 12.3
+      },
+      {
+        "id": "R105",
+        "name": "Bathroom",
+        "type": "bathroom",
+        "level": 1,
+        "area_m2": 7.4
+      },
+      {
+        "id": "R106",
+        "name": "Utility",
+        "type": "other",
+        "level": 1,
+        "area_m2": 6.0
+      },
+      {
+        "id": "R207",
+        "name": "Bedroom 1",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 24.4
+      },
+      {
+        "id": "R208",
+        "name": "Closet",
+        "type": "other",
+        "level": 2,
+        "area_m2": 6.4
+      },
+      {
+        "id": "R209",
+        "name": "Bedroom 2",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 17.0
+      },
+      {
+        "id": "R210",
+        "name": "Hall",
+        "type": "other",
+        "level": 2,
+        "area_m2": 16.9
+      },
+      {
+        "id": "R211",
+        "name": "Bedroom 3",
+        "type": "bedroom",
+        "level": 2,
+        "area_m2": 15.4
+      },
+      {
+        "id": "R212",
+        "name": "Bathroom 1",
+        "type": "bathroom",
+        "level": 2,
+        "area_m2": 15.4
+      }
+    ],
+    "scale": 1.0,
+    "plan_name": "example_plan_02",
+    "csv_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_02.csv"
+  }
+]
