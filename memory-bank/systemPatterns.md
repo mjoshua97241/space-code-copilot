@@ -16,8 +16,8 @@ Backend patterns:
   - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
   - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: ✅ **COMPLETE** - Integrated with project context filtering, uses BM25-only retrieval (default, validated best)
-  - blueprint_extractor (image → structured room data via VLM) - **Status**: ✅ **Phase 4 COMPLETE** - Semantic understanding extraction from blueprint images, room-only (name, type, area), preview-only results, multi-page PDF support, tested on 3 curated plans with ground truth CSVs
-- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, vision LLM support added (get_vision_llm() for GPT-4o and Gemini 1.5 Flash Vision)
+  - blueprint_extractor (image → structured room data via VLM) - **Status**: ✅ **ALL PHASES COMPLETE** - Semantic understanding extraction from blueprint images, room-only (name, type, area), preview-only results, multi-page PDF support, tested on 3 curated plans with ground truth CSVs, VLM evaluation framework complete, Gemini 2.0 Flash selected as default model (composite score: 0.753)
+- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, vision LLM support added (get_vision_llm() defaults to Gemini 2.0 Flash, also supports GPT-4o)
 
 AI patterns:
 
@@ -221,11 +221,14 @@ PDFs require more sophisticated caching due to expensive operations:
    - **Results JSON**: `backend/app/tests/curated_plan_results/*.json` (per-plan results + summary.json)
    - **Metrics Evaluated**: Recall (45.56%), Precision (55.79%), Area accuracy (65.38%), Type match rate (100%)
    - **Key Findings**: Type classification excellent, recall needs improvement (room splitting, missing small rooms), area accuracy good for matched rooms
-3. 🔄 **In Progress**: VLM Extraction Metrics Framework - Similar to RAGAS pattern (Phase 6)
-   - Evaluation framework: `evaluation/vlm_extraction_metrics.py` (custom metrics)
-   - Evaluation script: `evaluation/vlm_evaluation.py` (following RAGAS pattern)
-   - Golden dataset: `evaluation/data/vlm_golden_dataset.csv` (matching floor plans to CSV ground truth)
-   - Metrics: area_accuracy, recall, precision, type_match_rate, semantic_understanding_score, confidence_calibration, composite_score
+3. ✅ **COMPLETE**: VLM Extraction Metrics Framework - Similar to RAGAS pattern (Phase 6)
+   - Evaluation framework: `evaluation/vlm_extraction_metrics.py` (8 custom metrics with fuzzy matching)
+   - Evaluation script: `evaluation/vlm_evaluation.py` (following RAGAS pattern, model comparison)
+   - Golden dataset: `evaluation/data/vlm_golden_dataset.json` (automatically matches floor plans to CSV ground truth)
+   - Metrics: area_accuracy, recall, precision, type_match_rate, name_match_rate, semantic_understanding_score, confidence_calibration, composite_score
+   - **Model Selection**: Gemini 2.0 Flash selected as best model (composite score: 0.753 vs GPT-4o's 0.743)
+   - **Results**: Better recall (69.66% vs 53.85%), faster latency (7.61s vs 13.53s), lower cost, comparable accuracy
+   - **Defaults Updated**: All code updated to use Gemini 2.0 Flash as default (`app/core/llm.py`, `app/services/blueprint_extractor.py`)
 3. **High**: LangSmith setup (automatic tracing, no code changes needed)
 4. **Medium**: Performance middleware (simple, useful for monitoring)
 5. **Low**: Metrics endpoint (optional, for presentation/monitoring)

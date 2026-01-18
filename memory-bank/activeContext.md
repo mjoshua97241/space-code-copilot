@@ -206,18 +206,18 @@ Recent changes:
 6. ⏸️ **Presentation Preparation ON HOLD**
    - Presentation preparation plan created (`.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`)
    - Deferred to focus on new feature development
-7. 🔄 **CURRENT FOCUS: Multimodal Blueprint Extraction**
-   - Implementing mentor-suggested feature: Extract structured room data from blueprint images using vision LLM
-   - Plan created: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`
+7. ✅ **Multimodal Blueprint Extraction - ALL PHASES COMPLETE**
+   - ✅ **Feature Complete**: Extract structured room data from blueprint images using vision LLM
+   - Plan: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md` - **ALL TODOS COMPLETE**
    - **Scoped approach**: Room-only extraction (name, type, area) from curated plans, preview-only results
    - **Key differentiator**: Semantic understanding and structured extraction (not just OCR)
-   - **Features**: Vision LLM support (GPT-4o, Gemini 1.5 Flash), semantic room classification, dimension-aware inference, structured JSON output
+   - **Features**: Vision LLM support (GPT-4o, Gemini 2.0 Flash - **Gemini 2.0 Flash selected as default**), semantic room classification, dimension-aware inference, structured JSON output
    - **VLM capabilities**: Reads room labels, classifies types, associates dimensions with rooms, applies scale
    - **Integration**: Extracted data feeds into existing compliance checking pipeline
-   - **Evaluation**: Phase 6 includes VLM metrics framework (similar to RAGAS pattern)
-   - **Status**: Phase 4 COMPLETE ✅
-     - ✅ Phase 1: Vision LLM support (`app/core/llm.py` - `get_vision_llm()`), blueprint extractor (`app/services/blueprint_extractor.py`), extraction models (`BlueprintExtractionResult`, `ExtractionConfidence`), unit tests (13/13 passing)
-     - ✅ Phase 2: API endpoint (`POST /api/blueprint/extract` - preview-only, no CSV save)
+   - **Evaluation Framework**: Complete VLM metrics framework (similar to RAGAS pattern)
+   - **Status**: All 6 phases complete ✅
+     - ✅ Phase 1: Vision LLM support (`app/core/llm.py` - `get_vision_llm()` defaults to Gemini 2.0 Flash), blueprint extractor (`app/services/blueprint_extractor.py` defaults to Gemini 2.0 Flash), extraction models (`BlueprintExtractionResult`, `ExtractionConfidence`), unit tests (13/13 passing)
+     - ✅ Phase 2: API endpoint (`POST /api/blueprint/extract` - preview-only, no CSV save, multi-page PDF support)
      - ✅ Phase 3: Frontend integration (file upload UI, drag-and-drop, preview table, JavaScript handling)
      - ✅ Phase 4: Validation & curated plan testing - **COMPLETE**
        - ✅ Enhanced validation logic (required fields, numeric ranges, type validation, confidence scoring)
@@ -227,8 +227,16 @@ Recent changes:
        - ✅ Ground truth CSVs created: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv`
        - ✅ Test script: `backend/app/tests/test_curated_plans.py` (handles multi-page PDFs, ground truth comparison)
        - ✅ Results JSON files: `curated_plan_results/*.json` (per-plan results + summary)
-       - **Key findings**: Type classification excellent (100%), recall needs improvement (45.56%), area accuracy moderate (65.38%), room splitting and missing small rooms are main issues
-     - ⏳ Next: Phase 5 (dependencies & configuration) or Phase 6 (VLM metrics framework)
+     - ✅ Phase 5: Dependencies & configuration - **COMPLETE** - Vision LLM dependencies documented, .env.example updated, README.md updated
+     - ✅ Phase 6: VLM Metrics & Evaluation Framework - **COMPLETE**
+       - ✅ Custom metrics framework (`evaluation/vlm_extraction_metrics.py` - 8 metrics: area_accuracy, recall, precision, type_match_rate, name_match_rate, semantic_understanding_score, confidence_calibration, composite_score)
+       - ✅ Golden dataset creation (`evaluation/vlm_evaluation.py` - matches PDFs to CSVs, saves to `evaluation/data/vlm_golden_dataset.json`)
+       - ✅ Evaluation script (`evaluation/vlm_evaluation.py` - follows RAGAS pattern, evaluates multiple models, compares results, saves to `evaluation/results/vlm_evaluation_results.json`)
+       - ✅ **Model Comparison**: Evaluated GPT-4o vs Gemini 2.0 Flash
+         - **Best Model: Gemini 2.0 Flash** (composite score: 0.753 vs GPT-4o's 0.743)
+         - **Metrics**: Recall 69.66% vs 53.85%, Precision 70.24% vs 76.07%, Area Accuracy 66.59% vs 68.58%, Type Match 94.44% vs 100%, Latency 7.61s vs 13.53s
+         - **Decision**: Updated all defaults to use Gemini 2.0 Flash
+   - **Final Model Selection**: Gemini 2.0 Flash (better recall, faster, lower cost, comparable accuracy)
 
 Todo next:
 
@@ -237,10 +245,10 @@ Todo next:
   - Deferred to focus on multimodal blueprint extraction feature
   - Will resume after blueprint extraction implementation
 
-- 🔄 **CURRENT: Multimodal Blueprint Extraction** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
+- ✅ **Multimodal Blueprint Extraction - ALL PHASES COMPLETE** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
   - **Phase 1**: Core extraction service (1.5-2 days) - ✅ **COMPLETE**
-    - ✅ Vision LLM support (`app/core/llm.py` - `get_vision_llm()` for GPT-4o, Gemini 1.5 Flash)
-    - ✅ Blueprint extractor (`app/services/blueprint_extractor.py` - semantic room extraction, multi-page PDF support)
+    - ✅ Vision LLM support (`app/core/llm.py` - `get_vision_llm()` defaults to Gemini 2.0 Flash)
+    - ✅ Blueprint extractor (`app/services/blueprint_extractor.py` - defaults to Gemini 2.0 Flash, semantic room extraction, multi-page PDF support)
     - ✅ Extraction models (`BlueprintExtractionResult`, `ExtractionConfidence` in `domain.py`)
     - ✅ Unit tests (`app/tests/test_blueprint_extractor.py` - 13/13 passing)
   - **Phase 2**: API endpoint (0.5 day) - ✅ **COMPLETE** - POST /api/blueprint/extract (preview-only, no CSV save, multi-page PDF support)
@@ -253,9 +261,14 @@ Todo next:
     - ✅ Ground truth CSVs created: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv` (manually created)
     - ✅ Test script: `backend/app/tests/test_curated_plans.py` (handles multi-page PDFs, ground truth comparison, JSON results export)
     - ✅ Results JSON files: `curated_plan_results/*.json` (per-plan results + summary.json)
-    - **Key findings**: Type classification excellent (100%), recall needs improvement (room splitting, missing small rooms), area accuracy good for matched rooms, multi-level extraction needs work
-  - **Phase 5**: Dependencies & configuration (0.5 day) - ⏳ **PENDING** - Vision LLM dependencies, env config, documentation
-  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - ⏳ **PENDING** - Custom metrics, golden dataset, evaluation script
+  - **Phase 5**: Dependencies & configuration (0.5 day) - ✅ **COMPLETE** - Vision LLM dependencies documented, .env.example updated, README.md updated
+  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - ✅ **COMPLETE**
+    - ✅ Custom metrics framework (`evaluation/vlm_extraction_metrics.py` - 8 metrics with fuzzy matching)
+    - ✅ Golden dataset creation (`evaluation/vlm_evaluation.py` - matches PDFs to CSVs automatically)
+    - ✅ Evaluation script (`evaluation/vlm_evaluation.py` - follows RAGAS pattern, model comparison)
+    - ✅ **Model Selection**: Gemini 2.0 Flash selected as best model (composite score: 0.753 vs GPT-4o's 0.743)
+    - ✅ **Defaults Updated**: All code updated to use Gemini 2.0 Flash as default
   - **Scoped approach**: Room-only extraction (name, type, approx_area_m2), curated plans, preview-only, simple scale assumption (1:100 default)
   - **Key focus**: Semantic understanding over geometry - VLM reads labels, classifies types, associates dimensions, produces structured JSON
-  - **Timeline**: 5.5-7 days estimated (Phases 1-4 complete, ~3.5 days remaining)
+  - **Final Model**: Gemini 2.0 Flash (better recall 69.66% vs 53.85%, faster 7.61s vs 13.53s, lower cost, comparable accuracy)
+  - **Timeline**: All 6 phases complete (~5.5-7 days total)
