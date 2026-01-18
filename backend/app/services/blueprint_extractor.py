@@ -636,7 +636,7 @@ def _calculate_confidence_scores(
 def extract_rooms_from_blueprint(
     image_path: Union[str, Path],
     scale_override: Optional[float] = None,
-    model_name: str = "gpt-4o",
+    model_name: str = "gemini-2.0-flash",
     provider: Optional[str] = None,
     page_index: Optional[int] = None
 ) -> BlueprintExtractionResult:
@@ -658,8 +658,8 @@ def extract_rooms_from_blueprint(
         scale_override: Optional scale factor (default: 1.0 for 1:100 scale)
             - 1.0 = 1:100 scale (1 unit on blueprint = 1 meter)
             - 0.5 = 1:200 scale (1 unit on blueprint = 0.5 meters)
-        model_name: VLM model to use ("gpt-4o", "gemini-1.5-flash". etc.)
-        provider: LLM provider ("openai", "gemini") - defaults to env var
+        model_name: VLM model to use ("gemini-2.0-flash" default, "gpt-4o", etc.)
+        provider: LLM provider ("gemini" default, "openai") - defaults to env var
         page_index: Optional page index (0-based) for PDFs. If None, extracts all pages.
                     For multi-page PDFs, all pages are combined vertically into a single image.
     
@@ -670,7 +670,7 @@ def extract_rooms_from_blueprint(
         result = extract_rooms_from_blueprint(
             image_path="blueprint.pdf",
             scale_override=1.0,
-            model_name="gpt-4o"
+            model_name="gemini-2.0-flash"
         )
         rooms = result.rooms  # List[Room]
         confidence = result.confidence  # ExtractionConfidence
@@ -748,7 +748,7 @@ def extract_rooms_from_blueprint(
         scale_source=scale_source,
         extraction_metadata={
             "model_used": model_name,
-            "provider": provider or os.getenv("VISION_LLM_PROVIDER", "openai"),
+            "provider": provider or os.getenv("VISION_LLM_PROVIDER", "gemini"),
             "total_rooms_extracted": len(validated_rooms),
             "raw_rooms_count": len(raw_rooms)
         },

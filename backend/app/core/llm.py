@@ -62,13 +62,13 @@ def get_vision_llm(
     
     Pattern adapted from get_llm() but specifically for vision models:
     - GPT-4o: OpenAI's multimodal model (text + images)
-    - Gemini 1.5 Flahs: Google's fast multimodal model (text + images)
+    - Gemini 2.0 Flash: Google's fast multimodal model (text + images) - best performance per evaluation
     
     Args:
-        provider: "openai" or "gemini" (defaults to VISION_LLM_PROVIDER env var, or "openai")
+        provider: "openai" or "gemini" (defaults to VISION_LLM_PROVIDER env var, or "gemini")
         model_name: Override default model name
             - OpenAI: "gpt-4o" (default), "gpt-4o-mini", etc.
-            - Gemini: "gemini-1.5-flash" (default), "gemini-1.5-pro", etc.
+            - Gemini: "gemini-2.0-flash" (default), "gemini-2.5-flash", etc.
             
     Returns:
         LangChain chat model instance with vision capabilities
@@ -77,8 +77,8 @@ def get_vision_llm(
         llm = get_vision_llm(provider="openai", model_name="gpt-4o")
         # Can now send images + text messages to this LLM
     """
-    # Use provider from parameter, or environment variable, or default to "openai"
-    provider = provider or os.getenv("VISION_LLM_PROVIDER", "openai")
+    # Use provider from parameter, or environment variable, or default to "gemini" (best performance per evaluation)
+    provider = provider or os.getenv("VISION_LLM_PROVIDER", "gemini")
     provider = provider.lower()
     
     if provider == "openai":
@@ -104,9 +104,9 @@ def get_vision_llm(
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable not set")
         
-        # Gemini 1.5 Flash is Google's fast multimodal model
-        # Default to "gemini-1.5-flash" if no model_name provided
-        model = model_name or "gemini-1.5-flash"
+        # Gemini 2.0 Flash is Google's fast multimodal model (best performance per evaluation)
+        # Default to "gemini-2.0-flash" if no model_name provided
+        model = model_name or "gemini-2.0-flash"
         
         # ChatGoogleGenerativeAI supports vision for Gemini models
         return ChatGoogleGenerativeAI(
