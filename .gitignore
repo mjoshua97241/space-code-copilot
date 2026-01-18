@@ -31,6 +31,7 @@ backend/.mypy_cache/
 backend/.pyre/
 backend/.pytype/
 backend/pytest.ini.local
+*.pytest_cache
 
 # Linting / Formatting
 backend/.ruff_cache/
