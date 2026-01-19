@@ -4,20 +4,20 @@ overview: Test the current feature/multimodal branch, merge to main, then implem
 todos:
   - id: test-current-branch
     content: "Test feature/multimodal branch: run unit tests, test API endpoint, test frontend UI with sample PDFs"
-    status: pending
+    status: completed
   - id: merge-to-main
     content: Manually merge feature/multimodal to main branch (user will do this)
-    status: pending
+    status: cancelled
     dependencies:
       - test-current-branch
   - id: create-new-branch
     content: Manually create new branch feature/dynamic-overlays (user will do this)
-    status: pending
+    status: cancelled
     dependencies:
       - merge-to-main
   - id: add-dependencies
     content: Add pytesseract and opencv-python to backend/pyproject.toml
-    status: pending
+    status: completed
     dependencies:
       - create-new-branch
   - id: create-overlay-model
@@ -60,21 +60,21 @@ todos:
 
 **Test Blueprint Extraction Endpoint:**
 
-- [ ] Test `POST /api/blueprint/extract` with sample PDF from `backend/app/data/floor-plans/`
-- [ ] Verify extraction returns `BlueprintExtractionResult` with rooms, confidence scores
-- [ ] Test with different file types (PNG, JPG, PDF)
-- [ ] Test with optional `scale` parameter
-- [ ] Test with optional `page_index` parameter for multi-page PDFs
-- [ ] Verify error handling for invalid file types
+- [x] Test `POST /api/blueprint/extract` with sample PDF from `backend/app/data/floor-plans/`
+- [x] Verify extraction returns `BlueprintExtractionResult` with rooms, confidence scores
+- [x] Test with different file types (PNG, JPG, PDF)
+- [x] Test with optional `scale` parameter
+- [x] Test with optional `page_index` parameter for multi-page PDFs
+- [x] Verify error handling for invalid file types
 
 **Test Frontend UI:**
 
-- [ ] Open `http://localhost:8000` (or deployed URL)
-- [ ] Test file upload via drag-and-drop
-- [ ] Test file upload via click-to-select
-- [ ] Verify extraction results display in table
-- [ ] Verify confidence scores display correctly
-- [ ] Test with sample PDFs from `backend/app/data/floor-plans/`
+- [x] Open `http://localhost:8000` (or deployed URL)
+- [x] Test file upload via drag-and-drop
+- [x] Test file upload via click-to-select
+- [x] Verify extraction results display in table
+- [x] Verify confidence scores display correctly
+- [x] Test with sample PDFs from `backend/app/data/floor-plans/`
 
 **Run Existing Tests:**
 
@@ -86,9 +86,9 @@ PYTHONPATH=. pytest app/tests/test_e2e.py -v
 
 **Manual Integration Test:**
 
-- [ ] Upload `example_plan_01a.pdf` via UI
-- [ ] Verify extracted rooms match expected results (compare to `example_plan_01a.csv`)
-- [ ] Check that confidence scores are reasonable (>0.5)
+- [x] Upload `example_plan_01a.pdf` via UI
+- [x] Verify extracted rooms match expected results (compare to `example_plan_01a.csv`)
+- [x] Check that confidence scores are reasonable (>0.5)
 
 ### 1.2 Documentation Review
 
@@ -98,9 +98,9 @@ PYTHONPATH=. pytest app/tests/test_e2e.py -v
 
 ### 1.3 Pre-merge Checklist
 
-- [ ] All tests passing
+- [x] All tests passing
 - [ ] No uncommitted changes (`git status` clean)
-- [ ] Feature works end-to-end in UI
+- [x] Feature works end-to-end in UI
 - [ ] Documentation updated
 
 **After testing passes, you will manually:**
@@ -275,6 +275,18 @@ async def extract_blueprint(
 
 **Update `backend/app/templates/index.html`:**
 
+0. **Update Plan Viewer to Display Uploaded Blueprint:**
+
+   - When a file is selected in the extraction panel, display it in the plan viewer
+   - Replace the static `plan.png` with the uploaded blueprint image
+   - Update `handleFileSelect()` function to:
+     - Use `FileReader` API to read the uploaded file as a data URL
+     - For image files (PNG, JPG): Convert directly to data URL
+     - For PDF files: Extract first page as image (or show placeholder until extraction completes)
+     - Update `#plan-image` src to the data URL: `planImage.src = dataUrl`
+   - Clear overlays when a new file is selected (reset overlay state)
+   - This ensures dynamic overlays are rendered on the actual uploaded blueprint, not the static plan image
+
 1. **Add "Check Compliance" button:**
 
    - After extraction results, add button: "Check Compliance & Generate Overlays"
@@ -285,17 +297,40 @@ async def extract_blueprint(
    - Modify `loadOverlays()` to accept overlays from API response
    - Add `renderDynamicOverlays(overlays)` function
    - Update `renderOverlayElements()` to handle both static (from JSON) and dynamic (from API) overlays
+   - Optional: add modal to view all overlays/issues if needed
 
 3. **Update extraction flow:**
 
    - After extraction, show "Check Compliance" button
    - On click, call `/api/blueprint/extract-and-check` or `/api/blueprint/extract?check_compliance=true`
-   - Display issues in issues panel
-   - Render dynamic overlays on blueprint image
-   - Highlight non-compliant rooms (red overlay)
+   - **Single panel approach:** keep only the "Extracted Rooms (Preview)" table; remove separate compliance panel
+   - Add columns to the table:
+     - **Confidence**: show extraction confidence per room (badge, e.g., overall or min component)
+     - **Compliance**: Pass/Fail + issue count
+   - For rows with issues: show tooltip or expandable row with issue messages (rule + message)
+   - Optional: an "Issues (n)" badge above the table that opens a modal listing all issues
+   - Render dynamic overlays on blueprint image; highlight non-compliant rooms (red overlay)
 
 4. **JavaScript functions to add:**
    ```javascript
+   function displayUploadedBlueprint(file) {
+     // Read file as data URL and display in plan viewer
+     const reader = new FileReader();
+     reader.onload = (e) => {
+       const planImage = document.getElementById("plan-image");
+       planImage.src = e.target.result;
+       // Clear existing overlays when new blueprint is loaded
+       clearOverlays();
+     };
+     if (file.type.startsWith("image/")) {
+       reader.readAsDataURL(file);
+     } else if (file.type === "application/pdf") {
+       // For PDFs, could extract first page or show placeholder
+       // For now, show placeholder until extraction provides image
+       // Or use PDF.js to render first page
+     }
+   }
+   
    async function checkComplianceAndGenerateOverlays() {
      // Call API with check_compliance=true
      // Update issues list
@@ -312,6 +347,13 @@ async def extract_blueprint(
    function highlightNonCompliantRooms(issues) {
      // Find overlays matching issue.element_id
      // Add 'highlighted' class (red pulsing border)
+   }
+   
+   function clearOverlays() {
+     // Clear overlay container and reset overlay state
+     const container = document.getElementById("overlays-container");
+     if (container) container.innerHTML = "";
+     overlayElements.clear();
    }
    ```
 

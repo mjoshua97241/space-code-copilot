@@ -165,6 +165,29 @@ class ProjectContext(BaseModel):
         default=False,
         description="Whether building requires fire-rated elements"
     )
+    
+# ==================================================================
+# Overlay Model
+# ==================================================================
+
+class Overlay(BaseModel):
+    """
+    Overlay definition for room/door visualization on blueprint image.
+    
+    Use for dynamic overlays generated from OCR + text positioning.
+    Contains pixel coordinates for rendering overlays on the blueprint image.
+    """
+    id: str = Field(..., description="Element ID (matches Room.id or Door.id)")
+    type: Literal["room", "door"] = Field(..., description="Element type")
+    x: int = Field(..., ge=0, description="X coordinate in pixels")
+    y: int = Field(..., ge=0, description="Y coordinate in pixels")
+    width: int = Field(..., gt=0, description="Width in pixels")
+    height: int = Field(..., gt=0, description="Height in pixels")
+    room_name: Optional[str] = Field(None, description="Room name (for rooms)")
+    room_type: Optional[str] = Field(None, description="Room type (for rooms)")
+    
+    class Config:
+        frozen = False
 
 # ==================================================================
 # Blueprint Extraction Models (VLM)
@@ -221,6 +244,10 @@ class BlueprintExtractionResult(BaseModel):
     confidence: ExtractionConfidence = Field(
         ...,
         description="Extraction confidence score"
+    )
+    overlays: List[Overlay] = Field(
+        default_factory=list,
+        description="Generated overlays with pixel coordinates for visualization"
     )
     scale_used: float = Field(
         ...,
