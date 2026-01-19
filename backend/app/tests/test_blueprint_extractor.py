@@ -135,11 +135,11 @@ class TestExtractRoomsFromBlueprint:
             scale_override=1.0
         )
         
-        assert "rooms" in result
-        assert len(result["rooms"]) == 2
-        assert result["rooms"][0].name == "Office 101"
-        assert result["scale_used"] == 1.0
-        assert result["scale_source"] == "user_input"
+        assert hasattr(result, "rooms")
+        assert len(result.rooms) == 2
+        assert result.rooms[0].name == "Office 101"
+        assert result.scale_used == 1.0
+        assert result.scale_source == "user_input"
         
     @patch("app.services.blueprint_extractor.get_vision_llm")
     @patch("app.services.blueprint_extractor._load_image_as_base64")
