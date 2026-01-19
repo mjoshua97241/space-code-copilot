@@ -22,7 +22,7 @@ todos:
       - create-new-branch
   - id: create-overlay-model
     content: Add Overlay model to backend/app/models/domain.py and update BlueprintExtractionResult
-    status: pending
+    status: completed
     dependencies:
       - add-dependencies
   - id: create-overlay-generator
