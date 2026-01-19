@@ -12,7 +12,7 @@ from app.models.domain import BlueprintExtractionResult
 
 router = APIRouter(prefix="/api/blueprint", tags=["blueprint"])
 
-@router.post("/extract", response_model=BlueprintExtractionResult)
+@router.post("/extract/", response_model=BlueprintExtractionResult)
 async def extract_blueprint(
     file: UploadFile = File(..., description="Blueprint image (PNG/JPG) or PDF"),
     scale: Optional[float] = Form(None, description="Scale factor (default: 1.0 for 1:100)"),
