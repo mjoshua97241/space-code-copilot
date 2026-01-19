@@ -272,3 +272,27 @@ Todo next:
   - **Key focus**: Semantic understanding over geometry - VLM reads labels, classifies types, associates dimensions, produces structured JSON
   - **Final Model**: Gemini 2.0 Flash (better recall 69.66% vs 53.85%, faster 7.61s vs 13.53s, lower cost, comparable accuracy)
   - **Timeline**: All 6 phases complete (~5.5-7 days total)
+
+- 🔄 **Blueprint Extraction Testing & Dynamic Overlays** (`.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`):
+  - **Phase 1**: Test feature/multimodal branch before merging to main
+    - Run unit tests (`test_blueprint_extractor.py`, `test_e2e.py`)
+    - Test API endpoint (`POST /api/blueprint/extract`) with sample PDFs
+    - Test frontend UI (file upload, extraction results display, confidence scores)
+    - Verify extraction works with sample PDFs from `backend/app/data/floor-plans/`
+    - Manual merge to main after testing passes
+  - **Phase 2**: Dynamic overlays implementation
+    - Generate overlays from OCR + text positioning (pytesseract/easyocr)
+    - Match VLM-extracted room names to OCR text positions using fuzzy matching
+    - Infer room boundaries using image processing heuristics (OpenCV optional)
+    - Integrate compliance checking with extracted rooms
+    - Render dynamic overlays on blueprint image
+    - Highlight non-compliant rooms in red with pulsing animation
+  - **New files**: `app/services/overlay_generator.py`, `app/tests/test_overlay_generator.py`
+  - **Modified files**: 
+    - `app/models/domain.py` (add `Overlay` model, update `BlueprintExtractionResult`)
+    - `app/api/blueprint.py` (add extract-and-check endpoint with overlay generation and compliance checking)
+    - `app/templates/index.html` (add compliance button, dynamic overlay rendering, non-compliant room highlighting)
+    - `backend/pyproject.toml` (add pytesseract, opencv-python dependencies)
+  - **Dependencies**: pytesseract (or easyocr as alternative), opencv-python (optional for boundary detection)
+  - **System requirements**: Tesseract OCR installed on system (or use easyocr for no system dependencies)
+  - **Timeline**: 7-10 hours total (1-2h testing + 6-8h implementation)

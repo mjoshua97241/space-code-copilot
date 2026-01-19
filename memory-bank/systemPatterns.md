@@ -57,6 +57,14 @@ Frontend patterns:
   - Highlight behavior: Clicking an issue in compliance list highlights matching overlay by `element_id`
   - CSS: Blue base state (rgba(13, 110, 253, 0.3)), red highlight state (#dc3545) with pulsing animation
   - Supports both room and door overlays (matched by element_id from issues)
+- **Dynamic Overlay System** (upcoming - `.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`):
+  - Overlays generated dynamically from OCR + text positioning (vs static JSON)
+  - Uses pytesseract/easyocr to extract text positions from blueprint images
+  - Matches VLM-extracted room names to OCR text positions using fuzzy matching (rapidfuzz)
+  - Infers room boundaries using image processing heuristics (OpenCV optional)
+  - Integrated with compliance checking on extracted rooms from blueprint extraction
+  - Non-compliant rooms automatically highlighted in red with pulsing animation
+  - Works alongside static overlay system (supports both JSON and API-generated overlays)
 - JavaScript (inline or minimal separate script):
   - On page load: `fetch('/api/issues/')` → render issues list, `fetch('/static/overlays.json')` → render overlays.
   - **Note**: API endpoints require trailing slashes (`/api/issues/`, `/api/chat/`) to match FastAPI router definitions (`@router.get("/")` with prefix).
