@@ -31,6 +31,8 @@ dependencies = [
   "rapidfuzz>=3.14.3",
   "pillow>=12.1.0",  # Image processing for blueprint extraction
   "pytest>=8.4.2",
+  "pytesseract>=0.3.10,<0.4.0",  # OCR for text positioning
+  "opencv-python>=4.8.0,<5.0.0",  # Image processing for boundary detection (optional)
 ]
 
 [project.optional-dependencies]
