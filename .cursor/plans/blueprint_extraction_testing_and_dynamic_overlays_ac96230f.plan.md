@@ -37,7 +37,7 @@ todos:
       - create-overlay-generator
   - id: update-blueprint-api
     content: Update backend/app/api/blueprint.py to add extract-and-check endpoint with overlay generation and compliance checking
-    status: pending
+    status: completed
     dependencies:
       - create-overlay-generator
   - id: update-frontend
