@@ -3,11 +3,13 @@
 import tempfile
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from app.services.blueprint_extractor import extract_rooms_from_blueprint
+from app.services.overlay_generator import generate_overlays_from_blueprint
+from app.services.compliance_checker import check_compliance, get_compliance_summary
 from app.models.domain import BlueprintExtractionResult
 
 router = APIRouter(prefix="/api/blueprint", tags=["blueprint"])
@@ -68,3 +70,4 @@ async def extract_blueprint(
         # Clean up temp file
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
+

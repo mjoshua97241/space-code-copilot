@@ -27,12 +27,12 @@ todos:
       - add-dependencies
   - id: create-overlay-generator
     content: Create backend/app/services/overlay_generator.py with OCR text positioning and boundary inference
-    status: pending
+    status: completed
     dependencies:
       - create-overlay-model
   - id: write-overlay-tests
     content: Create backend/app/tests/test_overlay_generator.py with unit tests
-    status: pending
+    status: completed
     dependencies:
       - create-overlay-generator
   - id: update-blueprint-api
