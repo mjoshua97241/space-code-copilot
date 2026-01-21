@@ -5,6 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Code-Aware Space Planning Copilot</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      /* Additional styles for compliance features */
+      .compliance-btn {
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .compliance-btn:hover {
+        background: #45a049;
+      }
+      .compliance-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .confidence-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .confidence-high { background: #4CAF50; color: white; }
+      .confidence-medium { background: #FF9800; color: white; }
+      .confidence-low { background: #f44336; color: white; }
+      .compliance-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .compliance-pass {
+        color: #4CAF50;
+        font-weight: 600;
+      }
+      .compliance-fail {
+        color: #f44336;
+        font-weight: 600;
+      }
+      .compliance-issues-count {
+        background: #f44336;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .room-issues-tooltip {
+        position: relative;
+        cursor: help;
+      }
+      .room-issues-tooltip:hover::after {
+        content: attr(data-issues);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 0.5rem;
+        border-radius: 4px;
+        white-space: pre-line;
+        z-index: 1000;
+        font-size: 0.85rem;
+        max-width: 300px;
+        margin-bottom: 0.5rem;
+      }
+      .overlay.non-compliant {
+        border: 3px solid #f44336;
+        background: rgba(244, 67, 54, 0.1);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+      }
+      .extraction-results {
+        margin-top: 1rem;
+      }
+    </style>
   </head>
   <body>
     <div class="app-root">
@@ -53,10 +137,15 @@
                     <th>Type</th>
                     <th>Area (m²)</th>
                     <th>Level</th>
+                    <th>Confidence</th>
+                    <th>Compliance</th>
                   </tr>
                 </thead>
                 <tbody id="rooms-tbody"></tbody>
               </table>
+              <button class="compliance-btn" id="compliance-btn" style="display: none;">
+                Check Compliance & Generate Overlays
+              </button>
             </div>
           </div>
         </div>
@@ -115,6 +204,8 @@
       let issues = [];
       let overlays = [];
       let overlayElements = new Map(); // Map of element_id -> overlay DOM element
+      let extractedRooms = []; // Store extracted rooms for compliance checking
+      let complianceIssues = []; // Store compliance issues from extract-and-check
 
       // ====================================================================
       // Issues Fetching and Rendering
@@ -533,6 +624,10 @@
         }
 
         selectedFile = file;
+        
+        // Display uploaded blueprint in plan viewer
+        displayUploadedBlueprint(file);
+        
         document.getElementById("upload-zone").innerHTML = `
           <div class="upload-icon">✅</div>
           <p><strong>${escapeHtml(file.name)}</strong></p>
@@ -547,17 +642,45 @@
         showExtractionStatus("File selected. Click 'Extract Rooms' to process.", "info");
       }
 
+      function displayUploadedBlueprint(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const planImage = document.getElementById("plan-image");
+          planImage.src = e.target.result;
+          // Clear existing overlays when new blueprint is loaded
+          clearOverlays();
+        };
+        if (file.type.startsWith("image/")) {
+          reader.readAsDataURL(file);
+        } else if (file.type === "application/pdf") {
+          // For PDFs, show placeholder until extraction completes
+          // The extraction will provide the image
+          const planImage = document.getElementById("plan-image");
+          planImage.src = "/static/plan.png"; // Fallback to default
+        }
+      }
+
+      function clearOverlays() {
+        const container = document.getElementById("overlays-container");
+        if (container) container.innerHTML = "";
+        overlayElements.clear();
+        complianceIssues = [];
+      }
+
       async function extractBlueprint() {
         if (!selectedFile) return;
 
         const extractBtn = document.getElementById("extract-btn");
         const scaleInput = document.getElementById("scale-value");
         const resultsDiv = document.getElementById("extraction-results");
+        const complianceBtn = document.getElementById("compliance-btn");
 
         extractBtn.disabled = true;
         extractBtn.textContent = "Extracting...";
         showExtractionStatus("Processing blueprint with Vision LLM...", "loading");
         resultsDiv.style.display = "none";
+        complianceBtn.style.display = "none";
+        clearOverlays();
 
         const formData = new FormData();
         formData.append("file", selectedFile);
@@ -577,8 +700,13 @@
           }
 
           const data = await res.json();
+          extractedRooms = data.rooms;
           displayExtractionResults(data);
           showExtractionStatus(`✅ Extracted ${data.rooms.length} rooms`, "success");
+          
+          // Show compliance button
+          complianceBtn.style.display = "block";
+          complianceBtn.disabled = false;
         } catch (e) {
           console.error("Extraction error:", e);
           showExtractionStatus(`❌ Error: ${e.message}`, "error");
@@ -614,15 +742,45 @@
           </div>
         `;
 
-        // Show rooms table
-        tbody.innerHTML = data.rooms.map(room => `
-          <tr>
-            <td>${escapeHtml(room.name)}</td>
-            <td>${escapeHtml(room.type)}</td>
-            <td>${room.area_m2.toFixed(1)}</td>
-            <td>${room.level}</td>
-          </tr>
-        `).join("");
+        // Show rooms table with confidence and compliance columns
+        tbody.innerHTML = data.rooms.map(room => {
+          // Get room-specific issues (if any)
+          const roomIssues = complianceIssues.filter(issue => issue.element_id === room.id);
+          const hasIssues = roomIssues.length > 0;
+          
+          // Calculate confidence badge
+          const overallConf = conf.overall;
+          let confClass = "confidence-high";
+          let confText = "High";
+          if (overallConf < 0.7) {
+            confClass = overallConf < 0.5 ? "confidence-low" : "confidence-medium";
+            confText = overallConf < 0.5 ? "Low" : "Medium";
+          }
+          
+          // Compliance status
+          let complianceHtml = '<span class="compliance-status compliance-pass">✅ Pass</span>';
+          if (hasIssues) {
+            const issuesText = roomIssues.map(i => `• ${i.message}`).join('\n');
+            complianceHtml = `
+              <span class="compliance-status compliance-fail">
+                ❌ Fail
+                <span class="compliance-issues-count">${roomIssues.length}</span>
+              </span>
+              <span class="room-issues-tooltip" data-issues="${escapeHtml(issuesText)}" title="Hover for details">ℹ️</span>
+            `;
+          }
+          
+          return `
+            <tr class="${hasIssues ? 'has-issues' : ''}">
+              <td>${escapeHtml(room.name)}</td>
+              <td>${escapeHtml(room.type)}</td>
+              <td>${room.area_m2.toFixed(1)}</td>
+              <td>${room.level}</td>
+              <td><span class="confidence-badge ${confClass}">${confText}</span></td>
+              <td>${complianceHtml}</td>
+            </tr>
+          `;
+        }).join("");
 
         resultsDiv.style.display = "block";
       }
@@ -631,6 +789,120 @@
         const statusDiv = document.getElementById("extraction-status");
         statusDiv.className = `extraction-status status-${type}`;
         statusDiv.textContent = message;
+      }
+
+      async function checkComplianceAndGenerateOverlays() {
+        if (!selectedFile) return;
+
+        const complianceBtn = document.getElementById("compliance-btn");
+        complianceBtn.disabled = true;
+        complianceBtn.textContent = "Checking Compliance...";
+        showExtractionStatus("Checking compliance and generating overlays...", "loading");
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("generate_overlays", "true");
+        formData.append("use_opencv", "false"); // Can be made configurable
+        
+        const scaleInput = document.getElementById("scale-value");
+        if (scaleInput.value) {
+          formData.append("scale", scaleInput.value);
+        }
+
+        try {
+          const res = await fetch("/api/blueprint/extract-and-check/", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(errorData.detail || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          
+          // Store compliance issues
+          complianceIssues = data.issues || [];
+          
+          // Update extraction results with compliance info
+          if (data.extraction) {
+            extractedRooms = data.extraction.rooms;
+            displayExtractionResults(data.extraction);
+          }
+          
+          // Render dynamic overlays
+          if (data.extraction && data.extraction.overlays) {
+            renderDynamicOverlays(data.extraction.overlays);
+          }
+          
+          // Highlight non-compliant rooms
+          if (complianceIssues.length > 0) {
+            highlightNonCompliantRooms(complianceIssues);
+          }
+          
+          // Update issues panel (optional - can keep separate or merge)
+          updateIssuesPanel(complianceIssues);
+          
+          const summary = data.summary || {};
+          showExtractionStatus(
+            `✅ Compliance check complete. Found ${summary.total || 0} issue(s)`,
+            summary.total > 0 ? "warning" : "success"
+          );
+        } catch (e) {
+          console.error("Compliance check error:", e);
+          showExtractionStatus(`❌ Error: ${e.message}`, "error");
+        } finally {
+          complianceBtn.disabled = false;
+          complianceBtn.textContent = "Check Compliance & Generate Overlays";
+        }
+      }
+
+      function renderDynamicOverlays(overlaysData) {
+        // Clear existing overlays
+        clearOverlays();
+        
+        // Store overlays
+        overlays = overlaysData;
+        
+        // Use existing renderOverlays function
+        renderOverlays();
+      }
+
+      function highlightNonCompliantRooms(issues) {
+        // Get unique room IDs with issues
+        const nonCompliantRoomIds = new Set(
+          issues
+            .filter(issue => issue.element_type === "room")
+            .map(issue => issue.element_id)
+        );
+        
+        // Add non-compliant class to overlay elements
+        nonCompliantRoomIds.forEach(roomId => {
+          const overlayElement = overlayElements.get(roomId);
+          if (overlayElement) {
+            overlayElement.classList.add("non-compliant");
+          }
+        });
+      }
+
+      function updateIssuesPanel(issues) {
+        // Update the issues panel with compliance issues from blueprint extraction
+        const listContainer = document.getElementById("issues-list");
+        const countElement = document.getElementById("issues-count");
+        
+        if (issues.length === 0) {
+          listContainer.innerHTML = '<div class="no-issues">✅ No compliance issues found. Design is compliant!</div>';
+          countElement.textContent = "0 issues";
+          return;
+        }
+        
+        countElement.textContent = `${issues.length} issue${issues.length !== 1 ? 's' : ''}`;
+        listContainer.innerHTML = "";
+        issues.forEach((issue) => {
+          const issueElement = createIssueElement(issue);
+          listContainer.appendChild(issueElement);
+        });
       }
 
       // ====================================================================
@@ -646,6 +918,10 @@
 
         // Initialize blueprint extraction
         initExtraction();
+        
+        // Add compliance button event listener
+        const complianceBtn = document.getElementById("compliance-btn");
+        complianceBtn.addEventListener("click", checkComplianceAndGenerateOverlays);
 
         // Chat form submission
         const form = document.getElementById("chat-form");

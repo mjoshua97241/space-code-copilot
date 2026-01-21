@@ -42,7 +42,7 @@ todos:
       - create-overlay-generator
   - id: update-frontend
     content: Update backend/app/templates/index.html to add compliance button, dynamic overlay rendering, and non-compliant room highlighting
-    status: pending
+    status: completed
     dependencies:
       - update-blueprint-api
   - id: integration-testing
