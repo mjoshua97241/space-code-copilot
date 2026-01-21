@@ -42,6 +42,22 @@
       .confidence-high { background: #4CAF50; color: white; }
       .confidence-medium { background: #FF9800; color: white; }
       .confidence-low { background: #f44336; color: white; }
+      .area-input {
+        width: 80px;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-size: 0.9rem;
+        text-align: right;
+      }
+      .area-input:focus {
+        outline: none;
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+      }
+      .area-input:hover {
+        border-color: #999;
+      }
       .compliance-status {
         display: inline-flex;
         align-items: center;
@@ -861,7 +877,17 @@
             <tr class="${hasIssues ? 'has-issues' : ''}">
               <td>${escapeHtml(room.name)}</td>
               <td>${escapeHtml(room.type)}</td>
-              <td>${room.area_m2.toFixed(1)}</td>
+              <td>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  min="0" 
+                  value="${room.area_m2.toFixed(1)}" 
+                  data-room-id="${room.id}" 
+                  class="area-input"
+                  title="Edit area in m²"
+                />
+              </td>
               <td>${room.level}</td>
               <td><span class="confidence-badge ${confClass}">${confText}</span></td>
               <td>${complianceHtml}</td>
@@ -870,6 +896,48 @@
         }).join("");
 
         resultsDiv.style.display = "block";
+        
+        // Attach event listeners to area inputs to track changes
+        attachAreaInputListeners();
+      }
+
+      function attachAreaInputListeners() {
+        // Attach event listeners to all area input fields
+        const areaInputs = document.querySelectorAll('.area-input');
+        areaInputs.forEach(input => {
+          // Remove existing listeners to avoid duplicates
+          const newInput = input.cloneNode(true);
+          input.parentNode.replaceChild(newInput, input);
+          
+          // Add blur event to update when user finishes editing
+          newInput.addEventListener('blur', function() {
+            updateRoomArea(this.dataset.roomId, parseFloat(this.value));
+          });
+          
+          // Add Enter key support
+          newInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+              this.blur(); // Trigger blur to save
+            }
+          });
+        });
+      }
+
+      function updateRoomArea(roomId, newArea) {
+        // Validate area value
+        if (isNaN(newArea) || newArea < 0) {
+          console.warn(`Invalid area value for room ${roomId}: ${newArea}`);
+          return;
+        }
+        
+        // Find and update the room in extractedRooms array
+        const roomIndex = extractedRooms.findIndex(r => r.id === roomId);
+        if (roomIndex !== -1) {
+          extractedRooms[roomIndex].area_m2 = newArea;
+          console.log(`Updated room ${roomId} area to ${newArea} m²`);
+        } else {
+          console.warn(`Room ${roomId} not found in extractedRooms array`);
+        }
       }
 
       function showExtractionStatus(message, type) {
@@ -879,27 +947,25 @@
       }
 
       async function checkComplianceAndGenerateOverlays() {
-        if (!selectedFile) return;
+        // Check if we have extracted rooms (use edited values from extractedRooms array)
+        if (extractedRooms.length === 0) {
+          showExtractionStatus("❌ Please extract rooms first", "error");
+          return;
+        }
 
         const complianceBtn = document.getElementById("compliance-btn");
         complianceBtn.disabled = true;
         complianceBtn.textContent = "Checking Compliance...";
-        showExtractionStatus("Checking compliance and generating overlays...", "loading");
-
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        formData.append("generate_overlays", "true");
-        formData.append("use_opencv", "false"); // Can be made configurable
-        
-        const scaleInput = document.getElementById("scale-value");
-        if (scaleInput.value) {
-          formData.append("scale", scaleInput.value);
-        }
+        showExtractionStatus("Checking compliance...", "loading");
 
         try {
-          const res = await fetch("/api/blueprint/extract-and-check/", {
+          // Send edited rooms to compliance check endpoint (not re-extracting)
+          const res = await fetch("/api/blueprint/check-compliance/", {
             method: "POST",
-            body: formData,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(extractedRooms),
           });
 
           if (!res.ok) {
@@ -909,36 +975,26 @@
 
           const data = await res.json();
           
-          console.log("API Response:", {
-            hasExtraction: !!data.extraction,
-            hasOverlays: !!(data.extraction && data.extraction.overlays),
-            overlaysCount: data.extraction?.overlays?.length || 0,
-            overlays: data.extraction?.overlays
+          console.log("Compliance check response:", {
+            issuesCount: data.issues?.length || 0,
+            summary: data.summary
           });
           
           // Store compliance issues
           complianceIssues = data.issues || [];
           
-          // Update extraction results with compliance info
-          if (data.extraction) {
-            extractedRooms = data.extraction.rooms;
-            displayExtractionResults(data.extraction);
-          }
-          
-          // Overlay rendering disabled for now (deferred to future recommendations)
-          // TODO: Re-enable when overlay rendering is ready
-          // if (data.extraction && data.extraction.overlays) {
-          //   console.log("Calling renderDynamicOverlays with:", data.extraction.overlays.length, "overlays");
-          //   renderDynamicOverlays(data.extraction.overlays);
-          // }
-          
-          // Highlight non-compliant rooms - DISABLED (overlays disabled)
-          // if (complianceIssues.length > 0) {
-          //   highlightNonCompliantRooms(complianceIssues);
-          // }
-          
-          // Compliance issues are now shown in the Extracted Rooms table (single panel approach)
-          // No separate issues panel needed
+          // Re-render table with updated compliance info (using current extractedRooms with edited values)
+          // Create a minimal extraction result object for displayExtractionResults
+          const displayData = {
+            rooms: extractedRooms,
+            confidence: {
+              overall: 1.0, // Not relevant for compliance check
+              name_confidence: 1.0,
+              type_confidence: 1.0,
+              area_confidence: 1.0
+            }
+          };
+          displayExtractionResults(displayData);
           
           const summary = data.summary || {};
           showExtractionStatus(
@@ -950,7 +1006,7 @@
           showExtractionStatus(`❌ Error: ${e.message}`, "error");
         } finally {
           complianceBtn.disabled = false;
-          complianceBtn.textContent = "Check Compliance & Generate Overlays";
+          complianceBtn.textContent = "Check Compliance";
         }
       }
 

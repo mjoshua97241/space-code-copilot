@@ -4,7 +4,7 @@ overview: "Implement 5 UI improvements: empty plan viewer until upload, editable
 todos:
   - id: empty-plan-viewer
     content: Replace default plan.png with empty placeholder in plan viewer (line 110)
-    status: pending
+    status: completed
   - id: editable-area-column
     content: Make area column editable with input field and track changes in extractedRooms array (line 862)
     status: pending

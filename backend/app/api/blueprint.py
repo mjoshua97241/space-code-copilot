@@ -10,7 +10,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from app.services.blueprint_extractor import extract_rooms_from_blueprint
 from app.services.overlay_generator import generate_overlays_from_blueprint
 from app.services.compliance_checker import check_compliance, get_compliance_summary
-from app.models.domain import BlueprintExtractionResult, Issue
+from app.models.domain import BlueprintExtractionResult, Issue, Room
 
 router = APIRouter(prefix="/api/blueprint", tags=["blueprint"])
 
@@ -185,3 +185,72 @@ async def extract_and_check_compliance(
         # Clean up temp file
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
+
+
+@router.post("/check-compliance/")
+async def check_compliance_only(
+    rooms: List[Room]
+) -> Dict[str, Any]:
+    """
+    Check compliance for a list of rooms (without re-extracting from blueprint).
+    
+    This endpoint allows the frontend to send edited room data (e.g., corrected area values)
+    and get compliance results based on the user's corrections.
+    
+    Args:
+        rooms: List of Room objects with edited values
+        
+    Returns:
+        Dictionary with:
+        - "issues": List[Issue] - Compliance violations found
+        - "summary": dict - Summary statistics of issues
+    
+    Example request:
+        POST /api/blueprint/check-compliance/
+        Body: [
+            {
+                "id": "R101",
+                "name": "Office 101",
+                "type": "office",
+                "level": 1,
+                "area_m2": 15.5
+            },
+            ...
+        ]
+    
+    Example response:
+        {
+            "issues": [
+                {
+                    "element_id": "R101",
+                    "element_type": "room",
+                    "rule_id": "min-area-bedroom",
+                    "message": "Room area (15.5 m²) is below minimum (20.0 m²)",
+                    "code_ref": "IBC 1208.1",
+                    "severity": "error"
+                }
+            ],
+            "summary": {
+                "total": 1,
+                "by_severity": {"error": 1, "warning": 0},
+                "by_type": {"room": 1, "door": 0}
+            }
+        }
+    """
+    try:
+        # Check compliance with provided rooms
+        issues: List[Issue] = check_compliance(
+            rooms=rooms,
+            doors=[]  # No doors for now
+        )
+        
+        # Generate summary
+        summary = get_compliance_summary(issues)
+        
+        return {
+            "issues": issues,
+            "summary": summary
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Compliance check failed: {e}")
