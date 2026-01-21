@@ -58,6 +58,37 @@
       .area-input:hover {
         border-color: #999;
       }
+      .compliance-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .room-check-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        font-size: 14px;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .room-check-btn:hover {
+        background: #1976D2;
+      }
+      .room-check-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .room-check-btn .check-icon {
+        font-weight: bold;
+      }
       .compliance-status {
         display: inline-flex;
         align-items: center;
@@ -873,8 +904,20 @@
             `;
           }
           
+          // Add check button for individual room compliance check
+          const checkButtonHtml = `
+            <button 
+              class="room-check-btn" 
+              data-room-id="${room.id}"
+              title="Check compliance for this room"
+              aria-label="Check compliance"
+            >
+              <span class="check-icon">✓</span>
+            </button>
+          `;
+          
           return `
-            <tr class="${hasIssues ? 'has-issues' : ''}">
+            <tr class="${hasIssues ? 'has-issues' : ''}" data-room-id="${room.id}">
               <td>${escapeHtml(room.name)}</td>
               <td>${escapeHtml(room.type)}</td>
               <td>
@@ -890,7 +933,12 @@
               </td>
               <td>${room.level}</td>
               <td><span class="confidence-badge ${confClass}">${confText}</span></td>
-              <td>${complianceHtml}</td>
+              <td>
+                <div class="compliance-cell">
+                  ${complianceHtml}
+                  ${checkButtonHtml}
+                </div>
+              </td>
             </tr>
           `;
         }).join("");
@@ -899,6 +947,9 @@
         
         // Attach event listeners to area inputs to track changes
         attachAreaInputListeners();
+        
+        // Attach event listeners to room check buttons
+        attachRoomCheckButtons();
       }
 
       function attachAreaInputListeners() {
@@ -937,6 +988,123 @@
           console.log(`Updated room ${roomId} area to ${newArea} m²`);
         } else {
           console.warn(`Room ${roomId} not found in extractedRooms array`);
+        }
+      }
+
+      function attachRoomCheckButtons() {
+        // Attach event listeners to all room check buttons
+        const checkButtons = document.querySelectorAll('.room-check-btn');
+        checkButtons.forEach(button => {
+          // Remove existing listeners to avoid duplicates
+          const newButton = button.cloneNode(true);
+          button.parentNode.replaceChild(newButton, button);
+          
+          // Add click event
+          newButton.addEventListener('click', function() {
+            const roomId = this.dataset.roomId;
+            checkSingleRoomCompliance(roomId);
+          });
+        });
+      }
+
+      async function checkSingleRoomCompliance(roomId) {
+        // Find the room in extractedRooms array
+        const room = extractedRooms.find(r => r.id === roomId);
+        if (!room) {
+          console.error(`Room ${roomId} not found`);
+          return;
+        }
+
+        // Get the button and row
+        const button = document.querySelector(`.room-check-btn[data-room-id="${roomId}"]`);
+        const row = document.querySelector(`tr[data-room-id="${roomId}"]`);
+        
+        if (!button || !row) {
+          console.error(`Could not find button or row for room ${roomId}`);
+          return;
+        }
+
+        // Disable button and show loading state
+        button.disabled = true;
+        const originalIcon = button.querySelector('.check-icon').textContent;
+        button.querySelector('.check-icon').textContent = '...';
+
+        try {
+          // Send single room to compliance check endpoint
+          const res = await fetch("/api/blueprint/check-compliance/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify([room]), // Send as array with single room
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(errorData.detail || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          
+          // Get issues for this specific room
+          const roomIssues = data.issues || [];
+          
+          // Update complianceIssues array (remove old issues for this room, add new ones)
+          complianceIssues = complianceIssues.filter(issue => 
+            !(issue.element_id === roomId && issue.element_type === "room")
+          );
+          complianceIssues.push(...roomIssues);
+          
+          // Update the compliance cell in the row
+          updateRoomComplianceCell(row, roomId, roomIssues);
+          
+          console.log(`Compliance check for room ${roomId}: ${roomIssues.length} issue(s)`);
+          
+        } catch (e) {
+          console.error(`Compliance check error for room ${roomId}:`, e);
+          showExtractionStatus(`❌ Error checking room ${roomId}: ${e.message}`, "error");
+        } finally {
+          // Re-enable button
+          button.disabled = false;
+          button.querySelector('.check-icon').textContent = originalIcon;
+        }
+      }
+
+      function updateRoomComplianceCell(row, roomId, roomIssues) {
+        const complianceCell = row.querySelector('.compliance-cell');
+        if (!complianceCell) return;
+
+        const hasIssues = roomIssues.length > 0;
+        
+        // Build compliance HTML
+        let complianceHtml = '<span class="compliance-status compliance-pass">✅ Pass</span>';
+        if (hasIssues) {
+          const issuesText = roomIssues.map(i => `• ${i.message}`).join('\n');
+          complianceHtml = `
+            <span class="compliance-status compliance-fail">
+              ❌ Fail
+              <span class="compliance-issues-count">${roomIssues.length}</span>
+            </span>
+            <span class="room-issues-tooltip" data-issues="${escapeHtml(issuesText)}" title="Hover for details">ℹ️</span>
+          `;
+        }
+        
+        // Update row class
+        if (hasIssues) {
+          row.classList.add('has-issues');
+        } else {
+          row.classList.remove('has-issues');
+        }
+        
+        // Update compliance cell (keep the button)
+        const checkButton = complianceCell.querySelector('.room-check-btn');
+        complianceCell.innerHTML = complianceHtml;
+        if (checkButton) {
+          complianceCell.appendChild(checkButton);
+          // Re-attach event listener
+          checkButton.addEventListener('click', function() {
+            checkSingleRoomCompliance(roomId);
+          });
         }
       }
 
