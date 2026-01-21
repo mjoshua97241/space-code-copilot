@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: fix-tooltip-zindex
     content: Fix tooltip z-index to appear above table header (line 81)
-    status: pending
+    status: completed
 ---
 
 # UI Improvements for Blueprint Extraction
