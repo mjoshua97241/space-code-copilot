@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. **Deployed to Railway.app** - Public URL working, all endpoints functional. **Presentation preparation ON HOLD** - Deferred to focus on new feature development. **Multimodal Blueprint Extraction - ALL PHASES COMPLETE** ✅ - Full implementation complete with VLM evaluation framework, model comparison, and **Gemini 2.0 Flash selected as best model** (composite score: 0.753 vs GPT-4o's 0.743, 69.66% recall vs 53.85%, 7.61s latency vs 13.53s).
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. **Deployed to Railway.app** - Public URL working, all endpoints functional. **Presentation preparation ON HOLD** - Deferred to focus on new feature development. **Multimodal Blueprint Extraction - ALL PHASES COMPLETE** ✅ - Full implementation complete with VLM evaluation framework, model comparison, and **Gemini 2.0 Flash selected as best model** (composite score: 0.753 vs GPT-4o's 0.743, 69.66% recall vs 53.85%, 7.61s latency vs 13.53s). **UI Improvements for Blueprint Extraction - COMPLETE** ✅ - All 7 improvements implemented: empty plan viewer, editable area column, new compliance endpoint, conditional compliance column visibility, removed Type/Level columns, fixed tooltip z-index, and increased tooltip width.
 
 ## What Works
 
@@ -289,6 +289,24 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
    - **Approach**: VLM directly returns label bounding boxes alongside extracted rooms (more accurate than OCR+fuzzy matching)
    - **Architecture**: VLM extracts rooms + label_bbox → Parse/validate bboxes → Create Overlay objects → Return in API response
    - **Timeline**: Backend implementation complete (~2-3 hours)
+
+11. ✅ UI Improvements for Blueprint Extraction - **COMPLETE**:
+   - **Status**: All 7 improvements completed
+   - **Plan**: `.cursor/plans/ui_improvements_for_blueprint_extraction_e4cee6b1.plan.md` - **ALL TODOS COMPLETE**
+   - **Completed improvements**:
+     - ✅ **Empty Plan Viewer**: SVG placeholder until file upload (replaces default `plan.png`)
+     - ✅ **Editable Area Column**: Area values editable via input fields; edits tracked in `extractedRooms` array
+     - ✅ **New Compliance Endpoint**: `POST /api/blueprint/check-compliance/` accepts `List[Room]`, returns issues + summary
+     - ✅ **Conditional Compliance Column**: Hidden initially, shown after first compliance check
+     - ✅ **Hide Type/Level Columns**: Removed from UI (data still in room objects for compliance)
+     - ✅ **Fix Tooltip Z-Index**: Tooltips appear above table header (overflow: visible, z-index: 99999)
+     - ✅ **Tooltip Width**: Increased from 300px to 500px for better readability
+   - **Backend changes**:
+     - `app/api/blueprint.py`: Added `POST /api/blueprint/check-compliance/` endpoint
+   - **Frontend changes**:
+     - `app/templates/index.html`: Empty viewer, editable areas, conditional compliance column, removed Type/Level, fixed tooltips, per-room check buttons
+   - **User workflow**: Upload → Extract → Edit areas → Check compliance → View results with tooltips
+   - **Timeline**: All improvements completed (~3-4 hours total)
 
 ## Future Enhancements
 

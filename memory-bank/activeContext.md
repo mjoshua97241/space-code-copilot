@@ -313,3 +313,39 @@ Todo next:
     - Some overlays are wrong (false-positive match to unrelated OCR text)
     - VLM overlays may also have accuracy issues (bbox coordinates may not perfectly align with label text)
     - Next iteration should prioritize: OCR recall improvements, match gating, and frontend rendering integration
+- ✅ **UI Improvements for Blueprint Extraction - COMPLETE** (`.cursor/plans/ui_improvements_for_blueprint_extraction_e4cee6b1.plan.md`):
+  - **Status**: ✅ All 7 todos completed
+  - **Completed improvements**:
+    - ✅ **Empty Plan Viewer**: Replaced default `plan.png` with SVG placeholder showing "Upload a blueprint file to view the floor plan" until file is uploaded
+    - ✅ **Editable Area Column**: Area values are now editable input fields; user edits are tracked in `extractedRooms` array and sent to compliance check endpoint
+    - ✅ **New Compliance Endpoint**: Created `POST /api/blueprint/check-compliance/` that accepts `List[Room]` and returns issues + summary (allows re-checking with edited values)
+    - ✅ **Conditional Compliance Column**: Compliance column is hidden initially (`compliance-column-hidden` class) and shown after first compliance check (`complianceChecked` flag)
+    - ✅ **Hide Type/Level Columns**: Removed Type and Level columns from table header and body (data still available in room objects for compliance logic)
+    - ✅ **Fix Tooltip Z-Index**: Fixed tooltip to appear above table header using:
+      - `overflow: visible !important` on extraction-results, table, thead, tbody, and td elements
+      - Higher z-index (99999) for tooltip `::after` pseudo-element
+      - Proper stacking context setup
+    - ✅ **Tooltip Width**: Increased tooltip max-width from 300px to 500px with explicit width for better readability
+  - **Backend changes**:
+    - `app/api/blueprint.py`: Added `POST /api/blueprint/check-compliance/` endpoint (lines 190-256)
+      - Accepts `rooms: List[Room]` in JSON body
+      - Calls `check_compliance()` and `get_compliance_summary()`
+      - Returns `{"issues": List[Issue], "summary": dict}`
+  - **Frontend changes**:
+    - `app/templates/index.html`:
+      - Empty plan viewer: SVG placeholder instead of default image (line 110)
+      - Editable area inputs: `<input type="number">` with `blur` and `keypress` event listeners (lines 880-889)
+      - Area tracking: `updateRoomArea(roomId, newArea)` function to update `extractedRooms` array (lines 925-940)
+      - Compliance column visibility: `showComplianceColumn()` and `hideComplianceColumn()` functions (lines 1008-1037)
+      - Removed Type/Level columns from table header (lines 193, 196) and body (lines 929, 941)
+      - Tooltip CSS: Fixed z-index and overflow issues (lines 125-175)
+      - Per-room compliance check: Added checkmark button for individual room compliance checking (lines 907-917, 991-1088)
+      - Updated `checkComplianceAndGenerateOverlays()` to send edited room data to new endpoint (lines 1117-1176)
+  - **User workflow**:
+    1. User uploads blueprint → Plan viewer shows uploaded file
+    2. User clicks "Extract Rooms" → Table displays with editable area column
+    3. User edits area values → Changes tracked in `extractedRooms` array
+    4. User clicks "Check Compliance" → Sends edited rooms to backend, compliance column appears
+    5. User can click per-room check button (✓) to check individual rooms
+    6. Tooltips show compliance issues on hover (wider, above table header)
+  - **Timeline**: All improvements completed (~3-4 hours total)
