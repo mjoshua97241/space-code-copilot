@@ -89,6 +89,9 @@
       .room-check-btn .check-icon {
         font-weight: bold;
       }
+      .compliance-column-hidden {
+        display: none !important;
+      }
       .compliance-status {
         display: inline-flex;
         align-items: center;
@@ -110,9 +113,20 @@
         font-size: 0.85rem;
         font-weight: 600;
       }
+      .rooms-table {
+        position: relative; /* Create stacking context for table */
+      }
+      .rooms-table thead {
+        position: relative;
+        z-index: 1; /* Lower z-index for header */
+      }
+      .rooms-table tbody {
+        position: relative;
+      }
       .room-issues-tooltip {
         position: relative;
         cursor: help;
+        z-index: 10; /* Higher than table header */
       }
       .room-issues-tooltip:hover::after {
         content: attr(data-issues);
@@ -125,10 +139,12 @@
         padding: 0.5rem;
         border-radius: 4px;
         white-space: pre-line;
-        z-index: 1000;
+        z-index: 10000; /* Much higher z-index to appear above table header */
         font-size: 0.85rem;
         max-width: 300px;
         margin-bottom: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        pointer-events: none; /* Prevent tooltip from blocking interactions */
       }
       .overlay.non-compliant {
         border: 3px solid #f44336;
@@ -188,11 +204,9 @@
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Type</th>
                     <th>Area (m²)</th>
-                    <th>Level</th>
                     <th>Confidence</th>
-                    <th>Compliance</th>
+                    <th class="compliance-column-hidden">Compliance</th>
                   </tr>
                 </thead>
                 <tbody id="rooms-tbody"></tbody>
@@ -250,6 +264,7 @@
       let overlayElements = new Map(); // Map of element_id -> overlay DOM element
       let extractedRooms = []; // Store extracted rooms for compliance checking
       let complianceIssues = []; // Store compliance issues from extract-and-check
+      let complianceChecked = false; // Track if compliance has been checked at least once
 
       // ====================================================================
       // Issues Fetching and Rendering
@@ -835,6 +850,9 @@
 
           const data = await res.json();
           extractedRooms = data.rooms;
+          complianceIssues = []; // Reset compliance issues on new extraction
+          complianceChecked = false; // Reset compliance checked flag
+          hideComplianceColumn(); // Hide compliance column on new extraction
           displayExtractionResults(data);
           showExtractionStatus(`✅ Extracted ${data.rooms.length} rooms`, "success");
           
@@ -919,7 +937,6 @@
           return `
             <tr class="${hasIssues ? 'has-issues' : ''}" data-room-id="${room.id}">
               <td>${escapeHtml(room.name)}</td>
-              <td>${escapeHtml(room.type)}</td>
               <td>
                 <input 
                   type="number" 
@@ -931,9 +948,8 @@
                   title="Edit area in m²"
                 />
               </td>
-              <td>${room.level}</td>
               <td><span class="confidence-badge ${confClass}">${confText}</span></td>
-              <td>
+              <td class="${complianceChecked ? '' : 'compliance-column-hidden'}">
                 <div class="compliance-cell">
                   ${complianceHtml}
                   ${checkButtonHtml}
@@ -944,6 +960,13 @@
         }).join("");
 
         resultsDiv.style.display = "block";
+        
+        // Update compliance column visibility based on complianceChecked flag
+        if (complianceChecked) {
+          showComplianceColumn();
+        } else {
+          hideComplianceColumn();
+        }
         
         // Attach event listeners to area inputs to track changes
         attachAreaInputListeners();
@@ -989,6 +1012,40 @@
         } else {
           console.warn(`Room ${roomId} not found in extractedRooms array`);
         }
+      }
+
+      function showComplianceColumn() {
+        // Remove hidden class from compliance column header
+        const complianceHeader = document.querySelector('thead th:last-child');
+        if (complianceHeader) {
+          complianceHeader.classList.remove('compliance-column-hidden');
+        }
+        
+        // Remove hidden class from all compliance cells (last td in each row)
+        const rows = document.querySelectorAll('#rooms-tbody tr');
+        rows.forEach(row => {
+          const complianceCell = row.querySelector('td:last-child');
+          if (complianceCell) {
+            complianceCell.classList.remove('compliance-column-hidden');
+          }
+        });
+      }
+
+      function hideComplianceColumn() {
+        // Add hidden class to compliance column header
+        const complianceHeader = document.querySelector('thead th:last-child');
+        if (complianceHeader) {
+          complianceHeader.classList.add('compliance-column-hidden');
+        }
+        
+        // Add hidden class to all compliance cells (last td in each row)
+        const rows = document.querySelectorAll('#rooms-tbody tr');
+        rows.forEach(row => {
+          const complianceCell = row.querySelector('td:last-child');
+          if (complianceCell) {
+            complianceCell.classList.add('compliance-column-hidden');
+          }
+        });
       }
 
       function attachRoomCheckButtons() {
@@ -1049,6 +1106,12 @@
           // Get issues for this specific room
           const roomIssues = data.issues || [];
           
+          // Show compliance column if this is the first check
+          if (!complianceChecked) {
+            showComplianceColumn();
+            complianceChecked = true;
+          }
+          
           // Update complianceIssues array (remove old issues for this room, add new ones)
           complianceIssues = complianceIssues.filter(issue => 
             !(issue.element_id === roomId && issue.element_type === "room")
@@ -1071,7 +1134,7 @@
       }
 
       function updateRoomComplianceCell(row, roomId, roomIssues) {
-        const complianceCell = row.querySelector('.compliance-cell');
+        const complianceCell = row.querySelector('td:last-child');
         if (!complianceCell) return;
 
         const hasIssues = roomIssues.length > 0;
@@ -1096,15 +1159,38 @@
           row.classList.remove('has-issues');
         }
         
-        // Update compliance cell (keep the button)
+        // Add check button HTML
+        const checkButtonHtml = `
+          <button 
+            class="room-check-btn" 
+            data-room-id="${roomId}"
+            title="Check compliance for this room"
+            aria-label="Check compliance"
+          >
+            <span class="check-icon">✓</span>
+          </button>
+        `;
+        
+        // Update compliance cell with both status and button
+        complianceCell.innerHTML = `
+          <div class="compliance-cell">
+            ${complianceHtml}
+            ${checkButtonHtml}
+          </div>
+        `;
+        complianceCell.classList.remove('compliance-column-hidden');
+        
+        // Re-attach event listener to button
         const checkButton = complianceCell.querySelector('.room-check-btn');
-        complianceCell.innerHTML = complianceHtml;
         if (checkButton) {
-          complianceCell.appendChild(checkButton);
-          // Re-attach event listener
           checkButton.addEventListener('click', function() {
             checkSingleRoomCompliance(roomId);
           });
+        }
+        
+        // Show compliance column if this is the first check
+        if (complianceChecked && document.querySelector('th.compliance-column-hidden')) {
+          showComplianceColumn();
         }
       }
 
@@ -1151,6 +1237,11 @@
           // Store compliance issues
           complianceIssues = data.issues || [];
           
+          // Mark compliance as checked (before re-rendering so cells are shown)
+          if (!complianceChecked) {
+            complianceChecked = true;
+          }
+          
           // Re-render table with updated compliance info (using current extractedRooms with edited values)
           // Create a minimal extraction result object for displayExtractionResults
           const displayData = {
@@ -1163,6 +1254,11 @@
             }
           };
           displayExtractionResults(displayData);
+          
+          // Show compliance column after table is rendered (if first check)
+          if (complianceChecked && document.querySelector('td.compliance-column-hidden')) {
+            showComplianceColumn();
+          }
           
           const summary = data.summary || {};
           showExtractionStatus(

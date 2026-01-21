@@ -7,22 +7,22 @@ todos:
     status: completed
   - id: editable-area-column
     content: Make area column editable with input field and track changes in extractedRooms array (line 862)
-    status: pending
+    status: completed
   - id: new-compliance-endpoint
     content: Create POST /api/blueprint/check-compliance/ endpoint that accepts rooms list and returns issues
-    status: pending
+    status: completed
   - id: update-compliance-check
     content: Update checkComplianceAndGenerateOverlays() to send edited room data to new endpoint
-    status: pending
+    status: completed
     dependencies:
       - editable-area-column
       - new-compliance-endpoint
   - id: conditional-compliance-column
     content: Hide compliance column initially, show after first compliance check (lines 148, 865)
-    status: pending
+    status: completed
   - id: hide-type-level-columns
     content: Remove Type and Level columns from table header and body (lines 144, 146, 861, 863)
-    status: pending
+    status: completed
   - id: fix-tooltip-zindex
     content: Fix tooltip z-index to appear above table header (line 81)
     status: pending
