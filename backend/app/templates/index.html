@@ -156,16 +156,6 @@
             </div>
           </div>
         </div>
-        
-        <div class="issues-panel">
-          <div class="issues-header">
-            <h3>Compliance Issues</h3>
-            <span class="issues-count" id="issues-count">Loading...</span>
-          </div>
-          <div class="issues-list" id="issues-list">
-            <div class="loading">Loading issues...</div>
-          </div>
-        </div>
       </div>
 
       <!-- Right Panel: Chat -->
@@ -218,40 +208,13 @@
       // Issues Fetching and Rendering
       // ====================================================================
 
-      async function fetchIssues() {
-        const listContainer = document.getElementById("issues-list");
-        const countElement = document.getElementById("issues-count");
-        
-        listContainer.innerHTML = '<div class="loading">Loading issues...</div>';
-        countElement.textContent = "Loading...";
-
-        try {
-          const res = await fetch("/api/issues/");
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-          issues = await res.json();
-          
-          // Update count
-          countElement.textContent = `${issues.length} issue${issues.length !== 1 ? 's' : ''}`;
-          
-          if (issues.length === 0) {
-            listContainer.innerHTML = '<div class="no-issues">✅ No compliance issues found. Design is compliant!</div>';
-            return;
-          }
-
-          // Render issues
-          listContainer.innerHTML = "";
-          issues.forEach((issue) => {
-            const issueElement = createIssueElement(issue);
-            listContainer.appendChild(issueElement);
-          });
-        } catch (e) {
-          console.error("Error fetching issues:", e);
-          listContainer.innerHTML = `<div class="error">Failed to load issues: ${e.message}</div>`;
-          countElement.textContent = "Error";
-        }
-      }
+      // fetchIssues() disabled - separate compliance issues panel removed per plan
+      // Compliance issues are now shown in the Extracted Rooms table (single panel approach)
+      // async function fetchIssues() {
+      //   const listContainer = document.getElementById("issues-list");
+      //   const countElement = document.getElementById("issues-count");
+      //   ...
+      // }
 
       function createIssueElement(issue) {
         const div = document.createElement("div");
@@ -972,8 +935,8 @@
             highlightNonCompliantRooms(complianceIssues);
           }
           
-          // Update issues panel (optional - can keep separate or merge)
-          updateIssuesPanel(complianceIssues);
+          // Compliance issues are now shown in the Extracted Rooms table (single panel approach)
+          // No separate issues panel needed
           
           const summary = data.summary || {};
           showExtractionStatus(
@@ -1034,24 +997,8 @@
         });
       }
 
-      function updateIssuesPanel(issues) {
-        // Update the issues panel with compliance issues from blueprint extraction
-        const listContainer = document.getElementById("issues-list");
-        const countElement = document.getElementById("issues-count");
-        
-        if (issues.length === 0) {
-          listContainer.innerHTML = '<div class="no-issues">✅ No compliance issues found. Design is compliant!</div>';
-          countElement.textContent = "0 issues";
-          return;
-        }
-        
-        countElement.textContent = `${issues.length} issue${issues.length !== 1 ? 's' : ''}`;
-        listContainer.innerHTML = "";
-        issues.forEach((issue) => {
-          const issueElement = createIssueElement(issue);
-          listContainer.appendChild(issueElement);
-        });
-      }
+      // updateIssuesPanel() removed - compliance issues are now shown in the Extracted Rooms table
+      // (single panel approach per plan)
 
       // ====================================================================
       // Event Listeners
@@ -1061,8 +1008,8 @@
         // Load overlays on page load
         loadOverlays();
         
-        // Fetch issues on page load
-        fetchIssues();
+        // fetchIssues() removed - separate compliance issues panel removed per plan
+        // Compliance issues are now shown in the Extracted Rooms table
 
         // Initialize blueprint extraction
         initExtraction();
