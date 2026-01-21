@@ -47,7 +47,7 @@ todos:
       - update-blueprint-api
   - id: integration-testing
     content: "Test end-to-end: upload PDF, verify overlays generated, verify compliance checking, verify highlighting works"
-    status: pending
+    status: completed
     dependencies:
       - update-frontend
 ---

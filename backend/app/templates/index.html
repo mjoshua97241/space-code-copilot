@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Code-Aware Space Planning Copilot</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      // Configure PDF.js worker
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
     <style>
       /* Additional styles for compliance features */
       .compliance-btn {
@@ -642,21 +649,55 @@
         showExtractionStatus("File selected. Click 'Extract Rooms' to process.", "info");
       }
 
-      function displayUploadedBlueprint(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const planImage = document.getElementById("plan-image");
-          planImage.src = e.target.result;
-          // Clear existing overlays when new blueprint is loaded
-          clearOverlays();
-        };
+      async function displayUploadedBlueprint(file) {
+        const planImage = document.getElementById("plan-image");
+        
         if (file.type.startsWith("image/")) {
+          // For images, use FileReader to display directly
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            planImage.src = e.target.result;
+            clearOverlays();
+          };
           reader.readAsDataURL(file);
         } else if (file.type === "application/pdf") {
-          // For PDFs, show placeholder until extraction completes
-          // The extraction will provide the image
-          const planImage = document.getElementById("plan-image");
-          planImage.src = "/static/plan.png"; // Fallback to default
+          // For PDFs, render first page using PDF.js
+          if (typeof pdfjsLib === 'undefined') {
+            console.warn("PDF.js not loaded, using default image");
+            planImage.src = "/static/plan.png";
+            return;
+          }
+          
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const page = await pdf.getPage(1); // Get first page
+            
+            // Set up canvas for rendering
+            const viewport = page.getViewport({ scale: 2.0 }); // Scale for better quality
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            // Render PDF page to canvas
+            await page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise;
+            
+            // Convert canvas to data URL and display
+            planImage.src = canvas.toDataURL("image/png");
+            clearOverlays();
+          } catch (error) {
+            console.error("Error rendering PDF:", error);
+            // Fallback to default image if PDF rendering fails
+            planImage.src = "/static/plan.png";
+            showExtractionStatus("Could not preview PDF. Extraction will still work.", "warning");
+          }
+        } else {
+          // Unknown file type, use default
+          planImage.src = "/static/plan.png";
         }
       }
 
