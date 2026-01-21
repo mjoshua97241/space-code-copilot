@@ -349,3 +349,38 @@ Todo next:
     5. User can click per-room check button (✓) to check individual rooms
     6. Tooltips show compliance issues on hover (wider, above table header)
   - **Timeline**: All improvements completed (~3-4 hours total)
+- ✅ **UI Layout Restructure - COMPLETE**:
+  - **Status**: ✅ Complete - Blueprint Extraction moved to right panel with tab toggle
+  - **Changes**:
+    - ✅ **Moved Blueprint Extraction to Right Panel**: Extracted the Blueprint Extraction panel from the left panel and moved it to the right panel
+    - ✅ **Added Tab Toggle System**: Created tab interface in right panel with two tabs:
+      - "💬 Q&A Chat" tab (default, active)
+      - "🔍 Blueprint Extraction" tab
+    - ✅ **Fixed Tab Visibility**: Only one tab content is visible at a time, taking full height of right panel
+    - ✅ **Fixed Scrolling**: Resolved scrolling issue in Blueprint Extraction tab by:
+      - Removing conflicting `overflow: visible !important` from `.extraction-content`
+      - Adding `overflow-y: auto !important` to `#content-extraction .extraction-content`
+      - Adding `min-height: 0` to enable proper flex scrolling
+  - **Layout Structure**:
+    - **Left Panel**: Now contains only the Floor Plan viewer (plan image with overlays)
+    - **Right Panel**: Contains tabbed interface with:
+      - Tab header with toggle buttons
+      - Chat view (when Chat tab is active)
+      - Extraction view (when Extraction tab is active)
+  - **Frontend changes**:
+    - `app/templates/index.html`:
+      - Removed extraction panel from left panel (lines 197-237 removed)
+      - Added tab system to right panel (lines 259-269: tab buttons, lines 271-303: chat content, lines 305-347: extraction content)
+      - Added `switchTab(tabName)` function (lines 817-850) to handle tab switching
+      - Added CSS for tab system (lines 179-245: tab buttons, tab content, extraction panel in tabs)
+    - `app/static/styles.css`:
+      - Updated `.right-panel` with `overflow: hidden` and `min-height: 0` (lines 516-521)
+      - Added `#content-extraction .extraction-panel` styles (lines 144-151)
+      - Added `#content-extraction .extraction-content` scrolling styles (lines 153-157)
+      - Added `#content-extraction .extraction-header` flex-shrink (lines 159-161)
+  - **User Experience**:
+    - Left panel is now dedicated to floor plan viewing
+    - Right panel provides easy switching between Q&A Chat and Blueprint Extraction
+    - Each tab takes full height when active
+    - Scrolling works properly in both tabs
+  - **Timeline**: Completed (~1-2 hours total)
