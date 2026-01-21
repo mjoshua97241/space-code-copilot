@@ -76,20 +76,18 @@ async def extract_and_check_compliance(
     file: UploadFile = File(..., description="Blueprint image (PNG/JPG) or PDF"),
     scale: Optional[float] = Form(None, description="Scale factor (default 1.0 for 1:100)"),
     page_index: Optional[int] = Form(None, description="PDF page index (0-based). If None, extracts all pages combined."),
-    use_ocr_overlays: bool = Form(False, description="Whether to use OCR as fallback for overlays (default: uses VLM overlays)"),
-    use_opencv: bool = Form(False, description="Whether to use OpenCV for advanced boundary detection (requires opencv-python)")
+    use_ocr_overlays: bool = Form(False, description="[DISABLED] Overlays are currently disabled - deferred to future recommendations"),
+    use_opencv: bool = Form(False, description="[DISABLED] Overlays are currently disabled - deferred to future recommendations")
 ) -> Dict[str, Any]:
     """
     Extract rooms from blueprint, generate overlays, and check compliance.
     
     This endpoint combines:
-    1. VLM-based room extraction (includes label bounding boxes as overlays)
-    2. OCR-based overlay generation (optional fallback if VLM overlays are missing)
-    3. Compliance checking against building code rules
+    1. VLM-based room extraction
+    2. Compliance checking against building code rules
     
-    **Overlay Generation Strategy:**
-    - **Default**: Uses VLM-generated overlays from label_bbox (more accurate, always-on)
-    - **Fallback**: If VLM overlays are missing/insufficient AND use_ocr_overlays=True, generates OCR overlays
+    **Note**: Overlay generation is currently disabled (deferred to future recommendations).
+    Overlays will be returned as empty list until frontend rendering is implemented.
     
     Args:
         file: Blueprint image (PNG, JPG) or PDF
@@ -100,7 +98,7 @@ async def extract_and_check_compliance(
         
     Returns:
         Dictionary with:
-        - "extraction": BlueprintExtractionResult (with overlays from VLM, or OCR if fallback enabled)
+        - "extraction": BlueprintExtractionResult (overlays currently disabled, returns empty list)
         - "issues": List[Issue] - Compliance violations found
         - "summary": dict - Summary statistics of issues
     
@@ -157,48 +155,9 @@ async def extract_and_check_compliance(
             page_index=page_index
         )
         
-        # Step 2: Handle overlays (VLM by default, OCR as fallback if requested)
-        import logging
-        logger = logging.getLogger(__name__)
-        
-        vlm_overlays_count = len(result.overlays) if result.overlays else 0
-        logger.info(f"VLM extraction produced {vlm_overlays_count} overlays from {len(result.rooms)} rooms")
-        
-        # Use OCR overlays as fallback if:
-        # 1. User explicitly requested OCR overlays (use_ocr_overlays=True), OR
-        # 2. VLM overlays are missing/insufficient (less than 50% of rooms have overlays)
-        should_use_ocr = use_ocr_overlays or (vlm_overlays_count < len(result.rooms) * 0.5 and len(result.rooms) > 0)
-        
-        if should_use_ocr:
-            try:
-                ocr_overlays = generate_overlays_from_blueprint(
-                    image_path=tmp_path,
-                    extracted_rooms=result.rooms,
-                    page_index=page_index,
-                    use_opencv=use_opencv,
-                    fuzzy_threshold=70  # Lower threshold for better matching
-                )
-                
-                if ocr_overlays:
-                    # Merge OCR overlays with VLM overlays (OCR overwrites if same room_id)
-                    # Create a map of existing overlays by room_id
-                    overlay_by_id = {overlay.id: overlay for overlay in result.overlays}
-                    
-                    # Add OCR overlays (overwrite VLM overlays for same room_id)
-                    for ocr_overlay in ocr_overlays:
-                        overlay_by_id[ocr_overlay.id] = ocr_overlay
-                    
-                    result.overlays = list(overlay_by_id.values())
-                    logger.info(f"OCR fallback generated {len(ocr_overlays)} overlays. "
-                              f"Total overlays after merge: {len(result.overlays)}")
-                else:
-                    logger.warning(f"OCR overlay generation returned 0 overlays. "
-                                 f"Keeping {vlm_overlays_count} VLM overlays.")
-            except Exception as e:
-                # If OCR overlay generation fails, keep VLM overlays
-                logger.warning(f"OCR overlay generation failed: {e}. "
-                             f"Keeping {vlm_overlays_count} VLM overlays.", exc_info=True)
-                # result.overlays already contains VLM overlays, no need to change
+        # Step 2: Overlays disabled for now (deferred to future recommendations)
+        # TODO: Re-enable overlay generation when frontend rendering is ready
+        result.overlays = []  # Disable overlays - frontend rendering deferred
         
         # Step 3: Check compliance
         issues: List[Issue] = check_compliance(

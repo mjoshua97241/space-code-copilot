@@ -297,7 +297,19 @@ Todo next:
     - OCR initially returned 0 overlays due to missing Tesseract language data (`eng.traineddata`) / `TESSDATA_PREFIX`
       - Fix: install language pack (e.g., `tesseract-ocr-eng`) and/or point `TESSDATA_PREFIX` to tessdata dir
     - Whole-room bbox inference produced misaligned overlays → switched to **label-only overlays**
+  - **VLM Label Overlays Implementation** (`.cursor/plans/vlm_label_overlays_7c388fc1.plan.md`):
+    - **Status**: ✅ Backend complete, frontend rendering deferred to future
+    - **Completed**:
+      - ✅ Extended VLM prompt to request `label_bbox` (x, y, width, height) in pixel coordinates
+      - ✅ Parsed and validated `label_bbox` from VLM response, created `Overlay` objects
+      - ✅ Updated `POST /api/blueprint/extract-and-check/` to use VLM overlays by default (OCR as optional fallback)
+      - ✅ Added comprehensive unit tests (11 new tests, all passing)
+      - ✅ VLM overlays are now included in `BlueprintExtractionResult.overlays` automatically
+    - **Deferred to future**:
+      - Frontend rendering of VLM overlays in plan viewer (overlays are generated but not yet displayed)
+      - Integration with existing overlay rendering system in `index.html`
   - **Known limitations (still open)**:
     - Some overlays are missing (OCR misses labels or matching fails)
     - Some overlays are wrong (false-positive match to unrelated OCR text)
-    - Next iteration should prioritize OCR recall (PDF render DPI/zoom, rotated text handling) + match gating (reject dimension-like tokens, enforce 1:1 matching, top-k review)
+    - VLM overlays may also have accuracy issues (bbox coordinates may not perfectly align with label text)
+    - Next iteration should prioritize: OCR recall improvements, match gating, and frontend rendering integration

@@ -267,14 +267,66 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
    - **Current behavior**:
      - Overlays highlight **room label text** (more stable than trying to infer full-room boundaries).
    - **Remaining limitation**:
-     - Overlay accuracy is still sensitive to OCR quality and match disambiguation (see “Known Issues” above).
+     - Overlay accuracy is still sensitive to OCR quality and match disambiguation (see "Known Issues" above).
    - **Plan**: `.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`
    - **Approach**: OCR + text positioning to generate overlays from extracted room data
    - **Architecture**: VLM extracts semantic data → OCR finds text positions → Match room names → Infer boundaries → Generate overlays → Check compliance → Render with highlighting
    - **Integration**: Compliance checking on extracted rooms, visual highlighting of non-compliant rooms (red pulsing border)
    - **Timeline**: 7-10 hours total (1-2h testing + 6-8h implementation)
 
+10. ✅ VLM Label Overlays - **BACKEND COMPLETE, FRONTEND DEFERRED**:
+   - **Status**: Backend implementation complete, frontend rendering deferred to future recommendations
+   - **Completed**:
+     - ✅ Extended VLM prompt to request `label_bbox` (x, y, width, height) in pixel coordinates
+     - ✅ Parsed and validated `label_bbox` from VLM response, created `Overlay` objects
+     - ✅ Updated `POST /api/blueprint/extract-and-check/` to use VLM overlays by default (OCR as optional fallback)
+     - ✅ Added comprehensive unit tests (11 new tests in `test_blueprint_extractor.py`, all passing)
+     - ✅ VLM overlays are automatically included in `BlueprintExtractionResult.overlays`
+   - **Deferred to future**:
+     - Frontend rendering of VLM overlays in plan viewer (overlays are generated but not yet displayed in UI)
+     - Integration with existing overlay rendering system in `index.html`
+   - **Plan**: `.cursor/plans/vlm_label_overlays_7c388fc1.plan.md`
+   - **Approach**: VLM directly returns label bounding boxes alongside extracted rooms (more accurate than OCR+fuzzy matching)
+   - **Architecture**: VLM extracts rooms + label_bbox → Parse/validate bboxes → Create Overlay objects → Return in API response
+   - **Timeline**: Backend implementation complete (~2-3 hours)
+
 ## Future Enhancements
+
+### Overlay Rendering and Accuracy Improvements
+
+**Current Status:**
+- ✅ Backend: VLM label overlays implemented (bbox extraction, parsing, validation, API integration)
+- ✅ Backend: OCR overlays implemented (text positioning, fuzzy matching, label-only highlighting)
+- ⏸️ Frontend: Overlay rendering in plan viewer deferred to future
+
+**Future Recommendations:**
+
+1. **Frontend Overlay Rendering**:
+   - Integrate VLM overlays with existing overlay rendering system in `index.html`
+   - Display VLM-generated overlays on uploaded blueprint images
+   - Merge VLM and OCR overlays intelligently (prefer VLM, fallback to OCR)
+   - Visual highlighting of non-compliant rooms using overlay data
+
+2. **OCR Overlay Accuracy Improvements**:
+   - **Higher PDF render DPI/zoom**: Increase PDF rasterization scale (currently 2x) for better OCR accuracy on small text
+   - **Rotated text handling**: Try OCR on rotated versions (0°, 90°, 180°, 270°) or enable orientation detection
+   - **Region-of-interest OCR**: Focus OCR on interior regions, exclude borders/legends that contain mostly dimensions
+   - **Multiple OCR engines**: Try EasyOCR as alternative to Tesseract for better accuracy on stylized text
+
+3. **Match Gating Improvements**:
+   - **Reject dimension-like tokens**: Filter out OCR text that looks like measurements (mostly digits, "m", "mm", "sqm")
+   - **Enforce 1:1 matching**: If multiple rooms match same OCR token, keep only best-scoring match
+   - **Top-k review UI**: Allow users to review and select from top-3 OCR candidates for each room (human-in-the-loop)
+
+4. **Geometry-Based Approaches**:
+   - **Line/wall detection**: Use OpenCV or similar to detect room boundaries (walls) and infer room polygons
+   - **Segmentation**: Apply image segmentation to identify room regions, then match labels to regions
+   - **Interactive correction**: Allow users to manually adjust overlay positions or draw missing overlays
+
+5. **VLM Overlay Refinement**:
+   - **Multi-model ensemble**: Combine bboxes from multiple VLM models (Gemini 2.0 Flash + GPT-4o) for better accuracy
+   - **Confidence scoring**: Add confidence scores to VLM bboxes (when model is uncertain, use OCR fallback)
+   - **Post-processing**: Refine VLM bboxes using image analysis (detect actual text boundaries, not just approximate boxes)
 
 ### User-Provided API Keys (Post-MVP)
 - **Goal**: Allow users to use their own OpenAI/Gemini API keys instead of server's API key

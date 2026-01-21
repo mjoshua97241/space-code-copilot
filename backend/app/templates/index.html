@@ -960,16 +960,12 @@
             displayExtractionResults(data.extraction);
           }
           
-          // Render dynamic overlays
-          if (data.extraction && data.extraction.overlays) {
-            console.log("Calling renderDynamicOverlays with:", data.extraction.overlays.length, "overlays");
-            renderDynamicOverlays(data.extraction.overlays);
-          } else {
-            console.warn("No overlays in API response:", {
-              hasExtraction: !!data.extraction,
-              hasOverlays: !!(data.extraction && data.extraction.overlays)
-            });
-          }
+          // Overlay rendering disabled for now (deferred to future recommendations)
+          // TODO: Re-enable when overlay rendering is ready
+          // if (data.extraction && data.extraction.overlays) {
+          //   console.log("Calling renderDynamicOverlays with:", data.extraction.overlays.length, "overlays");
+          //   renderDynamicOverlays(data.extraction.overlays);
+          // }
           
           // Highlight non-compliant rooms
           if (complianceIssues.length > 0) {

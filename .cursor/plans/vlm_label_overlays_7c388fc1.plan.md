@@ -17,12 +17,12 @@ todos:
       - vlm-bbox-parse
   - id: tests-vlm-overlays
     content: Add/update unit tests in test_blueprint_extractor.py for VLM bbox→overlay conversion and validation
-    status: pending
+    status: completed
     dependencies:
       - vlm-bbox-parse
   - id: docs-future-overlays
-    content: Add "Future Recommendations for Precise Overlays" section to memory-bank/activeContext.md documenting OCR improvements, match gating, and geometry-based approaches
-    status: pending
+    content: Add "Future Recommendations for Precise Overlays" section to memory-bank/activeContext.md documenting VLM overlay work completed, deferred frontend rendering, OCR improvements, match gating, and geometry-based approaches
+    status: completed
 ---
 
 ## Goal
