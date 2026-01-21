@@ -42,6 +42,15 @@ from evaluation.vlm_extraction_metrics import (
     calculate_composite_score,
 )
 
+# Optional import for Hugging Face model (requires GPU)
+try:
+    import torch
+    from evaluation.hf_vlm_wrapper import create_hf_extractor
+    HF_AVAILABLE = True
+except ImportError:
+    HF_AVAILABLE = False
+    torch = None
+
 
 # Paths
 BASE_DIR = Path(__file__).parent.parent
@@ -483,6 +492,42 @@ def main():
             print(f"❌ Gemini evaluation failed: {e}")
     else:
         print("\n⚠ GOOGLE_API_KEY not set. Skipping Gemini evaluation.")
+    
+    # Evaluate Hugging Face model (if available and GPU present)
+    if HF_AVAILABLE:
+        if torch and torch.cuda.is_available():
+            print("\n" + "="*60)
+            print("Evaluating Hugging Face FloorPlanVisionAIAdaptor...")
+            print("="*60)
+            try:
+                # Create HF extractor (loads model once)
+                print("🔄 Loading Hugging Face model (this may take a moment)...")
+                hf_extractor = create_hf_extractor()
+                
+                def extractor_hf(image_path: str, scale_override: float = 1.0) -> BlueprintExtractionResult:
+                    """Extractor function for Hugging Face FloorPlanVisionAIAdaptor"""
+                    return hf_extractor(image_path, scale_override)
+                
+                # Evaluate Hugging Face model
+                result_hf = evaluate_vlm_extraction(
+                    extractor_func=extractor_hf,
+                    golden_dataset_df=golden_df,
+                    model_name="hf-floorplan-vision-adaptor",
+                    delay_between_extractions=0.5  # May be faster if local GPU
+                )
+                results.append(result_hf)
+                print("✅ Hugging Face model evaluation completed")
+            except Exception as e:
+                print(f"❌ Hugging Face model evaluation failed: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print("\n⚠ GPU not available. Hugging Face model requires GPU for inference.")
+            print("   Skipping Hugging Face evaluation.")
+    else:
+        print("\n⚠ Hugging Face dependencies not available.")
+        print("   Install with: pip install unsloth transformers torch pillow")
+        print("   Skipping Hugging Face evaluation.")
     
     # Compare models
     if results:

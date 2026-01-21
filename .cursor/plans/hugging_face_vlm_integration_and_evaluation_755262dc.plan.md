@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: update-evaluation-script
     content: Update evaluation/vlm_evaluation.py to include HF model evaluation
-    status: pending
+    status: completed
     dependencies:
       - create-hf-wrapper
   - id: run-evaluation
