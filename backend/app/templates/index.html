@@ -423,60 +423,62 @@
       // Overlay Loading and Rendering
       // ====================================================================
 
-      async function loadOverlays() {
-        try {
-          const res = await fetch("/static/overlays.json");
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-          overlays = await res.json();
-          renderOverlays();
-        } catch (e) {
-          console.error("Error loading overlays:", e);
-          // Silently fail - overlays are optional
-        }
-      }
+      // Overlay loading disabled (deferred to future recommendations)
+      // async function loadOverlays() {
+      //   try {
+      //     const res = await fetch("/static/overlays.json");
+      //     if (!res.ok) {
+      //       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      //     }
+      //     overlays = await res.json();
+      //     renderOverlays();
+      //   } catch (e) {
+      //     console.error("Error loading overlays:", e);
+      //     // Silently fail - overlays are optional
+      //   }
+      // }
 
-      function renderOverlays() {
-        const container = document.getElementById("overlays-container");
-        const planImage = document.getElementById("plan-image");
-        
-        if (!container || !planImage || overlays.length === 0) {
-          console.log("Cannot render overlays:", {
-            container: !!container,
-            planImage: !!planImage,
-            overlaysCount: overlays.length
-          });
-          return;
-        }
-
-        // Wait for image to load to get actual dimensions
-        // For data URLs (PDF-rendered images), we need to ensure naturalWidth/Height are set
-        const tryRender = () => {
-          if (planImage.naturalWidth > 0 && planImage.naturalHeight > 0) {
-            console.log("Rendering overlays:", {
-              overlaysCount: overlays.length,
-              imageSize: `${planImage.naturalWidth}x${planImage.naturalHeight}`,
-              displaySize: `${planImage.width}x${planImage.height}`
-            });
-            renderOverlayElements();
-          } else {
-            // If natural dimensions aren't set yet, wait a bit and try again
-            setTimeout(tryRender, 100);
-          }
-        };
-
-        if (planImage.complete && planImage.naturalWidth > 0) {
-          tryRender();
-        } else {
-          planImage.addEventListener("load", tryRender, { once: true });
-          // Also try after a short delay in case load event doesn't fire
-          setTimeout(tryRender, 500);
-        }
-        
-        // Update overlay positions on window resize
-        window.addEventListener("resize", handleResize);
-      }
+      // Overlay rendering disabled (deferred to future recommendations)
+      // function renderOverlays() {
+      //   const container = document.getElementById("overlays-container");
+      //   const planImage = document.getElementById("plan-image");
+      //   
+      //   if (!container || !planImage || overlays.length === 0) {
+      //     console.log("Cannot render overlays:", {
+      //       container: !!container,
+      //       planImage: !!planImage,
+      //       overlaysCount: overlays.length
+      //     });
+      //     return;
+      //   }
+      //
+      //   // Wait for image to load to get actual dimensions
+      //   // For data URLs (PDF-rendered images), we need to ensure naturalWidth/Height are set
+      //   const tryRender = () => {
+      //     if (planImage.naturalWidth > 0 && planImage.naturalHeight > 0) {
+      //       console.log("Rendering overlays:", {
+      //         overlaysCount: overlays.length,
+      //         imageSize: `${planImage.naturalWidth}x${planImage.naturalHeight}`,
+      //         displaySize: `${planImage.width}x${planImage.height}`
+      //       });
+      //       renderOverlayElements();
+      //     } else {
+      //       // If natural dimensions aren't set yet, wait a bit and try again
+      //       setTimeout(tryRender, 100);
+      //     }
+      //   };
+      //
+      //   if (planImage.complete && planImage.naturalWidth > 0) {
+      //     tryRender();
+      //   } else {
+      //     planImage.addEventListener("load", tryRender, { once: true });
+      //     // Also try after a short delay in case load event doesn't fire
+      //     setTimeout(tryRender, 500);
+      //   }
+      //   
+      //   // Update overlay positions on window resize
+      //   window.addEventListener("resize", handleResize);
+      // }
 
       function renderOverlayElements() {
         const container = document.getElementById("overlays-container");
@@ -930,10 +932,10 @@
           //   renderDynamicOverlays(data.extraction.overlays);
           // }
           
-          // Highlight non-compliant rooms
-          if (complianceIssues.length > 0) {
-            highlightNonCompliantRooms(complianceIssues);
-          }
+          // Highlight non-compliant rooms - DISABLED (overlays disabled)
+          // if (complianceIssues.length > 0) {
+          //   highlightNonCompliantRooms(complianceIssues);
+          // }
           
           // Compliance issues are now shown in the Extracted Rooms table (single panel approach)
           // No separate issues panel needed
@@ -1005,8 +1007,11 @@
       // ====================================================================
 
       document.addEventListener("DOMContentLoaded", () => {
-        // Load overlays on page load
-        loadOverlays();
+        // Overlay rendering disabled (deferred to future recommendations)
+        // loadOverlays();
+        
+        // Clear any existing overlays on page load
+        clearOverlays();
         
         // fetchIssues() removed - separate compliance issues panel removed per plan
         // Compliance issues are now shown in the Extracted Rooms table
