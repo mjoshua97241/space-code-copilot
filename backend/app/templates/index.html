@@ -113,20 +113,47 @@
         font-size: 0.85rem;
         font-weight: 600;
       }
+      .overlay.non-compliant {
+        border: 3px solid #f44336;
+        background: rgba(244, 67, 54, 0.1);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+      }
+      .extraction-content {
+        overflow: visible !important; /* Prevent clipping of tooltips */
+      }
+      .extraction-results {
+        margin-top: 1rem;
+        position: relative; /* Create stacking context for tooltips */
+        z-index: 1; /* Base z-index for container */
+        overflow: visible !important; /* Allow tooltips to escape container bounds */
+      }
       .rooms-table {
         position: relative; /* Create stacking context for table */
+        z-index: 1; /* Lower than tooltip */
+        overflow: visible !important; /* Allow tooltips to escape table bounds */
       }
       .rooms-table thead {
         position: relative;
         z-index: 1; /* Lower z-index for header */
+        overflow: visible !important; /* Allow tooltips above header */
       }
       .rooms-table tbody {
         position: relative;
+        z-index: 1; /* Lower than tooltip */
+        overflow: visible !important; /* Allow tooltips to escape */
+      }
+      .rooms-table td {
+        overflow: visible !important; /* Critical: allow tooltip to escape cell bounds */
+        position: relative; /* Create positioning context */
       }
       .room-issues-tooltip {
         position: relative;
         cursor: help;
-        z-index: 10; /* Higher than table header */
+        z-index: 100; /* Higher than table elements within extraction-results */
       }
       .room-issues-tooltip:hover::after {
         content: attr(data-issues);
@@ -139,24 +166,12 @@
         padding: 0.5rem;
         border-radius: 4px;
         white-space: pre-line;
-        z-index: 10000; /* Much higher z-index to appear above table header */
+        z-index: 99999; /* Highest z-index within extraction-results container */
         font-size: 0.85rem;
         max-width: 300px;
         margin-bottom: 0.5rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         pointer-events: none; /* Prevent tooltip from blocking interactions */
-      }
-      .overlay.non-compliant {
-        border: 3px solid #f44336;
-        background: rgba(244, 67, 54, 0.1);
-        animation: pulse 2s infinite;
-      }
-      @keyframes pulse {
-        0%, 100% { opacity: 0.3; }
-        50% { opacity: 0.6; }
-      }
-      .extraction-results {
-        margin-top: 1rem;
       }
     </style>
   </head>
