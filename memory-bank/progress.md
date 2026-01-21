@@ -152,7 +152,11 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 
 ## Known Issues
 
-None yet (project in early setup phase).
+### Dynamic overlays (OCR-based) reliability
+
+- **Missing overlays**: OCR does not always detect room labels (small font, low contrast, rotated text, PDF rasterization scale).
+- **Wrong overlays**: fuzzy matching can occasionally match a room name to unrelated OCR text (dimensions/annotations), producing incorrect label highlights.
+- **System dependency**: Tesseract may be present but fail without language data (`eng.traineddata`). `TESSDATA_PREFIX` must point to a valid tessdata directory.
 
 ## Next Steps
 
@@ -251,42 +255,19 @@ None yet (project in early setup phase).
    - **Final Model**: Gemini 2.0 Flash (selected based on evaluation: better recall, faster, lower cost, comparable accuracy)
    - **Timeline**: All 6 phases complete (~5.5-7 days total)
 
-9. 🔄 Blueprint Extraction Testing & Dynamic Overlays - **IN PROGRESS**:
-   - [ ] Phase 1: Test feature/multimodal branch - **PENDING**
-     - [ ] Run unit tests (`test_blueprint_extractor.py`, `test_e2e.py`)
-     - [ ] Test API endpoint (`POST /api/blueprint/extract`) with sample PDFs from `backend/app/data/floor-plans/`
-     - [ ] Test frontend UI (file upload via drag-and-drop and click-to-select, extraction results display, confidence scores)
-     - [ ] Verify extraction works with different file types (PNG, JPG, PDF)
-     - [ ] Test with optional `scale` and `page_index` parameters
-     - [ ] Manual integration test: Upload `example_plan_01a.pdf` and verify results match ground truth CSV
-     - [ ] Manual merge to main after testing passes
-   - [ ] Phase 2: Dynamic overlays implementation - **PENDING**
-     - [ ] Add dependencies (pytesseract, opencv-python) to `backend/pyproject.toml`
-     - [ ] Create `Overlay` model in `app/models/domain.py` (id, type, x, y, width, height, room_name, room_type)
-     - [ ] Update `BlueprintExtractionResult` to include `overlays: List[Overlay]` field
-     - [ ] Create overlay generator service (`app/services/overlay_generator.py`)
-       - `find_text_positions()` - OCR text extraction with coordinates (pytesseract/easyocr)
-       - `match_rooms_to_text()` - Fuzzy matching of room names to OCR text positions
-       - `infer_room_boundaries()` - Image processing to find room boundaries near text labels
-       - `generate_overlays_from_blueprint()` - Main orchestrator function
-     - [ ] Write unit tests (`app/tests/test_overlay_generator.py`)
-       - Test `find_text_positions()` with sample image
-       - Test `match_rooms_to_text()` with known room names
-       - Test `infer_room_boundaries()` with mock text positions
-       - Test `generate_overlays_from_blueprint()` end-to-end
-     - [ ] Update API endpoint (`app/api/blueprint.py`)
-       - Add new endpoint: `POST /api/blueprint/extract-and-check` (or extend existing with optional parameters)
-       - Integrate overlay generation and compliance checking
-       - Return combined result: extraction + overlays + issues + summary
-     - [ ] Update frontend (`app/templates/index.html`)
-       - Add "Check Compliance & Generate Overlays" button after extraction results
-       - Add `checkComplianceAndGenerateOverlays()` JavaScript function
-       - Add `renderDynamicOverlays(overlays)` function to render overlays from API response
-       - Add `highlightNonCompliantRooms(issues)` function to highlight non-compliant rooms in red
-       - Update overlay rendering to handle both static (JSON) and dynamic (API) overlays
-     - [ ] Integration testing
-       - Test end-to-end: upload PDF, verify overlays generated, verify compliance checking, verify highlighting works
-       - Test with different blueprint styles
+9. ✅ Blueprint Extraction Testing & Dynamic Overlays - **COMPLETE**:
+   - ✅ Phase 1: Testing checklist completed (API + UI + sample plan PDFs; unit tests run)
+   - ✅ Phase 2: Dynamic overlays implemented end-to-end
+     - ✅ Added deps (`pytesseract`, `opencv-python` optional, `python-multipart`)
+     - ✅ Added `Overlay` model + `BlueprintExtractionResult.overlays`
+     - ✅ Added `app/services/overlay_generator.py` (OCR text positioning + fuzzy matching)
+     - ✅ Added `POST /api/blueprint/extract-and-check/` (extract → overlays → compliance)
+     - ✅ Updated `app/templates/index.html` (uploaded blueprint viewer + compliance button + dynamic overlay rendering)
+     - ✅ Added/updated unit tests `app/tests/test_overlay_generator.py` (26 tests passing)
+   - **Current behavior**:
+     - Overlays highlight **room label text** (more stable than trying to infer full-room boundaries).
+   - **Remaining limitation**:
+     - Overlay accuracy is still sensitive to OCR quality and match disambiguation (see “Known Issues” above).
    - **Plan**: `.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`
    - **Approach**: OCR + text positioning to generate overlays from extracted room data
    - **Architecture**: VLM extracts semantic data → OCR finds text positions → Match room names → Infer boundaries → Generate overlays → Check compliance → Render with highlighting

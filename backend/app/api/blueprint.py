@@ -161,12 +161,21 @@ async def extract_and_check_compliance(
                     extracted_rooms=result.rooms,
                     page_index=page_index,
                     use_opencv=use_opencv,
-                    fuzzy_threshold=85 # Default fuzzy matching threshold
+                    fuzzy_threshold=70 # Lower threshold for better matching (was 85)
                 )
                 result.overlays = overlays
+                # Log overlay generation result for debugging
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Generated {len(overlays)} overlays from {len(result.rooms)} rooms")
+                if len(overlays) == 0 and len(result.rooms) > 0:
+                    logger.warning(f"No overlays generated despite {len(result.rooms)} rooms extracted. "
+                                 "Possible causes: OCR found no text, no text matched room names, or boundary inference failed.")
             except Exception as e:
                 # If overlay generation fails, continue without overlays
-                # Could log warning here
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Overlay generation failed: {e}", exc_info=True)
                 result.overlays = []
         
         # Step 3: Check compliance

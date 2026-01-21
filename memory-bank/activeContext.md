@@ -273,26 +273,31 @@ Todo next:
   - **Final Model**: Gemini 2.0 Flash (better recall 69.66% vs 53.85%, faster 7.61s vs 13.53s, lower cost, comparable accuracy)
   - **Timeline**: All 6 phases complete (~5.5-7 days total)
 
-- 🔄 **Blueprint Extraction Testing & Dynamic Overlays** (`.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`):
-  - **Phase 1**: Test feature/multimodal branch before merging to main
-    - Run unit tests (`test_blueprint_extractor.py`, `test_e2e.py`)
-    - Test API endpoint (`POST /api/blueprint/extract`) with sample PDFs
-    - Test frontend UI (file upload, extraction results display, confidence scores)
-    - Verify extraction works with sample PDFs from `backend/app/data/floor-plans/`
-    - Manual merge to main after testing passes
-  - **Phase 2**: Dynamic overlays implementation
-    - Generate overlays from OCR + text positioning (pytesseract/easyocr)
-    - Match VLM-extracted room names to OCR text positions using fuzzy matching
-    - Infer room boundaries using image processing heuristics (OpenCV optional)
-    - Integrate compliance checking with extracted rooms
-    - Render dynamic overlays on blueprint image
-    - Highlight non-compliant rooms in red with pulsing animation
-  - **New files**: `app/services/overlay_generator.py`, `app/tests/test_overlay_generator.py`
-  - **Modified files**: 
-    - `app/models/domain.py` (add `Overlay` model, update `BlueprintExtractionResult`)
-    - `app/api/blueprint.py` (add extract-and-check endpoint with overlay generation and compliance checking)
-    - `app/templates/index.html` (add compliance button, dynamic overlay rendering, non-compliant room highlighting)
-    - `backend/pyproject.toml` (add pytesseract, opencv-python dependencies)
-  - **Dependencies**: pytesseract (or easyocr as alternative), opencv-python (optional for boundary detection)
-  - **System requirements**: Tesseract OCR installed on system (or use easyocr for no system dependencies)
-  - **Timeline**: 7-10 hours total (1-2h testing + 6-8h implementation)
+- ✅ **Blueprint Extraction Testing & Dynamic Overlays** (`.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`):
+  - **Status**: ✅ Implementation complete (all plan todos marked completed; merge/branch steps were user-cancelled)
+  - **Backend additions/changes**:
+    - Added OCR deps in `backend/pyproject.toml`: `python-multipart`, `pytesseract`, `opencv-python` (OpenCV optional)
+    - Added `Overlay` model and `BlueprintExtractionResult.overlays` in `app/models/domain.py`
+    - Added `app/services/overlay_generator.py`:
+      - OCR text positioning (`pytesseract.image_to_data`) with preprocessing + multiple PSM configs
+      - Fuzzy matching via `rapidfuzz`
+      - Overlay generation now highlights **room label text** (not full-room bounding boxes) for stability
+      - Tesseract tessdata discovery attempts set `TESSDATA_PREFIX` when `eng.traineddata` is found
+    - Added `POST /api/blueprint/extract-and-check/` in `app/api/blueprint.py`:
+      - Extract rooms (VLM) → generate overlays (OCR) → run compliance → return extraction + issues + summary
+  - **Frontend changes**:
+    - `app/templates/index.html`:
+      - Plan viewer now displays the uploaded blueprint (images via FileReader; PDFs via PDF.js)
+      - Added “Check Compliance & Generate Overlays” button
+      - Renders API-generated overlays and highlights non-compliant rooms
+  - **Testing**:
+    - Added/updated `app/tests/test_overlay_generator.py` (26 tests passing)
+    - Integration path validated end-to-end via UI with sample PDFs
+  - **Issues encountered (and resolution)**:
+    - OCR initially returned 0 overlays due to missing Tesseract language data (`eng.traineddata`) / `TESSDATA_PREFIX`
+      - Fix: install language pack (e.g., `tesseract-ocr-eng`) and/or point `TESSDATA_PREFIX` to tessdata dir
+    - Whole-room bbox inference produced misaligned overlays → switched to **label-only overlays**
+  - **Known limitations (still open)**:
+    - Some overlays are missing (OCR misses labels or matching fails)
+    - Some overlays are wrong (false-positive match to unrelated OCR text)
+    - Next iteration should prioritize OCR recall (PDF render DPI/zoom, rotated text handling) + match gating (reject dimension-like tokens, enforce 1:1 matching, top-k review)

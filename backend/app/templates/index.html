@@ -479,14 +479,36 @@
         const planImage = document.getElementById("plan-image");
         
         if (!container || !planImage || overlays.length === 0) {
+          console.log("Cannot render overlays:", {
+            container: !!container,
+            planImage: !!planImage,
+            overlaysCount: overlays.length
+          });
           return;
         }
 
         // Wait for image to load to get actual dimensions
-        if (planImage.complete) {
-          renderOverlayElements();
+        // For data URLs (PDF-rendered images), we need to ensure naturalWidth/Height are set
+        const tryRender = () => {
+          if (planImage.naturalWidth > 0 && planImage.naturalHeight > 0) {
+            console.log("Rendering overlays:", {
+              overlaysCount: overlays.length,
+              imageSize: `${planImage.naturalWidth}x${planImage.naturalHeight}`,
+              displaySize: `${planImage.width}x${planImage.height}`
+            });
+            renderOverlayElements();
+          } else {
+            // If natural dimensions aren't set yet, wait a bit and try again
+            setTimeout(tryRender, 100);
+          }
+        };
+
+        if (planImage.complete && planImage.naturalWidth > 0) {
+          tryRender();
         } else {
-          planImage.addEventListener("load", renderOverlayElements, { once: true });
+          planImage.addEventListener("load", tryRender, { once: true });
+          // Also try after a short delay in case load event doesn't fire
+          setTimeout(tryRender, 500);
         }
         
         // Update overlay positions on window resize
@@ -499,6 +521,17 @@
         const imageContainer = planImage?.parentElement;
         
         if (!container || !planImage || !imageContainer) {
+          console.error("Missing elements for overlay rendering:", {
+            container: !!container,
+            planImage: !!planImage,
+            imageContainer: !!imageContainer
+          });
+          return;
+        }
+
+        // Check if we have overlays to render
+        if (!overlays || overlays.length === 0) {
+          console.warn("renderOverlayElements called but overlays array is empty");
           return;
         }
 
@@ -512,9 +545,26 @@
         const imgNaturalWidth = planImage.naturalWidth;
         const imgNaturalHeight = planImage.naturalHeight;
         
+        if (imgNaturalWidth === 0 || imgNaturalHeight === 0) {
+          console.error("Image dimensions not available:", {
+            naturalWidth: imgNaturalWidth,
+            naturalHeight: imgNaturalHeight,
+            displayWidth: planImage.width,
+            displayHeight: planImage.height
+          });
+          return;
+        }
+        
         // Calculate scale factor if image is scaled
         const scaleX = imgRect.width / imgNaturalWidth;
         const scaleY = imgRect.height / imgNaturalHeight;
+        
+        console.log("Rendering overlay elements:", {
+          overlaysCount: overlays.length,
+          naturalSize: `${imgNaturalWidth}x${imgNaturalHeight}`,
+          displaySize: `${imgRect.width}x${imgRect.height}`,
+          scale: `${scaleX.toFixed(3)}x${scaleY.toFixed(3)}`
+        });
         
         // Calculate offset if image is centered within container
         const offsetX = imgRect.left - containerRect.left;
@@ -525,6 +575,8 @@
         container.style.top = `${offsetY}px`;
         container.style.width = `${imgRect.width}px`;
         container.style.height = `${imgRect.height}px`;
+        container.style.position = "absolute";
+        container.style.pointerEvents = "none";
 
         // Create overlay elements
         overlays.forEach((overlay) => {
@@ -543,12 +595,24 @@
           overlayDiv.style.top = `${y}px`;
           overlayDiv.style.width = `${width}px`;
           overlayDiv.style.height = `${height}px`;
+          overlayDiv.style.position = "absolute";
+          overlayDiv.style.border = "2px solid #007bff";
+          overlayDiv.style.backgroundColor = "rgba(0, 123, 255, 0.1)";
+          overlayDiv.style.pointerEvents = "auto";
+          overlayDiv.style.cursor = "pointer";
+          
+          console.log(`Overlay ${overlay.id}:`, {
+            original: `${overlay.x},${overlay.y} ${overlay.width}x${overlay.height}`,
+            scaled: `${x.toFixed(1)},${y.toFixed(1)} ${width.toFixed(1)}x${height.toFixed(1)}`
+          });
           
           // Store reference for highlighting
           overlayElements.set(overlay.id, overlayDiv);
           
           container.appendChild(overlayDiv);
         });
+        
+        console.log(`Successfully rendered ${overlays.length} overlays`);
       }
       
       // Throttled resize handler
@@ -687,8 +751,25 @@
             }).promise;
             
             // Convert canvas to data URL and display
-            planImage.src = canvas.toDataURL("image/png");
-            clearOverlays();
+            const dataUrl = canvas.toDataURL("image/png");
+            planImage.src = dataUrl;
+            
+            // Ensure image dimensions are set correctly for overlay rendering
+            // Wait for image to load before clearing overlays
+            planImage.onload = () => {
+              console.log("PDF rendered, image dimensions:", {
+                naturalWidth: planImage.naturalWidth,
+                naturalHeight: planImage.naturalHeight,
+                width: planImage.width,
+                height: planImage.height
+              });
+              clearOverlays();
+            };
+            
+            // If image is already loaded (cached), trigger onload manually
+            if (planImage.complete) {
+              planImage.onload();
+            }
           } catch (error) {
             console.error("Error rendering PDF:", error);
             // Fallback to default image if PDF rendering fails
@@ -863,6 +944,13 @@
 
           const data = await res.json();
           
+          console.log("API Response:", {
+            hasExtraction: !!data.extraction,
+            hasOverlays: !!(data.extraction && data.extraction.overlays),
+            overlaysCount: data.extraction?.overlays?.length || 0,
+            overlays: data.extraction?.overlays
+          });
+          
           // Store compliance issues
           complianceIssues = data.issues || [];
           
@@ -874,7 +962,13 @@
           
           // Render dynamic overlays
           if (data.extraction && data.extraction.overlays) {
+            console.log("Calling renderDynamicOverlays with:", data.extraction.overlays.length, "overlays");
             renderDynamicOverlays(data.extraction.overlays);
+          } else {
+            console.warn("No overlays in API response:", {
+              hasExtraction: !!data.extraction,
+              hasOverlays: !!(data.extraction && data.extraction.overlays)
+            });
           }
           
           // Highlight non-compliant rooms
@@ -900,14 +994,31 @@
       }
 
       function renderDynamicOverlays(overlaysData) {
-        // Clear existing overlays
-        clearOverlays();
+        console.log("renderDynamicOverlays called with:", overlaysData?.length || 0, "overlays");
+        console.log("Overlays data:", overlaysData);
         
-        // Store overlays
-        overlays = overlaysData;
+        // Store overlays first (before clearing, in case we need them)
+        overlays = overlaysData || [];
+        
+        console.log("Stored overlays array:", overlays.length, overlays);
+        
+        if (overlays.length === 0) {
+          console.warn("No overlays to render - skipping");
+          return;
+        }
+        
+        // Clear existing overlay DOM elements (but keep the overlays array)
+        const container = document.getElementById("overlays-container");
+        if (container) container.innerHTML = "";
+        overlayElements.clear();
+        // Note: Don't clear complianceIssues here as they're needed
         
         // Use existing renderOverlays function
-        renderOverlays();
+        // Add a small delay to ensure image is ready
+        setTimeout(() => {
+          console.log("About to call renderOverlays, overlays count:", overlays.length);
+          renderOverlays();
+        }, 100);
       }
 
       function highlightNonCompliantRooms(issues) {
