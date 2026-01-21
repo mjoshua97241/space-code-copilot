@@ -12,7 +12,7 @@ todos:
       - vlm-bbox-prompt
   - id: api-prefer-vlm
     content: Update POST /api/blueprint/extract-and-check/ to use VLM overlays by default (keep OCR as optional fallback)
-    status: pending
+    status: completed
     dependencies:
       - vlm-bbox-parse
   - id: tests-vlm-overlays
