@@ -148,11 +148,18 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0; /* Allow flex child to shrink */
+}
+
+#content-extraction .extraction-header {
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 #content-extraction .extraction-content {
-  overflow-y: auto;
+  overflow-y: auto !important; /* Ensure scrolling works */
+  overflow-x: hidden;
   flex: 1;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
 }
 
 .extraction-header {

@@ -122,9 +122,8 @@
         0%, 100% { opacity: 0.3; }
         50% { opacity: 0.6; }
       }
-      .extraction-content {
-        overflow: visible !important; /* Prevent clipping of tooltips */
-      }
+      /* Note: extraction-content overflow is handled per-context */
+      /* Tooltip overflow is handled via .rooms-table td overflow: visible */
       .extraction-results {
         margin-top: 1rem;
         position: relative; /* Create stacking context for tooltips */
@@ -168,9 +167,9 @@
         white-space: pre-line;
         z-index: 99999; /* Highest z-index within extraction-results container */
         font-size: 0.85rem;
-        width: 500px; /* Explicit width to make tooltip wider */
+        width: 150px; /* Explicit width to make tooltip wider */
         max-width: 500px; /* Maximum width constraint */
-        min-width: 300px; /* Minimum width to ensure readability */
+        min-width: 100px; /* Minimum width to ensure readability */
         margin-bottom: 0.5rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         pointer-events: none; /* Prevent tooltip from blocking interactions */
@@ -240,8 +239,10 @@
       }
       #content-extraction .extraction-content {
         flex: 1;
-        overflow-y: auto;
+        overflow-y: auto !important; /* Allow scrolling in extraction tab */
+        overflow-x: hidden;
         padding: 16px;
+        min-height: 0; /* Allow flex child to shrink and enable scrolling */
       }
     </style>
   </head>
