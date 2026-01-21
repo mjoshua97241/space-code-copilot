@@ -4,10 +4,10 @@ overview: Use the vision LLM to directly return room-label bounding boxes (pixel
 todos:
   - id: vlm-bbox-prompt
     content: Extend VLM prompt in _build_extraction_prompt() to request per-room label_bbox (x, y, width, height) in pixel coordinates
-    status: pending
+    status: completed
   - id: vlm-bbox-parse
     content: Parse and validate label_bbox from VLM response, create Overlay objects, and populate BlueprintExtractionResult.overlays
-    status: pending
+    status: completed
     dependencies:
       - vlm-bbox-prompt
   - id: api-prefer-vlm

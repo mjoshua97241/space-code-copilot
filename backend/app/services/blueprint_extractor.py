@@ -7,6 +7,7 @@ Key capabilities:
 - Reads room labels and classifies into types
 - Associates scattered dimension annotations with rooms
 - Calculates areas from dimensions using scale
+- Locates room label bounding boxes in pixel coordinates
 - Produces structured JSON matching Room model schema
 """
 import base64
@@ -15,7 +16,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import List, Optional, Union, Dict, Any
+from typing import List, Optional, Union, Dict, Any, Tuple
 
 # Image processing libraries
 try:
@@ -32,7 +33,7 @@ from langchain_core.output_parsers import JsonOutputParser
 
 # Project imports
 from app.core.llm import get_vision_llm
-from app.models.domain import Room, ExtractionConfidence, BlueprintExtractionResult
+from app.models.domain import Room, ExtractionConfidence, BlueprintExtractionResult, Overlay
 
 VALID_ROOM_TYPES = {
     "bedroom", "living", "kitchen", "bathroom", "office", "meeting", "corridor", "storage", "other"
@@ -41,6 +42,69 @@ VALID_ROOM_TYPES = {
 # Reasonable area bounds (in m²) for validation
 MIN_ROOM_AREA_M2 = 2.0 # Minimum reasonable room area (e.g., small closet)
 MAX_ROOM_AREA_M2 = 500.0 # Maximum reasonable room area (e.g., large hall)
+
+def _get_image_dimensions(image_path: Union[str, Path], page_index: Optional[int] = None) -> Tuple[int, int]:
+    """
+    Get image dimensions (width, height) in pixels.
+    
+    Handles PNG/JPG images and PDF files (extracts specific page or combines all pages).
+    Used for validating bounding box coordinates.
+    
+    Args:
+        image_path: Path to image or PDF file
+        page_index: Optional page index (0-based) for PDFs. If None, uses all pages.
+    
+    Returns:
+        Tuple of (width, height) in pixels
+    """
+    image_path = Path(image_path)
+    
+    if not image_path.exists():
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+    
+    # Handle PDF files
+    if image_path.suffix.lower() == '.pdf':
+        doc = fitz.open(str(image_path))
+        if len(doc) == 0:
+            raise ValueError(f"PDF has no pages: {image_path}")
+        
+        # Determine which pages to extract
+        if page_index is not None:
+            if page_index < 0 or page_index >= len(doc):
+                doc.close()
+                raise ValueError(f"Page index {page_index} out of range (0-{len(doc)-1})")
+            pages_to_extract = [page_index]
+        else:
+            # Extract all pages
+            pages_to_extract = list(range(len(doc)))
+        
+        # Convert pages to images and combine them
+        page_images = []
+        mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for better VLM reading
+        
+        for page_num in pages_to_extract:
+            page = doc[page_num]
+            pix = page.get_pixmap(matrix=mat)
+            img_data = pix.tobytes("png")
+            page_img = Image.open(io.BytesIO(img_data))
+            page_images.append(page_img)
+        
+        doc.close()
+        
+        # Combine pages vertically if multiple pages
+        if len(page_images) == 1:
+            img = page_images[0]
+        else:
+            # Calculate combined dimensions
+            total_width = max(img.width for img in page_images)
+            total_height = sum(img.height for img in page_images)
+            img = Image.new('RGB', (total_width, total_height), color='white')
+    else:
+        # Load regular image file (PNG, JPG, etc.)
+        img = Image.open(image_path)
+    
+    return (img.width, img.height)
+
 
 def _load_image_as_base64(image_path: Union[str, Path], page_index: Optional[int] = None) -> str:
     """
@@ -138,7 +202,8 @@ def _build_extraction_prompt(scale: float) -> str:
     2. Classify room types (office, bedroom, living, etc.)
     3. Associate dimensions with rooms (dimension-aware inference)
     4. Calculate areas using scale
-    5. Output structured JSON
+    5. Locate room label bounding boxes in pixel coordinates
+    6. Output structured JSON
     
     Args:
         scale: Scale factor (e.g., 1.0 for 1:100 scale)
@@ -190,6 +255,13 @@ def _build_extraction_prompt(scale: float) -> str:
     - Look for floor level labels in plan titles or headers
     - If no clear label is found, default to level 1
 
+6. **Locate room label bounding boxes**: For each room, identify the pixel coordinates of the bounding box around the room label text.
+    - The bounding box should tightly enclose the room name/label text (e.g., "Office 101", "Bedroom 1")
+    - Coordinates are in pixels relative to the top-left corner of the image (x=0, y=0)
+    - Provide: x (left edge), y (top edge), width, height (all in pixels)
+    - If you cannot locate the label or are unsure, set label_bbox to null
+    - The bounding box should be just large enough to contain the text with minimal padding
+
 **Output format**: Return a JSON object with this exact structure:
 {{
     "plan_title": "GROUND FLOOR PLAN",
@@ -199,14 +271,34 @@ def _build_extraction_prompt(scale: float) -> str:
             "name": "Office 101",
             "type": "office",
             "level": 1,
-            "area_m2": 12.0
+            "area_m2": 12.0,
+            "label_bbox": {{
+                "x": 150,
+                "y": 200,
+                "width": 80,
+                "height": 20
+            }}
         }},
         {{
             "id": "R102",
             "name": "Meeting Room",
             "type": "meeting",
             "level": 1,
-            "area_m2": 25.5
+            "area_m2": 25.5,
+            "label_bbox": {{
+                "x": 300,
+                "y": 450,
+                "width": 120,
+                "height": 18
+            }}
+        }},
+        {{
+            "id": "R103",
+            "name": "WC",
+            "type": "bathroom",
+            "level": 1,
+            "area_m2": 4.5,
+            "label_bbox": null
         }}
     ]
 }}
@@ -220,6 +312,7 @@ def _build_extraction_prompt(scale: float) -> str:
 - Ensure all areas are in square meters (m²)
 - If a room's are cannot be determined, estimate based on dimensions or omit it
 - Generate unique IDs (e.g., "R101", "R102") if not visible on the plan
+- For label_bbox: Provide accurate pixel coordinates if you can clearly see the label. If the label is unclear, rotated, or missing, set label_bbox to null rather than guessing.
 
 Return ONLY valid JSON, no additional text.
 """
@@ -633,6 +726,110 @@ def _calculate_confidence_scores(
     }
 
 
+def _create_overlays_from_label_bbox(
+    raw_rooms: List[Dict[str, Any]],
+    validated_rooms: List[Room],
+    image_width: int,
+    image_height: int
+) -> List[Overlay]:
+    """
+    Create Overlay objects from label_bbox in VLM response.
+    
+    Validates bounding boxes:
+    - Must be within image bounds
+    - Width and height must be positive
+    - Rejects boxes that are absurdly large (>50% of image)
+    - Rejects boxes with zero or negative dimensions
+    
+    Args:
+        raw_rooms: List of raw room dictionaries from LLM (may contain label_bbox)
+        validated_rooms: List of validated Room objects (to match by id)
+        image_width: Image width in pixels
+        image_height: Image height in pixels
+    
+    Returns:
+        List of Overlay objects for rooms with valid label_bbox
+    """
+    overlays = []
+    
+    # Create lookup for validated rooms by id
+    room_by_id = {room.id: room for room in validated_rooms}
+    
+    for raw_room in raw_rooms:
+        room_id = raw_room.get("id")
+        if not room_id:
+            continue
+        
+        # Find corresponding validated room
+        room = room_by_id.get(room_id)
+        if not room:
+            continue  # Skip if room wasn't validated
+        
+        # Extract label_bbox
+        label_bbox = raw_room.get("label_bbox")
+        if not label_bbox or label_bbox is None:
+            continue  # Skip if no bbox provided
+        
+        # Validate bbox structure
+        if not isinstance(label_bbox, dict):
+            continue
+        
+        try:
+            x = int(label_bbox.get("x", 0))
+            y = int(label_bbox.get("y", 0))
+            width = int(label_bbox.get("width", 0))
+            height = int(label_bbox.get("height", 0))
+        except (ValueError, TypeError):
+            continue  # Skip if bbox values are invalid
+        
+        # Validate bbox values
+        # 1. Must have positive dimensions
+        if width <= 0 or height <= 0:
+            continue
+        
+        # 2. Must be within image bounds (with clamping)
+        # Clamp x, y to valid range
+        x = max(0, min(x, image_width - 1))
+        y = max(0, min(y, image_height - 1))
+        
+        # Clamp width/height to fit within image
+        width = min(width, image_width - x)
+        height = min(height, image_height - y)
+        
+        # Re-validate after clamping
+        if width <= 0 or height <= 0:
+            continue
+        
+        # 3. Reject absurdly large boxes (>50% of image area)
+        bbox_area = width * height
+        image_area = image_width * image_height
+        if bbox_area > image_area * 0.5:
+            continue  # Likely a hallucination
+        
+        # 4. Reject very small boxes (likely noise, < 10x10 pixels)
+        if width < 10 or height < 10:
+            continue
+        
+        # Create overlay
+        try:
+            overlay = Overlay(
+                id=room.id,
+                type="room",
+                x=x,
+                y=y,
+                width=width,
+                height=height,
+                room_name=room.name,
+                room_type=room.type
+            )
+            overlays.append(overlay)
+        except Exception:
+            # Skip if overlay creation fails (Pydantic validation)
+            continue
+    
+    return overlays
+
+
 def extract_rooms_from_blueprint(
     image_path: Union[str, Path],
     scale_override: Optional[float] = None,
@@ -738,7 +935,27 @@ def extract_rooms_from_blueprint(
     # Step 10: Calculate confidence scores
     confidence = _calculate_confidence_scores(validated_rooms, parsed_response)
     
-    # Step 11: Build result using Pydantic models
+    # Step 11: Create overlays from label_bbox (if provided by VLM)
+    overlays = []
+    try:
+        # Get image dimensions for bbox validation
+        image_width, image_height = _get_image_dimensions(image_path, page_index=page_index)
+        
+        # Create overlays from label_bbox in raw_rooms
+        overlays = _create_overlays_from_label_bbox(
+            raw_rooms=raw_rooms,
+            validated_rooms=validated_rooms,
+            image_width=image_width,
+            image_height=image_height
+        )
+    except Exception as e:
+        # Log but don't fail extraction if overlay creation fails
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to create overlays from label_bbox: {e}")
+        overlays = []
+    
+    # Step 12: Build result using Pydantic models
     confidence_obj = ExtractionConfidence(**confidence)
     
     result = BlueprintExtractionResult(
@@ -746,11 +963,13 @@ def extract_rooms_from_blueprint(
         confidence=confidence_obj,
         scale_used=scale,
         scale_source=scale_source,
+        overlays=overlays,  # Add overlays from VLM
         extraction_metadata={
             "model_used": model_name,
             "provider": provider or os.getenv("VISION_LLM_PROVIDER", "gemini"),
             "total_rooms_extracted": len(validated_rooms),
-            "raw_rooms_count": len(raw_rooms)
+            "raw_rooms_count": len(raw_rooms),
+            "overlays_generated": len(overlays)
         },
         note="Extraction is approximate. CSV pipeline remains ground truth."
     )
