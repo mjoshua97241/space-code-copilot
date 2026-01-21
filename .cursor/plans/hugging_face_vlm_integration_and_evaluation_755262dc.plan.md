@@ -4,7 +4,7 @@ overview: Evaluate and integrate the Hugging Face floor plan VLM (sabaridsnfuji/
 todos:
   - id: create-hf-wrapper
     content: Create evaluation/hf_vlm_wrapper.py to adapt HF model to evaluation framework interface
-    status: pending
+    status: completed
   - id: update-evaluation-script
     content: Update evaluation/vlm_evaluation.py to include HF model evaluation
     status: pending
