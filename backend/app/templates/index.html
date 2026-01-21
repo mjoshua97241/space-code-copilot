@@ -176,6 +176,73 @@
         pointer-events: none; /* Prevent tooltip from blocking interactions */
         word-wrap: break-word; /* Allow long words to wrap */
       }
+      /* Right Panel Tab System */
+      .right-panel-header {
+        padding: 0;
+        background: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+      }
+      .tab-buttons {
+        display: flex;
+        gap: 0;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 12px 16px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.2s ease;
+      }
+      .tab-btn:hover {
+        background: #e9ecef;
+        color: #212529;
+      }
+      .tab-btn.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        background: white;
+      }
+      .tab-content {
+        display: none !important;
+        flex: 1;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0; /* Allow flex child to shrink */
+      }
+      .tab-content.active {
+        display: flex !important;
+      }
+      /* Ensure both tab contents have proper flex layout when active */
+      #content-chat.active {
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #content-extraction.active {
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #content-extraction .extraction-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: white;
+        border: none;
+      }
+      #content-extraction .extraction-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
     </style>
   </head>
   <body>
@@ -193,81 +260,98 @@
             </div>
           </div>
         </div>
-        
-        <!-- Blueprint Extraction Panel -->
-        <div class="extraction-panel" id="extraction-panel">
-          <div class="extraction-header" onclick="toggleExtractionPanel()">
-            <h3>🔍 Blueprint Extraction (Preview)</h3>
-            <button class="toggle-btn" id="toggle-extraction">▼</button>
-          </div>
-          <div class="extraction-content" id="extraction-content">
-            <div class="upload-zone" id="upload-zone">
-              <div class="upload-icon">📄</div>
-              <p>Drag & drop blueprint image (PNG, JPG, PDF)</p>
-              <p class="upload-hint">or click to select file</p>
-              <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.pdf" hidden />
-            </div>
-            <div class="scale-input">
-              <label for="scale-value">Scale (optional):</label>
-              <input type="number" id="scale-value" placeholder="1.0" step="0.1" min="0.1" max="10" />
-              <span class="scale-hint">1.0 = 1:100 scale</span>
-            </div>
-            <button class="extract-btn" id="extract-btn" disabled>Extract Rooms</button>
-            <div class="extraction-status" id="extraction-status"></div>
-            <div class="extraction-results" id="extraction-results" style="display: none;">
-              <h4>Extracted Rooms (Preview)</h4>
-              <p class="preview-note">⚠️ Preview only - CSV pipeline remains ground truth</p>
-              <div class="confidence-scores" id="confidence-scores"></div>
-              <table class="rooms-table" id="rooms-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Area (m²)</th>
-                    <th>Confidence</th>
-                    <th class="compliance-column-hidden">Compliance</th>
-                  </tr>
-                </thead>
-                <tbody id="rooms-tbody"></tbody>
-              </table>
-              <button class="compliance-btn" id="compliance-btn" style="display: none;">
-                Check Compliance
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Right Panel: Chat -->
+      <!-- Right Panel: Chat and Extraction (Toggle) -->
       <div class="right-panel">
-        <div class="chat-header">
-          <h3>Building Code Assistant</h3>
-          <p class="chat-subtitle">Ask questions about building codes and compliance</p>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-          <div class="welcome-message">
-            <p>👋 Welcome! I can help you understand building code requirements and compliance issues.</p>
-            <p>Try asking:</p>
-            <ul>
-              <li>"What is the minimum bedroom area?"</li>
-              <li>"What are the door width requirements?"</li>
-              <li>"Explain the accessible door requirements"</li>
-            </ul>
+        <!-- Tab Toggle Header -->
+        <div class="right-panel-header">
+          <div class="tab-buttons">
+            <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">
+              💬 Q&A Chat
+            </button>
+            <button class="tab-btn" id="tab-extraction" onclick="switchTab('extraction')">
+              🔍 Blueprint Extraction
+            </button>
           </div>
         </div>
-        <div class="chat-input">
-          <form id="chat-form">
-            <textarea
-              id="chat-input"
-              placeholder="Ask about building codes or compliance issues..."
-              rows="3"
-            ></textarea>
-            <div class="chat-actions">
-              <button type="submit" id="chat-submit-btn">
-                <span class="btn-text">Send</span>
-                <span class="btn-loading" style="display: none;">Sending...</span>
-              </button>
+
+        <!-- Chat View -->
+        <div class="tab-content active" id="content-chat">
+          <div class="chat-header">
+            <h3>Building Code Assistant</h3>
+            <p class="chat-subtitle">Ask questions about building codes and compliance</p>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="welcome-message">
+              <p>👋 Welcome! I can help you understand building code requirements and compliance issues.</p>
+              <p>Try asking:</p>
+              <ul>
+                <li>"What is the minimum bedroom area?"</li>
+                <li>"What are the door width requirements?"</li>
+                <li>"Explain the accessible door requirements"</li>
+              </ul>
             </div>
-          </form>
+          </div>
+          <div class="chat-input">
+            <form id="chat-form">
+              <textarea
+                id="chat-input"
+                placeholder="Ask about building codes or compliance issues..."
+                rows="3"
+              ></textarea>
+              <div class="chat-actions">
+                <button type="submit" id="chat-submit-btn">
+                  <span class="btn-text">Send</span>
+                  <span class="btn-loading" style="display: none;">Sending...</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Extraction View -->
+        <div class="tab-content" id="content-extraction">
+          <div class="extraction-panel" id="extraction-panel">
+            <div class="extraction-header" onclick="toggleExtractionPanel()">
+              <h3>🔍 Blueprint Extraction (Preview)</h3>
+              <button class="toggle-btn" id="toggle-extraction">▼</button>
+            </div>
+            <div class="extraction-content" id="extraction-content">
+              <div class="upload-zone" id="upload-zone">
+                <div class="upload-icon">📄</div>
+                <p>Drag & drop blueprint image (PNG, JPG, PDF)</p>
+                <p class="upload-hint">or click to select file</p>
+                <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.pdf" hidden />
+              </div>
+              <div class="scale-input">
+                <label for="scale-value">Scale (optional):</label>
+                <input type="number" id="scale-value" placeholder="1.0" step="0.1" min="0.1" max="10" />
+                <span class="scale-hint">1.0 = 1:100 scale</span>
+              </div>
+              <button class="extract-btn" id="extract-btn" disabled>Extract Rooms</button>
+              <div class="extraction-status" id="extraction-status"></div>
+              <div class="extraction-results" id="extraction-results" style="display: none;">
+                <h4>Extracted Rooms (Preview)</h4>
+                <p class="preview-note">⚠️ Preview only - CSV pipeline remains ground truth</p>
+                <div class="confidence-scores" id="confidence-scores"></div>
+                <table class="rooms-table" id="rooms-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Area (m²)</th>
+                      <th>Confidence</th>
+                      <th class="compliance-column-hidden">Compliance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rooms-tbody"></tbody>
+                </table>
+                <button class="compliance-btn" id="compliance-btn" style="display: none;">
+                  Check Compliance
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -728,6 +812,39 @@
         const toggleBtn = document.getElementById("toggle-extraction");
         content.classList.toggle("collapsed");
         toggleBtn.textContent = content.classList.contains("collapsed") ? "▶" : "▼";
+      }
+
+      // Tab switching function
+      function switchTab(tabName) {
+        // Get elements
+        const chatTab = document.getElementById('tab-chat');
+        const extractionTab = document.getElementById('tab-extraction');
+        const chatContent = document.getElementById('content-chat');
+        const extractionContent = document.getElementById('content-extraction');
+        
+        // Update tab buttons - remove all active, then add to selected
+        chatTab.classList.remove('active');
+        extractionTab.classList.remove('active');
+        
+        // Hide all content
+        chatContent.classList.remove('active');
+        extractionContent.classList.remove('active');
+        
+        // Show selected tab and content
+        if (tabName === 'chat') {
+          chatTab.classList.add('active');
+          chatContent.classList.add('active');
+        } else if (tabName === 'extraction') {
+          extractionTab.classList.add('active');
+          extractionContent.classList.add('active');
+          
+          // If switching to extraction, ensure it's expanded
+          const extractionContentPanel = document.getElementById('extraction-content');
+          if (extractionContentPanel.classList.contains('collapsed')) {
+            extractionContentPanel.classList.remove('collapsed');
+            document.getElementById('toggle-extraction').textContent = '▼';
+          }
+        }
       }
 
       function handleFileSelect(file) {

@@ -134,6 +134,27 @@ body {
   border-bottom: 1px solid #ddd;
 }
 
+/* Right panel tab system - ensure extraction panel works in tabs */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#content-extraction .extraction-panel {
+  border: none;
+  background: white;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#content-extraction .extraction-content {
+  overflow-y: auto;
+  flex: 1;
+}
+
 .extraction-header {
   display: flex;
   justify-content: space-between;
@@ -497,6 +518,8 @@ body {
   display: flex;
   flex-direction: column;
   background: white;
+  overflow: hidden;
+  min-height: 0; /* Allow flex child to shrink */
 }
 
 .chat-header {
