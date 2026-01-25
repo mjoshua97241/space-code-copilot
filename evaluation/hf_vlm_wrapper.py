@@ -24,14 +24,13 @@ backend_path = repo_root / "backend"
 sys.path.insert(0, str(backend_path))
 
 try:
-    from unsloth import FastVisionModel
     from transformers import AutoTokenizer
     from PIL import Image
     import torch
 except ImportError as e:
     raise ImportError(
         f"Required packages missing for Hugging Face VLM: {e}\n"
-        "Install: pip install unsloth transformers torch pillow"
+        "Install: pip install transformers torch pillow"
     )
 
 # Import from blueprint_extractor for prompt building and validation
@@ -48,7 +47,8 @@ from app.models.domain import Room, ExtractionConfidence, BlueprintExtractionRes
 
 def create_hf_extractor(
     model_name: str = "sabaridsnfuji/FloorPlanVisionAIAdaptor",
-    device: Optional[str] = None
+    device: Optional[str] = None,
+    load_in_4bit: Optional[bool] = None,
 ):
     """
     Create extractor function compatible with evaluation framework.
@@ -59,6 +59,9 @@ def create_hf_extractor(
     Args:
         model_name: Hugging Face model identifier
         device: Device to use ("cuda", "cpu", or None for auto-detect)
+        load_in_4bit: Whether to load the model in 4-bit.
+            - If None (default): auto-select True for CUDA, False for CPU.
+            - CPU + 4-bit often requires bitsandbytes and may not work reliably.
         
     Returns:
         Function that takes (image_path: str, scale_override: float) and returns BlueprintExtractionResult
@@ -75,15 +78,30 @@ def create_hf_extractor(
         print("⚠ WARNING: CUDA requested but not available. Falling back to CPU.")
         print("   CPU inference will be very slow. Consider using GPU if available.")
         device = "cpu"
+
+    # Current implementation relies on Unsloth FastVisionModel, which requires a CUDA GPU.
+    if device != "cuda":
+        raise RuntimeError(
+            "Hugging Face FloorPlanVisionAIAdaptor evaluation requires a CUDA-capable GPU. "
+            "Unsloth does not run on CPU in this environment."
+        )
+
+    # Auto-select 4-bit loading: prefer 4-bit on CUDA, disable on CPU
+    if load_in_4bit is None:
+        load_in_4bit = (device == "cuda")
     
     print(f"🔄 Loading Hugging Face model: {model_name}")
     print(f"   Device: {device}")
+    print(f"   load_in_4bit: {load_in_4bit}")
     
     try:
-        # Load model and tokenizer with 4-bit quantization for memory efficiency
+        # Import Unsloth lazily so CPU-only machines fail gracefully.
+        from unsloth import FastVisionModel
+
+        # Load model and tokenizer (4-bit on CUDA by default)
         model, tokenizer = FastVisionModel.from_pretrained(
             model_name,
-            load_in_4bit=True,
+            load_in_4bit=load_in_4bit,
             use_gradient_checkpointing="unsloth"
         )
         FastVisionModel.for_inference(model)

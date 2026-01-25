@@ -22,10 +22,12 @@ cd /home/mj/workspace/space-code-copilot/backend
 uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # Install other dependencies
-uv pip install unsloth transformers bitsandbytes
+uv pip install unsloth transformers
 ```
 
-**Note:** CPU inference will be **very slow** (10-100x slower than GPU). Only use this if you don't have GPU access.
+**Notes:**
+- CPU inference will be **very slow** (10-100x slower than GPU). Only use this if you don't have GPU access.
+- `bitsandbytes` is primarily for CUDA + 4-bit quantization; it is **not required** for CPU runs in our wrapper (CPU defaults to `load_in_4bit=False`).
 
 ### Option 2: GPU Installation (Recommended - Much Faster)
 

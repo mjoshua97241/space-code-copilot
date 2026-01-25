@@ -42,13 +42,16 @@ from evaluation.vlm_extraction_metrics import (
     calculate_composite_score,
 )
 
-# Optional import for Hugging Face model (requires GPU)
+# Optional import for Hugging Face model.
+# Note: our current HF wrapper relies on Unsloth, which requires a CUDA-capable GPU.
+HF_IMPORT_ERROR: Optional[str] = None
 try:
     import torch
     from evaluation.hf_vlm_wrapper import create_hf_extractor
     HF_AVAILABLE = True
-except ImportError:
+except Exception as e:  # ImportError or runtime errors from Unsloth on CPU-only machines
     HF_AVAILABLE = False
+    HF_IMPORT_ERROR = str(e)
     torch = None
 
 
@@ -445,7 +448,8 @@ def main():
         return extract_rooms_from_blueprint(
             image_path=image_path,
             scale_override=scale_override,
-            model_name="gpt-4o"
+            model_name="gpt-4o",
+            provider="openai",
         )
     
     def extractor_gemini(image_path: str, scale_override: float = 1.0) -> BlueprintExtractionResult:
@@ -460,20 +464,23 @@ def main():
     # Evaluate models
     results = []
     
-    # Evaluate GPT-4o
-    print("\n" + "="*60)
-    print("Evaluating GPT-4o...")
-    print("="*60)
-    try:
-        result_gpt4o = evaluate_vlm_extraction(
-            extractor_func=extractor_gpt4o,
-            golden_dataset_df=golden_df,
-            model_name="gpt-4o",
-            delay_between_extractions=1.0
-        )
-        results.append(result_gpt4o)
-    except Exception as e:
-        print(f"❌ GPT-4o evaluation failed: {e}")
+    # Evaluate GPT-4o (optional - only if API key available)
+    if os.getenv("OPENAI_API_KEY"):
+        print("\n" + "="*60)
+        print("Evaluating GPT-4o...")
+        print("="*60)
+        try:
+            result_gpt4o = evaluate_vlm_extraction(
+                extractor_func=extractor_gpt4o,
+                golden_dataset_df=golden_df,
+                model_name="gpt-4o",
+                delay_between_extractions=1.0
+            )
+            results.append(result_gpt4o)
+        except Exception as e:
+            print(f"❌ GPT-4o evaluation failed: {e}")
+    else:
+        print("\n⚠ OPENAI_API_KEY not set. Skipping GPT-4o evaluation.")
     
     # Evaluate Gemini (optional - only if API key available)
     if os.getenv("GOOGLE_API_KEY"):
@@ -493,38 +500,32 @@ def main():
     else:
         print("\n⚠ GOOGLE_API_KEY not set. Skipping Gemini evaluation.")
     
-    # Evaluate Hugging Face model (if available - works on CPU or GPU)
-    if HF_AVAILABLE:
-        if torch:  # Check if torch is available (works on CPU or GPU)
+    # Evaluate Hugging Face model (optional)
+    if HF_AVAILABLE and torch:
+        # Our current HF wrapper uses Unsloth, which requires CUDA.
+        if not torch.cuda.is_available():
+            print("\n⚠ Hugging Face evaluation requires a CUDA GPU (Unsloth does not run on CPU).")
+            print("   Skipping Hugging Face evaluation.")
+        else:
             print("\n" + "="*60)
             print("Evaluating Hugging Face FloorPlanVisionAIAdaptor...")
             print("="*60)
-            
-            # Warn if using CPU
-            if not torch.cuda.is_available():
-                print("⚠ WARNING: Running on CPU. This will be very slow.")
-                print("   Consider using GPU for faster evaluation.")
-                print("   Continuing with CPU evaluation...\n")
-            else:
-                print("✓ GPU available - using CUDA for faster inference\n")
-            
+            print("✓ GPU available - using CUDA for inference\n")
+
             try:
-                # Create HF extractor (loads model once, auto-detects CPU/GPU)
+                # Create HF extractor (loads model once)
                 print("🔄 Loading Hugging Face model (this may take a moment)...")
-                hf_extractor = create_hf_extractor()  # Will auto-detect CPU if no GPU
-                
+                hf_extractor = create_hf_extractor(device="cuda")
+
                 def extractor_hf(image_path: str, scale_override: float = 1.0) -> BlueprintExtractionResult:
                     """Extractor function for Hugging Face FloorPlanVisionAIAdaptor"""
                     return hf_extractor(image_path, scale_override)
-                
-                # Evaluate Hugging Face model
-                # Use longer delay for CPU (slower inference), shorter for GPU
-                delay = 2.0 if not torch.cuda.is_available() else 0.5
+
                 result_hf = evaluate_vlm_extraction(
                     extractor_func=extractor_hf,
                     golden_dataset_df=golden_df,
                     model_name="hf-floorplan-vision-adaptor",
-                    delay_between_extractions=delay
+                    delay_between_extractions=0.5
                 )
                 results.append(result_hf)
                 print("✅ Hugging Face model evaluation completed")
@@ -532,12 +533,12 @@ def main():
                 print(f"❌ Hugging Face model evaluation failed: {e}")
                 import traceback
                 traceback.print_exc()
-        else:
-            print("\n⚠ PyTorch not available. Skipping Hugging Face evaluation.")
     else:
-        print("\n⚠ Hugging Face dependencies not available.")
-        print("   Install with: pip install unsloth transformers torch pillow")
-        print("   Skipping Hugging Face evaluation.")
+        print("\n⚠ Hugging Face evaluation not available in this environment.")
+        if HF_IMPORT_ERROR:
+            print(f"   Import error: {HF_IMPORT_ERROR}")
+        print("   Install deps with: `uv pip install unsloth transformers torch pillow`")
+        print("   And run on a CUDA-capable machine for Unsloth.")
     
     # Compare models
     if results:
