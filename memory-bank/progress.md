@@ -160,6 +160,16 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 
 ## Next Steps
 
+### Railway Deployment Prep + Testing (NEXT)
+
+1. Prepare Railway deployment environment (env vars, start command/PORT, optional Qdrant).
+2. Deploy and run smoke tests:
+   - `GET /` (UI renders)
+   - `GET /health`
+   - `POST /api/chat/`
+   - `POST /api/blueprint/extract/` (PNG/JPG/PDF)
+3. Verify static assets and template rendering (no mixed-content/redirect regressions).
+
 1. Implement backend Phase 1-3 (complete):
 
    - [x] Domain models (Room, Door, Rule, Issue) in `app/models/domain.py`

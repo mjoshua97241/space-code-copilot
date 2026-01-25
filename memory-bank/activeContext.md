@@ -412,3 +412,12 @@ Todo next:
   - **CUDA wheel selection**: `torch` must match the Colab runtime CUDA version (try `cu121` first, then `cu118` if needed).
   - **Unsloth GPU requirement/import order**: Unsloth requires CUDA and is happiest when imported before `transformers`.
 - **Next step (future)**: Re-run HF evaluation in Colab with GPU enabled and pinned HF deps (see `evaluation/vlm_evaluation_colab.py` docstring + `evaluation/INSTALL_HF_DEPS.md`).
+
+## Next Task: Railway Deployment Prep + Testing
+
+- **Goal**: Prepare and validate a clean deployment on **Railway**.
+- **Scope**:
+  - Confirm required env vars are documented and set in Railway (OpenAI/Gemini keys as needed, optional Qdrant).
+  - Verify start command / PORT binding works reliably (no redirect/mixed-content regressions).
+  - Smoke test key routes: `GET /`, `GET /health`, `POST /api/chat/`, `POST /api/blueprint/extract/` (and other active endpoints).
+  - Confirm static assets + template render correctly in prod.
