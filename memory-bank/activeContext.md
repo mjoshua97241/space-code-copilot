@@ -384,3 +384,14 @@ Todo next:
     - Each tab takes full height when active
     - Scrolling works properly in both tabs
   - **Timeline**: Completed (~1-2 hours total)
+
+## Hugging Face VLM Evaluation (DEFERRED)
+
+- **Status**: ⏸️ Deferred for now (no CUDA GPU available in local environment).
+- **Why**: Current HF adapter uses **Unsloth** (`evaluation/hf_vlm_wrapper.py`), which requires a **CUDA-capable GPU** and fails on CPU-only machines.
+- **What we have**:
+  - `evaluation/hf_vlm_wrapper.py` + `evaluation/vlm_evaluation.py` code is in place.
+  - `evaluation/INSTALL_HF_DEPS.md` documents CPU/GPU installation options, but **evaluation still requires GPU** due to Unsloth.
+  - Added `evaluation/vlm_evaluation_colab.py` as a **Colab-friendly runner** for future GPU-based evaluation.
+- **Latest run**:
+  - GPT‑4o + Gemini evaluation runs locally; HF is skipped with a clear “CUDA required” message.

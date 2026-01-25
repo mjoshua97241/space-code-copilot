@@ -15,6 +15,7 @@ Backend:
 - OpenAI / Gemini / Claude via config env vars.
 - Vision LLM support: Gemini 2.0 Flash (default, selected via evaluation), GPT-4o (alternative).
 - qdrant-client for vector DB (fallback: FAISS/in-memory).
+- Hugging Face VLM evaluation: optional; current adapter uses **Unsloth (CUDA-only)** so HF evaluation must run on a CUDA GPU (e.g., Google Colab GPU).
 
 Frontend:
 

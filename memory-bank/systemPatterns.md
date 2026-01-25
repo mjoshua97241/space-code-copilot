@@ -43,6 +43,14 @@ AI patterns:
   - structured extraction (blueprint → Room models → compliance checking)
 - **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing
 
+## HF VLM Evaluation Pattern (Deferred)
+
+- **Evaluation entrypoints**:
+  - Local runner: `evaluation/vlm_evaluation.py`
+  - Colab-friendly runner: `evaluation/vlm_evaluation_colab.py`
+- **Constraint**: Current HF adapter (`evaluation/hf_vlm_wrapper.py`) relies on **Unsloth**, which requires a **CUDA-capable GPU**. On CPU-only machines, HF evaluation should be skipped with a clear message.
+- **Recommendation**: Run HF evaluation on **Google Colab (GPU runtime)** or any CUDA machine; keep local evaluation focused on GPT‑4o and Gemini.
+
 Frontend patterns:
 
 - Single HTML template (`app/templates/index.html`) served by FastAPI via Jinja2Templates.
