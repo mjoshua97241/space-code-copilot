@@ -70,7 +70,6 @@ backend/.env.local
 backend/.env.*.local
 *.env
 .env.local
-!backend/.env.example
 # Note: .env.example should be tracked (it's a template)
 
 # Database
