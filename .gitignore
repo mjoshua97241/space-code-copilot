@@ -119,3 +119,4 @@ evaluation/__marimo__/
 # API keys
 evaluation/OpenAI_key.txt
 evaluation/langsmith-api.txt
+secret-replacements.txt
