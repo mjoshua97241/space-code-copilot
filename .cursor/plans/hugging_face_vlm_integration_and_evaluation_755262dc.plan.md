@@ -12,7 +12,7 @@ todos:
       - create-hf-wrapper
   - id: run-evaluation
     content: Run evaluation script and compare HF model against GPT-4o and Gemini 2.0 Flash
-    status: pending
+    status: in_progress
     dependencies:
       - update-evaluation-script
   - id: document-evaluation-results
@@ -49,6 +49,7 @@ todos:
     status: pending
     dependencies:
       - test-integration
+isProject: false
 ---
 
 # Hugging Face VLM Integration and Evaluation Plan

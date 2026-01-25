@@ -72,11 +72,9 @@ def create_hf_extractor(
         device = "cuda" if torch.cuda.is_available() else "cpu"
     
     if device == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA requested but not available. "
-            "Hugging Face VLM requires GPU for inference. "
-            "Set device='cpu' to use CPU (may be very slow)."
-        )
+        print("⚠ WARNING: CUDA requested but not available. Falling back to CPU.")
+        print("   CPU inference will be very slow. Consider using GPU if available.")
+        device = "cpu"
     
     print(f"🔄 Loading Hugging Face model: {model_name}")
     print(f"   Device: {device}")

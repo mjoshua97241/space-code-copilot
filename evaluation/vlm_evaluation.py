@@ -493,27 +493,38 @@ def main():
     else:
         print("\n⚠ GOOGLE_API_KEY not set. Skipping Gemini evaluation.")
     
-    # Evaluate Hugging Face model (if available and GPU present)
+    # Evaluate Hugging Face model (if available - works on CPU or GPU)
     if HF_AVAILABLE:
-        if torch and torch.cuda.is_available():
+        if torch:  # Check if torch is available (works on CPU or GPU)
             print("\n" + "="*60)
             print("Evaluating Hugging Face FloorPlanVisionAIAdaptor...")
             print("="*60)
+            
+            # Warn if using CPU
+            if not torch.cuda.is_available():
+                print("⚠ WARNING: Running on CPU. This will be very slow.")
+                print("   Consider using GPU for faster evaluation.")
+                print("   Continuing with CPU evaluation...\n")
+            else:
+                print("✓ GPU available - using CUDA for faster inference\n")
+            
             try:
-                # Create HF extractor (loads model once)
+                # Create HF extractor (loads model once, auto-detects CPU/GPU)
                 print("🔄 Loading Hugging Face model (this may take a moment)...")
-                hf_extractor = create_hf_extractor()
+                hf_extractor = create_hf_extractor()  # Will auto-detect CPU if no GPU
                 
                 def extractor_hf(image_path: str, scale_override: float = 1.0) -> BlueprintExtractionResult:
                     """Extractor function for Hugging Face FloorPlanVisionAIAdaptor"""
                     return hf_extractor(image_path, scale_override)
                 
                 # Evaluate Hugging Face model
+                # Use longer delay for CPU (slower inference), shorter for GPU
+                delay = 2.0 if not torch.cuda.is_available() else 0.5
                 result_hf = evaluate_vlm_extraction(
                     extractor_func=extractor_hf,
                     golden_dataset_df=golden_df,
                     model_name="hf-floorplan-vision-adaptor",
-                    delay_between_extractions=0.5  # May be faster if local GPU
+                    delay_between_extractions=delay
                 )
                 results.append(result_hf)
                 print("✅ Hugging Face model evaluation completed")
@@ -522,8 +533,7 @@ def main():
                 import traceback
                 traceback.print_exc()
         else:
-            print("\n⚠ GPU not available. Hugging Face model requires GPU for inference.")
-            print("   Skipping Hugging Face evaluation.")
+            print("\n⚠ PyTorch not available. Skipping Hugging Face evaluation.")
     else:
         print("\n⚠ Hugging Face dependencies not available.")
         print("   Install with: pip install unsloth transformers torch pillow")
