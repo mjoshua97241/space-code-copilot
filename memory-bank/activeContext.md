@@ -395,3 +395,20 @@ Todo next:
   - Added `evaluation/vlm_evaluation_colab.py` as a **Colab-friendly runner** for future GPU-based evaluation.
 - **Latest run**:
   - GPT‑4o + Gemini evaluation runs locally; HF is skipped with a clear “CUDA required” message.
+
+### Colab attempt (dependency issues)
+
+- **Status**: Tried running the new Colab runner, but hit **dependency friction** in Colab.
+- **Known issues to watch**:
+  - **`transformers` vs `huggingface-hub` mismatch**: some installs pull `huggingface-hub>=1.0` which can break older/newer `transformers` expectations; pin `huggingface-hub>=0.34,<1.0` if needed.
+  - **LangChain version conflicts in Colab** (observed):
+    - `langchain-google-genai 4.2.0` requires `langchain-core>=1.2.5,<2.0.0`
+    - `langgraph-prebuilt 1.0.6` requires `langchain-core>=1.0.0`
+    - But this repo is on the **LangChain 0.3.x** line, where:
+      - `langchain 0.3.27` requires `langchain-core>=0.3.72,<1.0.0`
+      - `langchain-openai 0.3.35` requires `langchain-core>=0.3.78,<1.0.0`
+    - Result: upgrading `langchain-core` to satisfy `langchain-google-genai` breaks `langchain`/`langchain-openai`, and keeping `langchain-core 0.3.x` breaks `langchain-google-genai 4.2.0`/`langgraph-prebuilt`.
+    - **Implication**: In Colab, we must either (a) pin `langchain-google-genai`/`langgraph*` to versions compatible with LangChain 0.3.x, or (b) upgrade the whole LangChain stack to 1.x+ (larger change).
+  - **CUDA wheel selection**: `torch` must match the Colab runtime CUDA version (try `cu121` first, then `cu118` if needed).
+  - **Unsloth GPU requirement/import order**: Unsloth requires CUDA and is happiest when imported before `transformers`.
+- **Next step (future)**: Re-run HF evaluation in Colab with GPU enabled and pinned HF deps (see `evaluation/vlm_evaluation_colab.py` docstring + `evaluation/INSTALL_HF_DEPS.md`).

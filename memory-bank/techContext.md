@@ -16,6 +16,9 @@ Backend:
 - Vision LLM support: Gemini 2.0 Flash (default, selected via evaluation), GPT-4o (alternative).
 - qdrant-client for vector DB (fallback: FAISS/in-memory).
 - Hugging Face VLM evaluation: optional; current adapter uses **Unsloth (CUDA-only)** so HF evaluation must run on a CUDA GPU (e.g., Google Colab GPU).
+  - Colab note: dependency mismatches can occur and may require pinning:
+    - `transformers` ↔ `huggingface-hub` (some combos require `huggingface-hub<1.0`)
+    - **LangChain stack split**: this repo uses **LangChain 0.3.x** (expects `langchain-core<1.0`), but some Colab installs pull `langchain-google-genai 4.x` / `langgraph-prebuilt 1.x` which require `langchain-core>=1.0`. These cannot coexist without pinning or a full LangChain 1.x+ upgrade.
 
 Frontend:
 
