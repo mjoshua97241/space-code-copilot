@@ -21,10 +21,11 @@ Use this checklist to deploy your app to Railway.app and get a public URL.
   git commit -m "Add deployment files and configuration"
   ```
 
-- [ ] Push to GitHub:
+- [x] Push to GitHub:
   ```bash
   git push origin main
   ```
+  Note: Only in origin feature/multimodal (branch)
 
 ## Step 2: Deploy to Railway.app
 
