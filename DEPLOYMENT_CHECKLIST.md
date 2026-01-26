@@ -29,16 +29,16 @@ Use this checklist to deploy your app to Railway.app and get a public URL.
 
 ## Step 2: Deploy to Railway.app
 
-1. [ ] Go to [Railway.app](https://railway.app) and sign in (GitHub OAuth)
+1. [x] Go to [Railway.app](https://railway.app) and sign in (GitHub OAuth)
 
-2. [ ] Click "New Project" → "Deploy from GitHub repo"
+2. [x] Click "New Project" → "Deploy from GitHub repo"
 
-3. [ ] Select your repository (`space-code-copilot`)
+3. [x] Select your repository (`space-code-copilot`)
 
-4. [ ] Railway will auto-detect Python and start building
+4. [x] Railway will auto-detect Python and start building
    - Wait for build to complete (2-5 minutes)
 
-5. [ ] Configure environment variables:
+5. [x] Configure environment variables:
    - Go to your project → Variables tab
    - Add required keys:
      - `GOOGLE_API_KEY` = `your_gemini_api_key` (for blueprint extraction - Gemini 2.0 Flash is default)
@@ -46,7 +46,7 @@ Use this checklist to deploy your app to Railway.app and get a public URL.
    - Optional: `VISION_LLM_PROVIDER` = `"gemini"` (default) or `"openai"`
    - Railway will automatically restart the service
 
-6. [ ] Get your public URL:
+6. [x] Get your public URL:
    - Go to Settings → Domains
    - Railway provides a default domain: `https://your-app-name.railway.app`
    - Or generate a custom domain
