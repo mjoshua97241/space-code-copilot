@@ -421,3 +421,26 @@ Todo next:
   - Verify start command / PORT binding works reliably (no redirect/mixed-content regressions).
   - Smoke test key routes: `GET /`, `GET /health`, `POST /api/chat/`, `POST /api/blueprint/extract/` (and other active endpoints).
   - Confirm static assets + template render correctly in prod.
+
+## Future Improvements
+
+### Conversational Chat with Blueprint Context
+
+- **Current State**: Chat is **stateless Q&A only** - each query is processed independently without conversation context.
+- **Future Enhancement**: Add conversational chat capabilities with access to extracted room areas from uploaded blueprints.
+- **Key Features**:
+  - **Conversation History**: Maintain message history per session/conversation ID
+  - **Blueprint Context Integration**: Chat should have access to extracted room data from uploaded blueprints
+  - **Seamless Conversations**: Enable follow-up questions like "What about bathrooms?" after asking "What is the minimum bedroom area?"
+  - **Context-Aware Answers**: LLM can reference specific rooms and areas from the user's uploaded blueprint
+- **Implementation Considerations**:
+  - Add `conversation_id` or `session_id` to track conversations
+  - Store message history (in-memory, Redis, or database)
+  - Include previous messages in LLM prompt
+  - Pass extracted room data (from blueprint extraction) to chat context
+  - Update `ChatRequest` to optionally include `conversation_id` and `message_history`
+  - Frontend should maintain conversation state and send conversation ID with each message
+- **Benefits**:
+  - More natural conversation flow
+  - Context-aware responses about user's specific blueprint
+  - Better user experience for iterative compliance checking discussions

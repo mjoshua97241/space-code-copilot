@@ -371,6 +371,72 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
    - **Confidence scoring**: Add confidence scores to VLM bboxes (when model is uncertain, use OCR fallback)
    - **Post-processing**: Refine VLM bboxes using image analysis (detect actual text boundaries, not just approximate boxes)
 
+### Conversational Chat with Blueprint Context
+
+**Goal**: Enable conversational chat with access to extracted room areas from uploaded blueprints for seamless, context-aware conversations.
+
+**Current State**:
+- Chat is **stateless Q&A only** - each query is processed independently
+- No conversation history or context between messages
+- No access to extracted blueprint data in chat context
+
+**Proposed Features**:
+1. **Conversation History Management**:
+   - Add `conversation_id` or `session_id` to track conversations
+   - Store message history per conversation (in-memory, Redis, or database)
+   - Include previous messages in LLM prompt for context
+
+2. **Blueprint Context Integration**:
+   - Chat should have access to extracted room data from uploaded blueprints
+   - Pass extracted rooms (name, type, area) to chat context
+   - Enable questions like "Is bedroom 1 compliant?" referencing specific extracted rooms
+   - Enable follow-up questions: "What about bathrooms?" after asking about bedrooms
+
+3. **Seamless Conversation Flow**:
+   - Maintain conversation state across multiple messages
+   - LLM can reference previous questions and answers
+   - Context-aware responses about user's specific blueprint
+
+**Implementation Plan**:
+1. **Update `ChatRequest` model** (`app/api/chat.py`):
+   - Add optional `conversation_id: Optional[str]` field
+   - Add optional `message_history: Optional[List[Dict]]` field
+   - Add optional `blueprint_context: Optional[List[Room]]` field (extracted rooms)
+
+2. **Add Conversation Storage**:
+   - In-memory dictionary for MVP: `{conversation_id: List[messages]}`
+   - Or use Redis/database for production persistence
+   - Generate unique conversation ID on first message
+
+3. **Update Chat Endpoint** (`app/api/chat.py`):
+   - Retrieve conversation history if `conversation_id` provided
+   - Include previous messages in LLM prompt
+   - Include blueprint context (extracted rooms) in prompt if available
+   - Store new message in conversation history
+   - Return `conversation_id` in response
+
+4. **Update Frontend** (`app/templates/index.html`):
+   - Generate and maintain `conversation_id` in JavaScript
+   - Send `conversation_id` with each chat request
+   - Pass extracted rooms from blueprint extraction to chat context
+   - Display conversation history in chat UI
+
+5. **Update LLM Prompt**:
+   - Include conversation history in system/user messages
+   - Include blueprint context: "User has uploaded a blueprint with the following rooms: [room list]"
+   - Enable context-aware responses about specific rooms
+
+**Benefits**:
+- ✅ More natural conversation flow
+- ✅ Context-aware responses about user's specific blueprint
+- ✅ Better user experience for iterative compliance checking discussions
+- ✅ Seamless integration between blueprint extraction and Q&A chat
+
+**Dependencies**:
+- Conversation storage mechanism (in-memory for MVP, Redis/database for production)
+- Frontend state management for conversation ID
+- Integration between blueprint extraction and chat endpoints
+
 ### User-Provided API Keys (Post-MVP)
 - **Goal**: Allow users to use their own OpenAI/Gemini API keys instead of server's API key
 - **Benefits**: 

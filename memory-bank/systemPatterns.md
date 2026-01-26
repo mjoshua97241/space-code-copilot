@@ -320,6 +320,49 @@ PDFs require more sophisticated caching due to expensive operations:
 - Rule type validation (fixes invalid rule_type assignments)
 - Graceful error handling with fallback to seeded rules
 
+## Chat Patterns
+
+### Current Implementation: Stateless Q&A
+
+**Pattern**: Each chat request is processed independently without conversation context.
+
+**Implementation**:
+- `POST /api/chat/` endpoint accepts single `query` string
+- No conversation history or session management
+- Each request retrieves context from vector store and generates answer independently
+- Frontend displays messages visually but doesn't maintain conversation state
+
+**Limitations**:
+- No follow-up question context (e.g., "What about bathrooms?" after asking about bedrooms)
+- No access to extracted blueprint data in chat context
+- Each question must be self-contained
+
+### Future Pattern: Conversational Chat with Blueprint Context
+
+**Proposed Pattern**: Maintain conversation history and integrate blueprint extraction data.
+
+**Key Components**:
+1. **Conversation Management**:
+   - `conversation_id` or `session_id` to track conversations
+   - Message history storage (in-memory for MVP, Redis/database for production)
+   - Previous messages included in LLM prompt
+
+2. **Blueprint Context Integration**:
+   - Extracted room data (from blueprint extraction) passed to chat context
+   - LLM can reference specific rooms and areas from user's uploaded blueprint
+   - Enables questions like "Is bedroom 1 compliant?" with context
+
+3. **Seamless Conversation Flow**:
+   - Follow-up questions maintain context from previous messages
+   - Context-aware responses about user's specific blueprint
+   - Integration between blueprint extraction and Q&A chat
+
+**Implementation Approach**:
+- Update `ChatRequest` to include `conversation_id`, `message_history`, and `blueprint_context`
+- Store conversation state per session
+- Include conversation history and blueprint context in LLM prompt
+- Frontend maintains conversation ID and passes extracted rooms to chat
+
 ## Future Enhancements
 
 ### User-Provided API Keys (Post-MVP)
