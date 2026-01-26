@@ -15,7 +15,7 @@ Use this checklist to deploy your app to Railway.app and get a public URL.
 
 ## Step 1: Prepare Code
 
-- [ ] Commit all changes:
+- [x] Commit all changes:
   ```bash
   git add .
   git commit -m "Add deployment files and configuration"
