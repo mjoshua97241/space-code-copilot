@@ -57,10 +57,10 @@ Test your deployed app:
 
 ### Basic Endpoints
 
-- [ ] Health check: `https://your-app.railway.app/health`
+- [x] Health check: `https://your-app.railway.app/health`
   - Should return: `{"status": "ok"}`
 
-- [ ] Issues API: `https://your-app.railway.app/api/issues`
+- [x] Issues API: `https://your-app.railway.app/api/issues`
   - Should return JSON array of compliance issues
 
 - [ ] Chat API: `https://your-app.railway.app/api/chat`
