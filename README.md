@@ -41,12 +41,21 @@ uv sync
 
 2. Set up environment variables (create `.env` in `backend/`):
 ```bash
-# LLM Provider (choose one)
+# LLM Provider (choose one for text-based operations)
 OPENAI_API_KEY=your_key_here
 # or
 GEMINI_API_KEY=your_key_here
 # or
 ANTHROPIC_API_KEY=your_key_here
+
+# Vision LLM Configuration (for blueprint extraction)
+# Provider: "openai" (GPT-4o) or "gemini" (Gemini 1.5 Flash)
+VISION_LLM_PROVIDER=openai
+
+# Vision LLM API Keys (required if using vision features)
+# For OpenAI (GPT-4o): Use OPENAI_API_KEY above
+# For Gemini: Use GOOGLE_API_KEY below
+GOOGLE_API_KEY=your_key_here  # Required if VISION_LLM_PROVIDER=gemini
 
 # Qdrant (optional, defaults to in-memory)
 QDRANT_URL=http://localhost:6333
@@ -99,7 +108,7 @@ Place your project data in `backend/app/data/`:
 - Static file serving and template setup
 - Project structure initialized
 
-**In Progress (MVP):**
+**Implemented (MVP):**
 - CSV loaders for rooms and doors
 - Domain models (Room, Door, Rule, Issue)
 - Compliance checker
@@ -107,6 +116,7 @@ Place your project data in `backend/app/data/`:
 - PDF ingest and vector store
 - `/api/chat` endpoint with RAG
 - Frontend HTML template with plan viewer, issues list, and chat
+- Blueprint extraction (preview) - multimodal VLM extraction from blueprint images
 
 See `memory-bank/progress.md` for detailed status.
 
@@ -121,8 +131,57 @@ See `memory-bank/progress.md` for detailed status.
 
 - `GET /health` - Health check
 - `GET /` - Frontend UI (HTML template)
-- `GET /api/issues` - List compliance issues (planned)
-- `POST /api/chat` - Chat with RAG context (planned)
+- `GET /api/issues` - List compliance issues
+- `POST /api/chat` - Chat with RAG context
+- `POST /api/blueprint/extract` - Extract room data from blueprint images (preview-only)
+
+## Blueprint Extraction (Preview)
+
+The system includes a multimodal blueprint extraction feature that uses Vision LLMs (GPT-4o or Gemini 1.5 Flash) to extract structured room data from architectural blueprint images.
+
+### Features
+
+- **Semantic Understanding**: VLM reads room labels, classifies types, and associates dimensions with rooms
+- **Multi-format Support**: Accepts PNG, JPG, or PDF blueprints
+- **Multi-page PDFs**: Automatically combines all pages or extracts specific page
+- **Structured Output**: Returns Room models (name, type, area, level) ready for compliance checking
+- **Preview Mode**: Extraction results are preview-only; CSV pipeline remains ground truth
+
+### Usage
+
+1. Upload a blueprint image via the frontend UI (drag-and-drop or file picker)
+2. Optionally specify scale factor (default: 1.0 for 1:100 scale)
+3. System extracts rooms using VLM semantic understanding
+4. Preview results in table with confidence scores
+
+### Configuration
+
+Set vision LLM provider in `.env`:
+
+```bash
+# Choose vision LLM provider
+VISION_LLM_PROVIDER=openai  # or "gemini"
+
+# API keys (required)
+OPENAI_API_KEY=your_key_here  # For GPT-4o
+GOOGLE_API_KEY=your_key_here  # For Gemini 1.5 Flash
+```
+
+### Limitations
+
+- Areas are approximate (depends on scale assumption)
+- Works best with clear, labeled blueprints
+- Room extraction only (no door extraction in MVP)
+- Preview-only results (CSV pipeline remains ground truth)
+
+### Known Issues
+
+- Recall: ~45% (some rooms missed, especially small spaces)
+- Precision: ~56% (room splitting occurs with combined labels)
+- Area accuracy: ~65% (good for matched rooms, affected by splitting)
+- Type classification: 100% (excellent)
+
+See `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` for detailed evaluation results.
 
 ## Constraints
 

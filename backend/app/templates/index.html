@@ -5,6 +5,246 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Code-Aware Space Planning Copilot</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      // Configure PDF.js worker
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
+    <style>
+      /* Additional styles for compliance features */
+      .compliance-btn {
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .compliance-btn:hover {
+        background: #45a049;
+      }
+      .compliance-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .confidence-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .confidence-high { background: #4CAF50; color: white; }
+      .confidence-medium { background: #FF9800; color: white; }
+      .confidence-low { background: #f44336; color: white; }
+      .area-input {
+        width: 80px;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-size: 0.9rem;
+        text-align: right;
+      }
+      .area-input:focus {
+        outline: none;
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+      }
+      .area-input:hover {
+        border-color: #999;
+      }
+      .compliance-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .room-check-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        font-size: 14px;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .room-check-btn:hover {
+        background: #1976D2;
+      }
+      .room-check-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .room-check-btn .check-icon {
+        font-weight: bold;
+      }
+      .compliance-column-hidden {
+        display: none !important;
+      }
+      .compliance-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .compliance-pass {
+        color: #4CAF50;
+        font-weight: 600;
+      }
+      .compliance-fail {
+        color: #f44336;
+        font-weight: 600;
+      }
+      .compliance-issues-count {
+        background: #f44336;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .overlay.non-compliant {
+        border: 3px solid #f44336;
+        background: rgba(244, 67, 54, 0.1);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+      }
+      /* Note: extraction-content overflow is handled per-context */
+      /* Tooltip overflow is handled via .rooms-table td overflow: visible */
+      .extraction-results {
+        margin-top: 1rem;
+        position: relative; /* Create stacking context for tooltips */
+        z-index: 1; /* Base z-index for container */
+        overflow: visible !important; /* Allow tooltips to escape container bounds */
+      }
+      .rooms-table {
+        position: relative; /* Create stacking context for table */
+        z-index: 1; /* Lower than tooltip */
+        overflow: visible !important; /* Allow tooltips to escape table bounds */
+      }
+      .rooms-table thead {
+        position: relative;
+        z-index: 1; /* Lower z-index for header */
+        overflow: visible !important; /* Allow tooltips above header */
+      }
+      .rooms-table tbody {
+        position: relative;
+        z-index: 1; /* Lower than tooltip */
+        overflow: visible !important; /* Allow tooltips to escape */
+      }
+      .rooms-table td {
+        overflow: visible !important; /* Critical: allow tooltip to escape cell bounds */
+        position: relative; /* Create positioning context */
+      }
+      .room-issues-tooltip {
+        position: relative;
+        cursor: help;
+        z-index: 100; /* Higher than table elements within extraction-results */
+      }
+      .room-issues-tooltip:hover::after {
+        content: attr(data-issues);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 0.5rem;
+        border-radius: 4px;
+        white-space: pre-line;
+        z-index: 99999; /* Highest z-index within extraction-results container */
+        font-size: 0.85rem;
+        width: 150px; /* Explicit width to make tooltip wider */
+        max-width: 500px; /* Maximum width constraint */
+        min-width: 100px; /* Minimum width to ensure readability */
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        pointer-events: none; /* Prevent tooltip from blocking interactions */
+        word-wrap: break-word; /* Allow long words to wrap */
+      }
+      /* Right Panel Tab System */
+      .right-panel-header {
+        padding: 0;
+        background: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+      }
+      .tab-buttons {
+        display: flex;
+        gap: 0;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 12px 16px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.2s ease;
+      }
+      .tab-btn:hover {
+        background: #e9ecef;
+        color: #212529;
+      }
+      .tab-btn.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        background: white;
+      }
+      .tab-content {
+        display: none !important;
+        flex: 1;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0; /* Allow flex child to shrink */
+      }
+      .tab-content.active {
+        display: flex !important;
+      }
+      /* Ensure both tab contents have proper flex layout when active */
+      #content-chat.active {
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #content-extraction.active {
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #content-extraction .extraction-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: white;
+        border: none;
+      }
+      #content-extraction .extraction-content {
+        flex: 1;
+        overflow-y: auto !important; /* Allow scrolling in extraction tab */
+        overflow-x: hidden;
+        padding: 16px;
+        min-height: 0; /* Allow flex child to shrink and enable scrolling */
+      }
+    </style>
   </head>
   <body>
     <div class="app-root">
@@ -16,53 +256,103 @@
           </div>
           <div class="plan-image-wrapper">
             <div class="plan-image-container">
-              <img src="/static/plan.png" alt="Floor plan" id="plan-image" />
+              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'%3E%3Crect width='800' height='600' fill='%23f5f5f5'/%3E%3Ctext x='400' y='280' font-family='Arial, sans-serif' font-size='18' fill='%23999' text-anchor='middle'%3EUpload a blueprint file to view the floor plan%3C/text%3E%3C/svg%3E" alt="Floor plan placeholder" id="plan-image" />
               <div class="overlays-container" id="overlays-container"></div>
             </div>
           </div>
         </div>
-        <div class="issues-panel">
-          <div class="issues-header">
-            <h3>Compliance Issues</h3>
-            <span class="issues-count" id="issues-count">Loading...</span>
-          </div>
-          <div class="issues-list" id="issues-list">
-            <div class="loading">Loading issues...</div>
-          </div>
-        </div>
       </div>
 
-      <!-- Right Panel: Chat -->
+      <!-- Right Panel: Chat and Extraction (Toggle) -->
       <div class="right-panel">
-        <div class="chat-header">
-          <h3>Building Code Assistant</h3>
-          <p class="chat-subtitle">Ask questions about building codes and compliance</p>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-          <div class="welcome-message">
-            <p>👋 Welcome! I can help you understand building code requirements and compliance issues.</p>
-            <p>Try asking:</p>
-            <ul>
-              <li>"What is the minimum bedroom area?"</li>
-              <li>"What are the door width requirements?"</li>
-              <li>"Explain the accessible door requirements"</li>
-            </ul>
+        <!-- Tab Toggle Header -->
+        <div class="right-panel-header">
+          <div class="tab-buttons">
+            <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">
+              💬 Q&A Chat
+            </button>
+            <button class="tab-btn" id="tab-extraction" onclick="switchTab('extraction')">
+              🔍 Blueprint Extraction
+            </button>
           </div>
         </div>
-        <div class="chat-input">
-          <form id="chat-form">
-            <textarea
-              id="chat-input"
-              placeholder="Ask about building codes or compliance issues..."
-              rows="3"
-            ></textarea>
-            <div class="chat-actions">
-              <button type="submit" id="chat-submit-btn">
-                <span class="btn-text">Send</span>
-                <span class="btn-loading" style="display: none;">Sending...</span>
-              </button>
+
+        <!-- Chat View -->
+        <div class="tab-content active" id="content-chat">
+          <div class="chat-header">
+            <h3>Building Code Assistant</h3>
+            <p class="chat-subtitle">Ask questions about building codes and compliance</p>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="welcome-message">
+              <p>👋 Welcome! I can help you understand building code requirements and compliance issues.</p>
+              <p>Try asking:</p>
+              <ul>
+                <li>"What is the minimum bedroom area?"</li>
+                <li>"What are the door width requirements?"</li>
+                <li>"Explain the accessible door requirements"</li>
+              </ul>
             </div>
-          </form>
+          </div>
+          <div class="chat-input">
+            <form id="chat-form">
+              <textarea
+                id="chat-input"
+                placeholder="Ask about building codes or compliance issues..."
+                rows="3"
+              ></textarea>
+              <div class="chat-actions">
+                <button type="submit" id="chat-submit-btn">
+                  <span class="btn-text">Send</span>
+                  <span class="btn-loading" style="display: none;">Sending...</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Extraction View -->
+        <div class="tab-content" id="content-extraction">
+          <div class="extraction-panel" id="extraction-panel">
+            <div class="extraction-header" onclick="toggleExtractionPanel()">
+              <h3>🔍 Blueprint Extraction (Preview)</h3>
+              <button class="toggle-btn" id="toggle-extraction">▼</button>
+            </div>
+            <div class="extraction-content" id="extraction-content">
+              <div class="upload-zone" id="upload-zone">
+                <div class="upload-icon">📄</div>
+                <p>Drag & drop blueprint image (PNG, JPG, PDF)</p>
+                <p class="upload-hint">or click to select file</p>
+                <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.pdf" hidden />
+              </div>
+              <div class="scale-input">
+                <label for="scale-value">Scale (optional):</label>
+                <input type="number" id="scale-value" placeholder="1.0" step="0.1" min="0.1" max="10" />
+                <span class="scale-hint">1.0 = 1:100 scale</span>
+              </div>
+              <button class="extract-btn" id="extract-btn" disabled>Extract Rooms</button>
+              <div class="extraction-status" id="extraction-status"></div>
+              <div class="extraction-results" id="extraction-results" style="display: none;">
+                <h4>Extracted Rooms (Preview)</h4>
+                <p class="preview-note">⚠️ Preview only - CSV pipeline remains ground truth</p>
+                <div class="confidence-scores" id="confidence-scores"></div>
+                <table class="rooms-table" id="rooms-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Area (m²)</th>
+                      <th>Confidence</th>
+                      <th class="compliance-column-hidden">Compliance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rooms-tbody"></tbody>
+                </table>
+                <button class="compliance-btn" id="compliance-btn" style="display: none;">
+                  Check Compliance
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -75,45 +365,21 @@
       let issues = [];
       let overlays = [];
       let overlayElements = new Map(); // Map of element_id -> overlay DOM element
+      let extractedRooms = []; // Store extracted rooms for compliance checking
+      let complianceIssues = []; // Store compliance issues from extract-and-check
+      let complianceChecked = false; // Track if compliance has been checked at least once
 
       // ====================================================================
       // Issues Fetching and Rendering
       // ====================================================================
 
-      async function fetchIssues() {
-        const listContainer = document.getElementById("issues-list");
-        const countElement = document.getElementById("issues-count");
-        
-        listContainer.innerHTML = '<div class="loading">Loading issues...</div>';
-        countElement.textContent = "Loading...";
-
-        try {
-          const res = await fetch("/api/issues/");
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-          issues = await res.json();
-          
-          // Update count
-          countElement.textContent = `${issues.length} issue${issues.length !== 1 ? 's' : ''}`;
-          
-          if (issues.length === 0) {
-            listContainer.innerHTML = '<div class="no-issues">✅ No compliance issues found. Design is compliant!</div>';
-            return;
-          }
-
-          // Render issues
-          listContainer.innerHTML = "";
-          issues.forEach((issue) => {
-            const issueElement = createIssueElement(issue);
-            listContainer.appendChild(issueElement);
-          });
-        } catch (e) {
-          console.error("Error fetching issues:", e);
-          listContainer.innerHTML = `<div class="error">Failed to load issues: ${e.message}</div>`;
-          countElement.textContent = "Error";
-        }
-      }
+      // fetchIssues() disabled - separate compliance issues panel removed per plan
+      // Compliance issues are now shown in the Extracted Rooms table (single panel approach)
+      // async function fetchIssues() {
+      //   const listContainer = document.getElementById("issues-list");
+      //   const countElement = document.getElementById("issues-count");
+      //   ...
+      // }
 
       function createIssueElement(issue) {
         const div = document.createElement("div");
@@ -322,38 +588,62 @@
       // Overlay Loading and Rendering
       // ====================================================================
 
-      async function loadOverlays() {
-        try {
-          const res = await fetch("/static/overlays.json");
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-          overlays = await res.json();
-          renderOverlays();
-        } catch (e) {
-          console.error("Error loading overlays:", e);
-          // Silently fail - overlays are optional
-        }
-      }
+      // Overlay loading disabled (deferred to future recommendations)
+      // async function loadOverlays() {
+      //   try {
+      //     const res = await fetch("/static/overlays.json");
+      //     if (!res.ok) {
+      //       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      //     }
+      //     overlays = await res.json();
+      //     renderOverlays();
+      //   } catch (e) {
+      //     console.error("Error loading overlays:", e);
+      //     // Silently fail - overlays are optional
+      //   }
+      // }
 
-      function renderOverlays() {
-        const container = document.getElementById("overlays-container");
-        const planImage = document.getElementById("plan-image");
-        
-        if (!container || !planImage || overlays.length === 0) {
-          return;
-        }
-
-        // Wait for image to load to get actual dimensions
-        if (planImage.complete) {
-          renderOverlayElements();
-        } else {
-          planImage.addEventListener("load", renderOverlayElements, { once: true });
-        }
-        
-        // Update overlay positions on window resize
-        window.addEventListener("resize", handleResize);
-      }
+      // Overlay rendering disabled (deferred to future recommendations)
+      // function renderOverlays() {
+      //   const container = document.getElementById("overlays-container");
+      //   const planImage = document.getElementById("plan-image");
+      //   
+      //   if (!container || !planImage || overlays.length === 0) {
+      //     console.log("Cannot render overlays:", {
+      //       container: !!container,
+      //       planImage: !!planImage,
+      //       overlaysCount: overlays.length
+      //     });
+      //     return;
+      //   }
+      //
+      //   // Wait for image to load to get actual dimensions
+      //   // For data URLs (PDF-rendered images), we need to ensure naturalWidth/Height are set
+      //   const tryRender = () => {
+      //     if (planImage.naturalWidth > 0 && planImage.naturalHeight > 0) {
+      //       console.log("Rendering overlays:", {
+      //         overlaysCount: overlays.length,
+      //         imageSize: `${planImage.naturalWidth}x${planImage.naturalHeight}`,
+      //         displaySize: `${planImage.width}x${planImage.height}`
+      //       });
+      //       renderOverlayElements();
+      //     } else {
+      //       // If natural dimensions aren't set yet, wait a bit and try again
+      //       setTimeout(tryRender, 100);
+      //     }
+      //   };
+      //
+      //   if (planImage.complete && planImage.naturalWidth > 0) {
+      //     tryRender();
+      //   } else {
+      //     planImage.addEventListener("load", tryRender, { once: true });
+      //     // Also try after a short delay in case load event doesn't fire
+      //     setTimeout(tryRender, 500);
+      //   }
+      //   
+      //   // Update overlay positions on window resize
+      //   window.addEventListener("resize", handleResize);
+      // }
 
       function renderOverlayElements() {
         const container = document.getElementById("overlays-container");
@@ -361,6 +651,17 @@
         const imageContainer = planImage?.parentElement;
         
         if (!container || !planImage || !imageContainer) {
+          console.error("Missing elements for overlay rendering:", {
+            container: !!container,
+            planImage: !!planImage,
+            imageContainer: !!imageContainer
+          });
+          return;
+        }
+
+        // Check if we have overlays to render
+        if (!overlays || overlays.length === 0) {
+          console.warn("renderOverlayElements called but overlays array is empty");
           return;
         }
 
@@ -374,9 +675,26 @@
         const imgNaturalWidth = planImage.naturalWidth;
         const imgNaturalHeight = planImage.naturalHeight;
         
+        if (imgNaturalWidth === 0 || imgNaturalHeight === 0) {
+          console.error("Image dimensions not available:", {
+            naturalWidth: imgNaturalWidth,
+            naturalHeight: imgNaturalHeight,
+            displayWidth: planImage.width,
+            displayHeight: planImage.height
+          });
+          return;
+        }
+        
         // Calculate scale factor if image is scaled
         const scaleX = imgRect.width / imgNaturalWidth;
         const scaleY = imgRect.height / imgNaturalHeight;
+        
+        console.log("Rendering overlay elements:", {
+          overlaysCount: overlays.length,
+          naturalSize: `${imgNaturalWidth}x${imgNaturalHeight}`,
+          displaySize: `${imgRect.width}x${imgRect.height}`,
+          scale: `${scaleX.toFixed(3)}x${scaleY.toFixed(3)}`
+        });
         
         // Calculate offset if image is centered within container
         const offsetX = imgRect.left - containerRect.left;
@@ -387,6 +705,8 @@
         container.style.top = `${offsetY}px`;
         container.style.width = `${imgRect.width}px`;
         container.style.height = `${imgRect.height}px`;
+        container.style.position = "absolute";
+        container.style.pointerEvents = "none";
 
         // Create overlay elements
         overlays.forEach((overlay) => {
@@ -405,12 +725,24 @@
           overlayDiv.style.top = `${y}px`;
           overlayDiv.style.width = `${width}px`;
           overlayDiv.style.height = `${height}px`;
+          overlayDiv.style.position = "absolute";
+          overlayDiv.style.border = "2px solid #007bff";
+          overlayDiv.style.backgroundColor = "rgba(0, 123, 255, 0.1)";
+          overlayDiv.style.pointerEvents = "auto";
+          overlayDiv.style.cursor = "pointer";
+          
+          console.log(`Overlay ${overlay.id}:`, {
+            original: `${overlay.x},${overlay.y} ${overlay.width}x${overlay.height}`,
+            scaled: `${x.toFixed(1)},${y.toFixed(1)} ${width.toFixed(1)}x${height.toFixed(1)}`
+          });
           
           // Store reference for highlighting
           overlayElements.set(overlay.id, overlayDiv);
           
           container.appendChild(overlayDiv);
         });
+        
+        console.log(`Successfully rendered ${overlays.length} overlays`);
       }
       
       // Throttled resize handler
@@ -433,15 +765,719 @@
       }
 
       // ====================================================================
+      // Blueprint Extraction
+      // ====================================================================
+
+      let selectedFile = null;
+
+      function initExtraction() {
+        const uploadZone = document.getElementById("upload-zone");
+        const fileInput = document.getElementById("file-input");
+        const extractBtn = document.getElementById("extract-btn");
+
+        // Click to select file
+        uploadZone.addEventListener("click", () => fileInput.click());
+
+        // Drag and drop
+        uploadZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          uploadZone.classList.add("dragover");
+        });
+
+        uploadZone.addEventListener("dragleave", () => {
+          uploadZone.classList.remove("dragover");
+        });
+
+        uploadZone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          uploadZone.classList.remove("dragover");
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            handleFileSelect(files[0]);
+          }
+        });
+
+        // File input change
+        fileInput.addEventListener("change", (e) => {
+          if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+          }
+        });
+
+        // Extract button
+        extractBtn.addEventListener("click", extractBlueprint);
+      }
+
+      function toggleExtractionPanel() {
+        const content = document.getElementById("extraction-content");
+        const toggleBtn = document.getElementById("toggle-extraction");
+        content.classList.toggle("collapsed");
+        toggleBtn.textContent = content.classList.contains("collapsed") ? "▶" : "▼";
+      }
+
+      // Tab switching function
+      function switchTab(tabName) {
+        // Get elements
+        const chatTab = document.getElementById('tab-chat');
+        const extractionTab = document.getElementById('tab-extraction');
+        const chatContent = document.getElementById('content-chat');
+        const extractionContent = document.getElementById('content-extraction');
+        
+        // Update tab buttons - remove all active, then add to selected
+        chatTab.classList.remove('active');
+        extractionTab.classList.remove('active');
+        
+        // Hide all content
+        chatContent.classList.remove('active');
+        extractionContent.classList.remove('active');
+        
+        // Show selected tab and content
+        if (tabName === 'chat') {
+          chatTab.classList.add('active');
+          chatContent.classList.add('active');
+        } else if (tabName === 'extraction') {
+          extractionTab.classList.add('active');
+          extractionContent.classList.add('active');
+          
+          // If switching to extraction, ensure it's expanded
+          const extractionContentPanel = document.getElementById('extraction-content');
+          if (extractionContentPanel.classList.contains('collapsed')) {
+            extractionContentPanel.classList.remove('collapsed');
+            document.getElementById('toggle-extraction').textContent = '▼';
+          }
+        }
+      }
+
+      function handleFileSelect(file) {
+        const allowedExtensions = [".png", ".jpg", ".jpeg", ".pdf"];
+        const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+        
+        if (!allowedExtensions.includes(ext)) {
+          showExtractionStatus(`Invalid file type: ${ext}. Allowed: PNG, JPG, PDF`, "error");
+          return;
+        }
+
+        selectedFile = file;
+        
+        // Display uploaded blueprint in plan viewer
+        displayUploadedBlueprint(file);
+        
+        document.getElementById("upload-zone").innerHTML = `
+          <div class="upload-icon">✅</div>
+          <p><strong>${escapeHtml(file.name)}</strong></p>
+          <p class="upload-hint">${(file.size / 1024).toFixed(1)} KB - Click to change</p>
+          <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.pdf" hidden />
+        `;
+        // Re-attach event listener to new file input
+        document.getElementById("file-input").addEventListener("change", (e) => {
+          if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+        });
+        document.getElementById("extract-btn").disabled = false;
+        showExtractionStatus("File selected. Click 'Extract Rooms' to process.", "info");
+      }
+
+      async function displayUploadedBlueprint(file) {
+        const planImage = document.getElementById("plan-image");
+        
+        if (file.type.startsWith("image/")) {
+          // For images, use FileReader to display directly
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            planImage.src = e.target.result;
+            clearOverlays();
+          };
+          reader.readAsDataURL(file);
+        } else if (file.type === "application/pdf") {
+          // For PDFs, render first page using PDF.js
+          if (typeof pdfjsLib === 'undefined') {
+            console.warn("PDF.js not loaded, using default image");
+            planImage.src = "/static/plan.png";
+            return;
+          }
+          
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const page = await pdf.getPage(1); // Get first page
+            
+            // Set up canvas for rendering
+            const viewport = page.getViewport({ scale: 2.0 }); // Scale for better quality
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            // Render PDF page to canvas
+            await page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise;
+            
+            // Convert canvas to data URL and display
+            const dataUrl = canvas.toDataURL("image/png");
+            planImage.src = dataUrl;
+            
+            // Ensure image dimensions are set correctly for overlay rendering
+            // Wait for image to load before clearing overlays
+            planImage.onload = () => {
+              console.log("PDF rendered, image dimensions:", {
+                naturalWidth: planImage.naturalWidth,
+                naturalHeight: planImage.naturalHeight,
+                width: planImage.width,
+                height: planImage.height
+              });
+              clearOverlays();
+            };
+            
+            // If image is already loaded (cached), trigger onload manually
+            if (planImage.complete) {
+              planImage.onload();
+            }
+          } catch (error) {
+            console.error("Error rendering PDF:", error);
+            // Fallback to default image if PDF rendering fails
+            planImage.src = "/static/plan.png";
+            showExtractionStatus("Could not preview PDF. Extraction will still work.", "warning");
+          }
+        } else {
+          // Unknown file type, use default
+          planImage.src = "/static/plan.png";
+        }
+      }
+
+      function clearOverlays() {
+        const container = document.getElementById("overlays-container");
+        if (container) container.innerHTML = "";
+        overlayElements.clear();
+        complianceIssues = [];
+      }
+
+      async function extractBlueprint() {
+        if (!selectedFile) return;
+
+        const extractBtn = document.getElementById("extract-btn");
+        const scaleInput = document.getElementById("scale-value");
+        const resultsDiv = document.getElementById("extraction-results");
+        const complianceBtn = document.getElementById("compliance-btn");
+
+        extractBtn.disabled = true;
+        extractBtn.textContent = "Extracting...";
+        showExtractionStatus("Processing blueprint with Vision LLM...", "loading");
+        resultsDiv.style.display = "none";
+        complianceBtn.style.display = "none";
+        clearOverlays();
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        if (scaleInput.value) {
+          formData.append("scale", scaleInput.value);
+        }
+
+        try {
+          const res = await fetch("/api/blueprint/extract/", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(errorData.detail || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          extractedRooms = data.rooms;
+          complianceIssues = []; // Reset compliance issues on new extraction
+          complianceChecked = false; // Reset compliance checked flag
+          hideComplianceColumn(); // Hide compliance column on new extraction
+          displayExtractionResults(data);
+          showExtractionStatus(`✅ Extracted ${data.rooms.length} rooms`, "success");
+          
+          // Show compliance button
+          complianceBtn.style.display = "block";
+          complianceBtn.disabled = false;
+        } catch (e) {
+          console.error("Extraction error:", e);
+          showExtractionStatus(`❌ Error: ${e.message}`, "error");
+        } finally {
+          extractBtn.disabled = false;
+          extractBtn.textContent = "Extract Rooms";
+        }
+      }
+
+      function displayExtractionResults(data) {
+        const resultsDiv = document.getElementById("extraction-results");
+        const tbody = document.getElementById("rooms-tbody");
+        const confidenceDiv = document.getElementById("confidence-scores");
+
+        // Show confidence scores
+        const conf = data.confidence;
+        confidenceDiv.innerHTML = `
+          <div class="confidence-item">
+            <span>Overall:</span>
+            <span class="confidence-value">${(conf.overall * 100).toFixed(0)}%</span>
+          </div>
+          <div class="confidence-item">
+            <span>Names:</span>
+            <span class="confidence-value">${(conf.name_confidence * 100).toFixed(0)}%</span>
+          </div>
+          <div class="confidence-item">
+            <span>Types:</span>
+            <span class="confidence-value">${(conf.type_confidence * 100).toFixed(0)}%</span>
+          </div>
+          <div class="confidence-item">
+            <span>Areas:</span>
+            <span class="confidence-value">${(conf.area_confidence * 100).toFixed(0)}%</span>
+          </div>
+        `;
+
+        // Show rooms table with confidence and compliance columns
+        tbody.innerHTML = data.rooms.map(room => {
+          // Get room-specific issues (if any)
+          const roomIssues = complianceIssues.filter(issue => issue.element_id === room.id);
+          const hasIssues = roomIssues.length > 0;
+          
+          // Calculate confidence badge
+          const overallConf = conf.overall;
+          let confClass = "confidence-high";
+          let confText = "High";
+          if (overallConf < 0.7) {
+            confClass = overallConf < 0.5 ? "confidence-low" : "confidence-medium";
+            confText = overallConf < 0.5 ? "Low" : "Medium";
+          }
+          
+          // Compliance status
+          let complianceHtml = '<span class="compliance-status compliance-pass">✅ Pass</span>';
+          if (hasIssues) {
+            const issuesText = roomIssues.map(i => `• ${i.message}`).join('\n');
+            complianceHtml = `
+              <span class="compliance-status compliance-fail">
+                ❌ Fail
+                <span class="compliance-issues-count">${roomIssues.length}</span>
+              </span>
+              <span class="room-issues-tooltip" data-issues="${escapeHtml(issuesText)}" title="Hover for details">ℹ️</span>
+            `;
+          }
+          
+          // Add check button for individual room compliance check
+          const checkButtonHtml = `
+            <button 
+              class="room-check-btn" 
+              data-room-id="${room.id}"
+              title="Check compliance for this room"
+              aria-label="Check compliance"
+            >
+              <span class="check-icon">✓</span>
+            </button>
+          `;
+          
+          return `
+            <tr class="${hasIssues ? 'has-issues' : ''}" data-room-id="${room.id}">
+              <td>${escapeHtml(room.name)}</td>
+              <td>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  min="0" 
+                  value="${room.area_m2.toFixed(1)}" 
+                  data-room-id="${room.id}" 
+                  class="area-input"
+                  title="Edit area in m²"
+                />
+              </td>
+              <td><span class="confidence-badge ${confClass}">${confText}</span></td>
+              <td class="${complianceChecked ? '' : 'compliance-column-hidden'}">
+                <div class="compliance-cell">
+                  ${complianceHtml}
+                  ${checkButtonHtml}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        resultsDiv.style.display = "block";
+        
+        // Update compliance column visibility based on complianceChecked flag
+        if (complianceChecked) {
+          showComplianceColumn();
+        } else {
+          hideComplianceColumn();
+        }
+        
+        // Attach event listeners to area inputs to track changes
+        attachAreaInputListeners();
+        
+        // Attach event listeners to room check buttons
+        attachRoomCheckButtons();
+      }
+
+      function attachAreaInputListeners() {
+        // Attach event listeners to all area input fields
+        const areaInputs = document.querySelectorAll('.area-input');
+        areaInputs.forEach(input => {
+          // Remove existing listeners to avoid duplicates
+          const newInput = input.cloneNode(true);
+          input.parentNode.replaceChild(newInput, input);
+          
+          // Add blur event to update when user finishes editing
+          newInput.addEventListener('blur', function() {
+            updateRoomArea(this.dataset.roomId, parseFloat(this.value));
+          });
+          
+          // Add Enter key support
+          newInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+              this.blur(); // Trigger blur to save
+            }
+          });
+        });
+      }
+
+      function updateRoomArea(roomId, newArea) {
+        // Validate area value
+        if (isNaN(newArea) || newArea < 0) {
+          console.warn(`Invalid area value for room ${roomId}: ${newArea}`);
+          return;
+        }
+        
+        // Find and update the room in extractedRooms array
+        const roomIndex = extractedRooms.findIndex(r => r.id === roomId);
+        if (roomIndex !== -1) {
+          extractedRooms[roomIndex].area_m2 = newArea;
+          console.log(`Updated room ${roomId} area to ${newArea} m²`);
+        } else {
+          console.warn(`Room ${roomId} not found in extractedRooms array`);
+        }
+      }
+
+      function showComplianceColumn() {
+        // Remove hidden class from compliance column header
+        const complianceHeader = document.querySelector('thead th:last-child');
+        if (complianceHeader) {
+          complianceHeader.classList.remove('compliance-column-hidden');
+        }
+        
+        // Remove hidden class from all compliance cells (last td in each row)
+        const rows = document.querySelectorAll('#rooms-tbody tr');
+        rows.forEach(row => {
+          const complianceCell = row.querySelector('td:last-child');
+          if (complianceCell) {
+            complianceCell.classList.remove('compliance-column-hidden');
+          }
+        });
+      }
+
+      function hideComplianceColumn() {
+        // Add hidden class to compliance column header
+        const complianceHeader = document.querySelector('thead th:last-child');
+        if (complianceHeader) {
+          complianceHeader.classList.add('compliance-column-hidden');
+        }
+        
+        // Add hidden class to all compliance cells (last td in each row)
+        const rows = document.querySelectorAll('#rooms-tbody tr');
+        rows.forEach(row => {
+          const complianceCell = row.querySelector('td:last-child');
+          if (complianceCell) {
+            complianceCell.classList.add('compliance-column-hidden');
+          }
+        });
+      }
+
+      function attachRoomCheckButtons() {
+        // Attach event listeners to all room check buttons
+        const checkButtons = document.querySelectorAll('.room-check-btn');
+        checkButtons.forEach(button => {
+          // Remove existing listeners to avoid duplicates
+          const newButton = button.cloneNode(true);
+          button.parentNode.replaceChild(newButton, button);
+          
+          // Add click event
+          newButton.addEventListener('click', function() {
+            const roomId = this.dataset.roomId;
+            checkSingleRoomCompliance(roomId);
+          });
+        });
+      }
+
+      async function checkSingleRoomCompliance(roomId) {
+        // Find the room in extractedRooms array
+        const room = extractedRooms.find(r => r.id === roomId);
+        if (!room) {
+          console.error(`Room ${roomId} not found`);
+          return;
+        }
+
+        // Get the button and row
+        const button = document.querySelector(`.room-check-btn[data-room-id="${roomId}"]`);
+        const row = document.querySelector(`tr[data-room-id="${roomId}"]`);
+        
+        if (!button || !row) {
+          console.error(`Could not find button or row for room ${roomId}`);
+          return;
+        }
+
+        // Disable button and show loading state
+        button.disabled = true;
+        const originalIcon = button.querySelector('.check-icon').textContent;
+        button.querySelector('.check-icon').textContent = '...';
+
+        try {
+          // Send single room to compliance check endpoint
+          const res = await fetch("/api/blueprint/check-compliance/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify([room]), // Send as array with single room
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(errorData.detail || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          
+          // Get issues for this specific room
+          const roomIssues = data.issues || [];
+          
+          // Show compliance column if this is the first check
+          if (!complianceChecked) {
+            showComplianceColumn();
+            complianceChecked = true;
+          }
+          
+          // Update complianceIssues array (remove old issues for this room, add new ones)
+          complianceIssues = complianceIssues.filter(issue => 
+            !(issue.element_id === roomId && issue.element_type === "room")
+          );
+          complianceIssues.push(...roomIssues);
+          
+          // Update the compliance cell in the row
+          updateRoomComplianceCell(row, roomId, roomIssues);
+          
+          console.log(`Compliance check for room ${roomId}: ${roomIssues.length} issue(s)`);
+          
+        } catch (e) {
+          console.error(`Compliance check error for room ${roomId}:`, e);
+          showExtractionStatus(`❌ Error checking room ${roomId}: ${e.message}`, "error");
+        } finally {
+          // Re-enable button
+          button.disabled = false;
+          button.querySelector('.check-icon').textContent = originalIcon;
+        }
+      }
+
+      function updateRoomComplianceCell(row, roomId, roomIssues) {
+        const complianceCell = row.querySelector('td:last-child');
+        if (!complianceCell) return;
+
+        const hasIssues = roomIssues.length > 0;
+        
+        // Build compliance HTML
+        let complianceHtml = '<span class="compliance-status compliance-pass">✅ Pass</span>';
+        if (hasIssues) {
+          const issuesText = roomIssues.map(i => `• ${i.message}`).join('\n');
+          complianceHtml = `
+            <span class="compliance-status compliance-fail">
+              ❌ Fail
+              <span class="compliance-issues-count">${roomIssues.length}</span>
+            </span>
+            <span class="room-issues-tooltip" data-issues="${escapeHtml(issuesText)}" title="Hover for details">ℹ️</span>
+          `;
+        }
+        
+        // Update row class
+        if (hasIssues) {
+          row.classList.add('has-issues');
+        } else {
+          row.classList.remove('has-issues');
+        }
+        
+        // Add check button HTML
+        const checkButtonHtml = `
+          <button 
+            class="room-check-btn" 
+            data-room-id="${roomId}"
+            title="Check compliance for this room"
+            aria-label="Check compliance"
+          >
+            <span class="check-icon">✓</span>
+          </button>
+        `;
+        
+        // Update compliance cell with both status and button
+        complianceCell.innerHTML = `
+          <div class="compliance-cell">
+            ${complianceHtml}
+            ${checkButtonHtml}
+          </div>
+        `;
+        complianceCell.classList.remove('compliance-column-hidden');
+        
+        // Re-attach event listener to button
+        const checkButton = complianceCell.querySelector('.room-check-btn');
+        if (checkButton) {
+          checkButton.addEventListener('click', function() {
+            checkSingleRoomCompliance(roomId);
+          });
+        }
+        
+        // Show compliance column if this is the first check
+        if (complianceChecked && document.querySelector('th.compliance-column-hidden')) {
+          showComplianceColumn();
+        }
+      }
+
+      function showExtractionStatus(message, type) {
+        const statusDiv = document.getElementById("extraction-status");
+        statusDiv.className = `extraction-status status-${type}`;
+        statusDiv.textContent = message;
+      }
+
+      async function checkComplianceAndGenerateOverlays() {
+        // Check if we have extracted rooms (use edited values from extractedRooms array)
+        if (extractedRooms.length === 0) {
+          showExtractionStatus("❌ Please extract rooms first", "error");
+          return;
+        }
+
+        const complianceBtn = document.getElementById("compliance-btn");
+        complianceBtn.disabled = true;
+        complianceBtn.textContent = "Checking Compliance...";
+        showExtractionStatus("Checking compliance...", "loading");
+
+        try {
+          // Send edited rooms to compliance check endpoint (not re-extracting)
+          const res = await fetch("/api/blueprint/check-compliance/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(extractedRooms),
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(errorData.detail || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          
+          console.log("Compliance check response:", {
+            issuesCount: data.issues?.length || 0,
+            summary: data.summary
+          });
+          
+          // Store compliance issues
+          complianceIssues = data.issues || [];
+          
+          // Mark compliance as checked (before re-rendering so cells are shown)
+          if (!complianceChecked) {
+            complianceChecked = true;
+          }
+          
+          // Re-render table with updated compliance info (using current extractedRooms with edited values)
+          // Create a minimal extraction result object for displayExtractionResults
+          const displayData = {
+            rooms: extractedRooms,
+            confidence: {
+              overall: 1.0, // Not relevant for compliance check
+              name_confidence: 1.0,
+              type_confidence: 1.0,
+              area_confidence: 1.0
+            }
+          };
+          displayExtractionResults(displayData);
+          
+          // Show compliance column after table is rendered (if first check)
+          if (complianceChecked && document.querySelector('td.compliance-column-hidden')) {
+            showComplianceColumn();
+          }
+          
+          const summary = data.summary || {};
+          showExtractionStatus(
+            `✅ Compliance check complete. Found ${summary.total || 0} issue(s)`,
+            summary.total > 0 ? "warning" : "success"
+          );
+        } catch (e) {
+          console.error("Compliance check error:", e);
+          showExtractionStatus(`❌ Error: ${e.message}`, "error");
+        } finally {
+          complianceBtn.disabled = false;
+          complianceBtn.textContent = "Check Compliance";
+        }
+      }
+
+      function renderDynamicOverlays(overlaysData) {
+        console.log("renderDynamicOverlays called with:", overlaysData?.length || 0, "overlays");
+        console.log("Overlays data:", overlaysData);
+        
+        // Store overlays first (before clearing, in case we need them)
+        overlays = overlaysData || [];
+        
+        console.log("Stored overlays array:", overlays.length, overlays);
+        
+        if (overlays.length === 0) {
+          console.warn("No overlays to render - skipping");
+          return;
+        }
+        
+        // Clear existing overlay DOM elements (but keep the overlays array)
+        const container = document.getElementById("overlays-container");
+        if (container) container.innerHTML = "";
+        overlayElements.clear();
+        // Note: Don't clear complianceIssues here as they're needed
+        
+        // Use existing renderOverlays function
+        // Add a small delay to ensure image is ready
+        setTimeout(() => {
+          console.log("About to call renderOverlays, overlays count:", overlays.length);
+          renderOverlays();
+        }, 100);
+      }
+
+      function highlightNonCompliantRooms(issues) {
+        // Get unique room IDs with issues
+        const nonCompliantRoomIds = new Set(
+          issues
+            .filter(issue => issue.element_type === "room")
+            .map(issue => issue.element_id)
+        );
+        
+        // Add non-compliant class to overlay elements
+        nonCompliantRoomIds.forEach(roomId => {
+          const overlayElement = overlayElements.get(roomId);
+          if (overlayElement) {
+            overlayElement.classList.add("non-compliant");
+          }
+        });
+      }
+
+      // updateIssuesPanel() removed - compliance issues are now shown in the Extracted Rooms table
+      // (single panel approach per plan)
+
+      // ====================================================================
       // Event Listeners
       // ====================================================================
 
       document.addEventListener("DOMContentLoaded", () => {
-        // Load overlays on page load
-        loadOverlays();
+        // Overlay rendering disabled (deferred to future recommendations)
+        // loadOverlays();
         
-        // Fetch issues on page load
-        fetchIssues();
+        // Clear any existing overlays on page load
+        clearOverlays();
+        
+        // fetchIssues() removed - separate compliance issues panel removed per plan
+        // Compliance issues are now shown in the Extracted Rooms table
+
+        // Initialize blueprint extraction
+        initExtraction();
+        
+        // Add compliance button event listener
+        const complianceBtn = document.getElementById("compliance-btn");
+        complianceBtn.addEventListener("click", checkComplianceAndGenerateOverlays);
 
         // Chat form submission
         const form = document.getElementById("chat-form");

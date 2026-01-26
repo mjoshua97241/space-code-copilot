@@ -1,0 +1,239 @@
+{
+  "plan_name": "example_plan_02",
+  "plan_path": "/home/mj/workspace/space-code-copilot/backend/app/data/floor-plans/example_plan_02.pdf",
+  "ground_truth_csv": "/home/mj/workspace/space-code-copilot/backend/app/data/floor-plans/example_plan_02.csv",
+  "has_ground_truth": true,
+  "page_index": null,
+  "extraction_result": {
+    "rooms": [
+      {
+        "id": "R101",
+        "name": "Office / Bedroom",
+        "type": "bedroom",
+        "level": 1,
+        "area_m2": 15.4
+      },
+      {
+        "id": "R102",
+        "name": "Living room - Dining room",
+        "type": "living",
+        "level": 1,
+        "area_m2": 37.4
+      },
+      {
+        "id": "R103",
+        "name": "Kitchen",
+        "type": "kitchen",
+        "level": 1,
+        "area_m2": 16.0
+      }
+    ],
+    "confidence": {
+      "overall": 1.0,
+      "name_confidence": 1.0,
+      "type_confidence": 1.0,
+      "area_confidence": 1.0
+    },
+    "scale_used": 1.0,
+    "scale_source": "user_input",
+    "metadata": {
+      "model_used": "gpt-4o",
+      "provider": "openai",
+      "total_rooms_extracted": 3,
+      "raw_rooms_count": 5
+    }
+  },
+  "timestamp": "2026-01-16T18:50:30.519263",
+  "ground_truth": [
+    {
+      "id": "R101",
+      "name": "Office/Bedroom",
+      "type": "bedroom",
+      "level": 1,
+      "area_m2": 15.4
+    },
+    {
+      "id": "R102",
+      "name": "Living room - Dining room",
+      "type": "living",
+      "level": 1,
+      "area_m2": 15.4
+    },
+    {
+      "id": "R103",
+      "name": "Kitchen",
+      "type": "kitchen",
+      "level": 1,
+      "area_m2": 16.0
+    },
+    {
+      "id": "R104",
+      "name": "Hall",
+      "type": "other",
+      "level": 1,
+      "area_m2": 12.3
+    },
+    {
+      "id": "R105",
+      "name": "Bathroom",
+      "type": "bathroom",
+      "level": 1,
+      "area_m2": 7.4
+    },
+    {
+      "id": "R106",
+      "name": "Utility",
+      "type": "other",
+      "level": 1,
+      "area_m2": 6.0
+    },
+    {
+      "id": "R207",
+      "name": "Bedroom 1",
+      "type": "bedroom",
+      "level": 2,
+      "area_m2": 24.4
+    },
+    {
+      "id": "R208",
+      "name": "Closet",
+      "type": "other",
+      "level": 2,
+      "area_m2": 6.4
+    },
+    {
+      "id": "R209",
+      "name": "Bedroom 2",
+      "type": "bedroom",
+      "level": 2,
+      "area_m2": 17.0
+    },
+    {
+      "id": "R210",
+      "name": "Hall",
+      "type": "other",
+      "level": 2,
+      "area_m2": 16.9
+    },
+    {
+      "id": "R211",
+      "name": "Bedroom 3",
+      "type": "bedroom",
+      "level": 2,
+      "area_m2": 15.4
+    },
+    {
+      "id": "R212",
+      "name": "Bathroom 1",
+      "type": "bathroom",
+      "level": 2,
+      "area_m2": 15.4
+    }
+  ],
+  "comparison": {
+    "total_ground_truth": 12,
+    "total_extracted": 3,
+    "matched_count": 2,
+    "recall": 0.16666666666666666,
+    "precision": 0.6666666666666666,
+    "area_accuracy": 0.2857142857142857,
+    "avg_area_error_pct": 71.42857142857143,
+    "type_match_rate": 1.0,
+    "matched_pairs": [
+      {
+        "extracted": {
+          "id": "R102",
+          "name": "Living room - Dining room",
+          "type": "living",
+          "area_m2": 37.4
+        },
+        "ground_truth": {
+          "id": "R102",
+          "name": "Living room - Dining room",
+          "type": "living",
+          "area_m2": 15.4
+        },
+        "area_error_pct": 142.85714285714286
+      },
+      {
+        "extracted": {
+          "id": "R103",
+          "name": "Kitchen",
+          "type": "kitchen",
+          "area_m2": 16.0
+        },
+        "ground_truth": {
+          "id": "R103",
+          "name": "Kitchen",
+          "type": "kitchen",
+          "area_m2": 16.0
+        },
+        "area_error_pct": 0.0
+      }
+    ],
+    "unmatched_extracted": [
+      {
+        "id": "R101",
+        "name": "Office / Bedroom",
+        "type": "bedroom",
+        "area_m2": 15.4
+      }
+    ],
+    "unmatched_ground_truth": [
+      {
+        "id": "R101",
+        "name": "Office/Bedroom",
+        "type": "bedroom",
+        "area_m2": 15.4
+      },
+      {
+        "id": "R210",
+        "name": "Hall",
+        "type": "other",
+        "area_m2": 16.9
+      },
+      {
+        "id": "R105",
+        "name": "Bathroom",
+        "type": "bathroom",
+        "area_m2": 7.4
+      },
+      {
+        "id": "R106",
+        "name": "Utility",
+        "type": "other",
+        "area_m2": 6.0
+      },
+      {
+        "id": "R207",
+        "name": "Bedroom 1",
+        "type": "bedroom",
+        "area_m2": 24.4
+      },
+      {
+        "id": "R208",
+        "name": "Closet",
+        "type": "other",
+        "area_m2": 6.4
+      },
+      {
+        "id": "R209",
+        "name": "Bedroom 2",
+        "type": "bedroom",
+        "area_m2": 17.0
+      },
+      {
+        "id": "R211",
+        "name": "Bedroom 3",
+        "type": "bedroom",
+        "area_m2": 15.4
+      },
+      {
+        "id": "R212",
+        "name": "Bathroom 1",
+        "type": "bathroom",
+        "area_m2": 15.4
+      }
+    ]
+  }
+}

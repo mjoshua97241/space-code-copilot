@@ -9,13 +9,15 @@ Backend patterns:
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
   - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, and post-processing to fix LLM citations
+  - `app/api/blueprint.py` - Blueprint extraction endpoint (`POST /api/blueprint/extract`) - **Status**: ✅ **COMPLETE** - Accepts blueprint image upload (PNG/JPG/PDF), extracts room data using VLM, returns preview-only results, supports multi-page PDFs with optional page_index parameter
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ **COMPLETE** - Enhanced with page number extraction (PDF + document pages), section extraction, and metadata preservation
   - vector_store (embedding + Qdrant search) - **Status**: ✅ **BM25-only retrieval (default, validated)** - Evaluation shows BM25-only is best (composite score: 0.422), hybrid and dense-only available as options
   - compliance_checker (rules + design → issues)
   - rule_extractor (LLM-based rule extraction from PDFs; MVP core feature) - **Status**: ✅ **COMPLETE** - Integrated with project context filtering, uses BM25-only retrieval (default, validated best)
-- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, no changes needed
+  - blueprint_extractor (image → structured room data via VLM) - **Status**: ✅ **ALL PHASES COMPLETE** - Semantic understanding extraction from blueprint images, room-only (name, type, area), preview-only results, multi-page PDF support, tested on 3 curated plans with ground truth CSVs, VLM evaluation framework complete, Gemini 2.0 Flash selected as default model (composite score: 0.753)
+- LLM client abstraction in app/core/llm.py to swap OpenAI/Gemini/Claude. - **Status**: ✅ Complete, vision LLM support added (get_vision_llm() defaults to Gemini 2.0 Flash, also supports GPT-4o)
 
 AI patterns:
 
@@ -33,7 +35,21 @@ AI patterns:
   - summarizing issues
   - answering questions via RAG (handles multiple code documents)
   - extracting rules from PDFs (MVP core feature) - **COMPLETE** - automatically processes multiple code PDFs with project context filtering
+  - extracting structured data from blueprint images (VLM) - **IN PROGRESS** - semantic understanding of room labels, type classification, dimension association, structured JSON output
+- Use Vision LLM (VLM) for:
+  - blueprint image analysis (semantic understanding, not just OCR)
+  - room label reading and type classification
+  - dimension annotation association with rooms
+  - structured extraction (blueprint → Room models → compliance checking)
 - **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing
+
+## HF VLM Evaluation Pattern (Deferred)
+
+- **Evaluation entrypoints**:
+  - Local runner: `evaluation/vlm_evaluation.py`
+  - Colab-friendly runner: `evaluation/vlm_evaluation_colab.py`
+- **Constraint**: Current HF adapter (`evaluation/hf_vlm_wrapper.py`) relies on **Unsloth**, which requires a **CUDA-capable GPU**. On CPU-only machines, HF evaluation should be skipped with a clear message.
+- **Recommendation**: Run HF evaluation on **Google Colab (GPU runtime)** or any CUDA machine; keep local evaluation focused on GPT‑4o and Gemini.
 
 Frontend patterns:
 
@@ -49,6 +65,14 @@ Frontend patterns:
   - Highlight behavior: Clicking an issue in compliance list highlights matching overlay by `element_id`
   - CSS: Blue base state (rgba(13, 110, 253, 0.3)), red highlight state (#dc3545) with pulsing animation
   - Supports both room and door overlays (matched by element_id from issues)
+- **Dynamic Overlay System** (upcoming - `.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`):
+  - Overlays generated dynamically from OCR + text positioning (vs static JSON)
+  - Uses pytesseract/easyocr to extract text positions from blueprint images
+  - Matches VLM-extracted room names to OCR text positions using fuzzy matching (rapidfuzz)
+  - Infers room boundaries using image processing heuristics (OpenCV optional)
+  - Integrated with compliance checking on extracted rooms from blueprint extraction
+  - Non-compliant rooms automatically highlighted in red with pulsing animation
+  - Works alongside static overlay system (supports both JSON and API-generated overlays)
 - JavaScript (inline or minimal separate script):
   - On page load: `fetch('/api/issues/')` → render issues list, `fetch('/static/overlays.json')` → render overlays.
   - **Note**: API endpoints require trailing slashes (`/api/issues/`, `/api/chat/`) to match FastAPI router definitions (`@router.get("/")` with prefix).
@@ -140,8 +164,9 @@ PDFs require more sophisticated caching due to expensive operations:
 
 **Do use lessons for:**
 - `app/services/vector_store.py` - RAG/vector DB patterns (Qdrant setup, embedding pipelines)
-- `app/core/llm.py` - Multi-provider LLM abstraction (OpenAI/Gemini/Claude switching)
+- `app/core/llm.py` - Multi-provider LLM abstraction (OpenAI/Gemini/Claude switching), vision LLM support (GPT-4o, Gemini 1.5 Flash Vision)
 - `app/services/rule_extractor.py` - LLM-based extraction patterns (structured output, prompt engineering)
+- `app/services/blueprint_extractor.py` - VLM-based extraction patterns (semantic understanding, structured output from images)
 - `app/services/pdf_ingest.py` - PDF chunking patterns (if complex chunking strategies needed)
 - LangGraph agent orchestration (if we add agent workflows)
 
@@ -205,10 +230,25 @@ PDFs require more sophisticated caching due to expensive operations:
    - Evaluation notebook: `evaluation/rag_evaluation.py`
    - Results: BM25-only outperformed hybrid, dense-only, and parent-document
    - Saved to LangSmith dataset and local JSON
-2. **High**: LangSmith setup (automatic tracing, no code changes needed)
-3. **Medium**: Performance middleware (simple, useful for monitoring)
-4. **Low**: Metrics endpoint (optional, for presentation/monitoring)
-5. **Low**: Cache statistics (optional, for optimization insights)
+2. ✅ **Phase 4 Complete**: Curated Plan Testing - Quantitative evaluation completed
+   - **Test Script**: `backend/app/tests/test_curated_plans.py` - Handles multi-page PDFs, ground truth comparison, JSON export
+   - **Ground Truth CSVs**: `backend/app/data/floor-plans/example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv` (manually created)
+   - **Results Documentation**: `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` (297 lines, comprehensive analysis)
+   - **Results JSON**: `backend/app/tests/curated_plan_results/*.json` (per-plan results + summary.json)
+   - **Metrics Evaluated**: Recall (45.56%), Precision (55.79%), Area accuracy (65.38%), Type match rate (100%)
+   - **Key Findings**: Type classification excellent, recall needs improvement (room splitting, missing small rooms), area accuracy good for matched rooms
+3. ✅ **COMPLETE**: VLM Extraction Metrics Framework - Similar to RAGAS pattern (Phase 6)
+   - Evaluation framework: `evaluation/vlm_extraction_metrics.py` (8 custom metrics with fuzzy matching)
+   - Evaluation script: `evaluation/vlm_evaluation.py` (following RAGAS pattern, model comparison)
+   - Golden dataset: `evaluation/data/vlm_golden_dataset.json` (automatically matches floor plans to CSV ground truth)
+   - Metrics: area_accuracy, recall, precision, type_match_rate, name_match_rate, semantic_understanding_score, confidence_calibration, composite_score
+   - **Model Selection**: Gemini 2.0 Flash selected as best model (composite score: 0.753 vs GPT-4o's 0.743)
+   - **Results**: Better recall (69.66% vs 53.85%), faster latency (7.61s vs 13.53s), lower cost, comparable accuracy
+   - **Defaults Updated**: All code updated to use Gemini 2.0 Flash as default (`app/core/llm.py`, `app/services/blueprint_extractor.py`)
+3. **High**: LangSmith setup (automatic tracing, no code changes needed)
+4. **Medium**: Performance middleware (simple, useful for monitoring)
+5. **Low**: Metrics endpoint (optional, for presentation/monitoring)
+6. **Low**: Cache statistics (optional, for optimization insights)
 
 ### RAG Technique Validation (COMPLETE)
 
@@ -279,6 +319,49 @@ PDFs require more sophisticated caching due to expensive operations:
 - ID conflict resolution (renames conflicting rule IDs to avoid duplicates)
 - Rule type validation (fixes invalid rule_type assignments)
 - Graceful error handling with fallback to seeded rules
+
+## Chat Patterns
+
+### Current Implementation: Stateless Q&A
+
+**Pattern**: Each chat request is processed independently without conversation context.
+
+**Implementation**:
+- `POST /api/chat/` endpoint accepts single `query` string
+- No conversation history or session management
+- Each request retrieves context from vector store and generates answer independently
+- Frontend displays messages visually but doesn't maintain conversation state
+
+**Limitations**:
+- No follow-up question context (e.g., "What about bathrooms?" after asking about bedrooms)
+- No access to extracted blueprint data in chat context
+- Each question must be self-contained
+
+### Future Pattern: Conversational Chat with Blueprint Context
+
+**Proposed Pattern**: Maintain conversation history and integrate blueprint extraction data.
+
+**Key Components**:
+1. **Conversation Management**:
+   - `conversation_id` or `session_id` to track conversations
+   - Message history storage (in-memory for MVP, Redis/database for production)
+   - Previous messages included in LLM prompt
+
+2. **Blueprint Context Integration**:
+   - Extracted room data (from blueprint extraction) passed to chat context
+   - LLM can reference specific rooms and areas from user's uploaded blueprint
+   - Enables questions like "Is bedroom 1 compliant?" with context
+
+3. **Seamless Conversation Flow**:
+   - Follow-up questions maintain context from previous messages
+   - Context-aware responses about user's specific blueprint
+   - Integration between blueprint extraction and Q&A chat
+
+**Implementation Approach**:
+- Update `ChatRequest` to include `conversation_id`, `message_history`, and `blueprint_context`
+- Store conversation state per session
+- Include conversation history and blueprint context in LLM prompt
+- Frontend maintains conversation ID and passes extracted rooms to chat
 
 ## Future Enhancements
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal, Optional
+from typing import Literal, Optional, List, Dict, Any
 
 # ==================================================================
 # Room Model
@@ -165,3 +165,106 @@ class ProjectContext(BaseModel):
         default=False,
         description="Whether building requires fire-rated elements"
     )
+    
+# ==================================================================
+# Overlay Model
+# ==================================================================
+
+class Overlay(BaseModel):
+    """
+    Overlay definition for room/door visualization on blueprint image.
+    
+    Use for dynamic overlays generated from OCR + text positioning.
+    Contains pixel coordinates for rendering overlays on the blueprint image.
+    """
+    id: str = Field(..., description="Element ID (matches Room.id or Door.id)")
+    type: Literal["room", "door"] = Field(..., description="Element type")
+    x: int = Field(..., ge=0, description="X coordinate in pixels")
+    y: int = Field(..., ge=0, description="Y coordinate in pixels")
+    width: int = Field(..., gt=0, description="Width in pixels")
+    height: int = Field(..., gt=0, description="Height in pixels")
+    room_name: Optional[str] = Field(None, description="Room name (for rooms)")
+    room_type: Optional[str] = Field(None, description="Room type (for rooms)")
+    
+    class Config:
+        frozen = False
+
+# ==================================================================
+# Blueprint Extraction Models (VLM)
+# ==================================================================
+
+class ExtractionConfidence(BaseModel):
+    """
+    Confidence scores for VLM blueprint extraction quality.
+    
+    Used to indicate reliability of extracted data.
+    All scores are 0.0-1.0 (0% to 100% confidence).
+    """
+    overall: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Overall extraction confidence"
+    )
+    name_confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Room name extraction confidence"
+    )
+    type_confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Room type classification confidence"
+    )
+    area_confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Area calculation confidence"
+    )
+    
+    class Config:
+        frozen = False
+
+class BlueprintExtractionResult(BaseModel):
+    """
+    Result of VLM blueprint extraction.
+    
+    Contains extracted rooms, confidence scores, and metadata.
+    Used as response from /api/blueprint/extract endpoint.
+    
+    Note: This is preview-only. CSV pipeline remains ground truth.
+    """
+    rooms: List[Room] = Field(
+        ...,
+        description="Extracted rooms from blueprint"
+    )
+    confidence: ExtractionConfidence = Field(
+        ...,
+        description="Extraction confidence score"
+    )
+    overlays: List[Overlay] = Field(
+        default_factory=list,
+        description="Generated overlays with pixel coordinates for visualization"
+    )
+    scale_used: float = Field(
+        ...,
+        description="Scale factor applied (e.g., 1.0 for 1:100)"
+    )
+    scale_source: Literal["default", "user_input", "auto_detected"] = Field(
+        ...,
+        description="Source of scale value"
+    )
+    extraction_metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional extraction metadata (model, provider, etc.)"
+    )
+    note: str = Field(
+        default="Extraction is approximate. CSV pipeline remains ground truth.",
+        description="User-facing note about extraction limitations"
+    )
+    
+    class Config:
+        frozen = False

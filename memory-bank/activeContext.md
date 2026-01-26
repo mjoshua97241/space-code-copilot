@@ -203,31 +203,244 @@ Recent changes:
    - README.md updated with deployment section
    - ✅ **Railway deployment fixes**: PORT variable expansion, API endpoint trailing slashes
    - ✅ **Deployed to Railway.app** - Public URL working, all endpoints functional
-   - **Next**: Presentation prep
+6. ⏸️ **Presentation Preparation ON HOLD**
+   - Presentation preparation plan created (`.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`)
+   - Deferred to focus on new feature development
+7. ✅ **Multimodal Blueprint Extraction - ALL PHASES COMPLETE**
+   - ✅ **Feature Complete**: Extract structured room data from blueprint images using vision LLM
+   - Plan: `.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md` - **ALL TODOS COMPLETE**
+   - **Scoped approach**: Room-only extraction (name, type, area) from curated plans, preview-only results
+   - **Key differentiator**: Semantic understanding and structured extraction (not just OCR)
+   - **Features**: Vision LLM support (GPT-4o, Gemini 2.0 Flash - **Gemini 2.0 Flash selected as default**), semantic room classification, dimension-aware inference, structured JSON output
+   - **VLM capabilities**: Reads room labels, classifies types, associates dimensions with rooms, applies scale
+   - **Integration**: Extracted data feeds into existing compliance checking pipeline
+   - **Evaluation Framework**: Complete VLM metrics framework (similar to RAGAS pattern)
+   - **Status**: All 6 phases complete ✅
+     - ✅ Phase 1: Vision LLM support (`app/core/llm.py` - `get_vision_llm()` defaults to Gemini 2.0 Flash), blueprint extractor (`app/services/blueprint_extractor.py` defaults to Gemini 2.0 Flash), extraction models (`BlueprintExtractionResult`, `ExtractionConfidence`), unit tests (13/13 passing)
+     - ✅ Phase 2: API endpoint (`POST /api/blueprint/extract` - preview-only, no CSV save, multi-page PDF support)
+     - ✅ Phase 3: Frontend integration (file upload UI, drag-and-drop, preview table, JavaScript handling)
+     - ✅ Phase 4: Validation & curated plan testing - **COMPLETE**
+       - ✅ Enhanced validation logic (required fields, numeric ranges, type validation, confidence scoring)
+       - ✅ Tested on 3 curated blueprint images with ground truth CSVs
+       - ✅ Quantitative evaluation completed with metrics (recall, precision, area accuracy, type match rate)
+       - ✅ Results documented in `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md`
+       - ✅ Ground truth CSVs created: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv`
+       - ✅ Test script: `backend/app/tests/test_curated_plans.py` (handles multi-page PDFs, ground truth comparison)
+       - ✅ Results JSON files: `curated_plan_results/*.json` (per-plan results + summary)
+     - ✅ Phase 5: Dependencies & configuration - **COMPLETE** - Vision LLM dependencies documented, .env.example updated, README.md updated
+     - ✅ Phase 6: VLM Metrics & Evaluation Framework - **COMPLETE**
+       - ✅ Custom metrics framework (`evaluation/vlm_extraction_metrics.py` - 8 metrics: area_accuracy, recall, precision, type_match_rate, name_match_rate, semantic_understanding_score, confidence_calibration, composite_score)
+       - ✅ Golden dataset creation (`evaluation/vlm_evaluation.py` - matches PDFs to CSVs, saves to `evaluation/data/vlm_golden_dataset.json`)
+       - ✅ Evaluation script (`evaluation/vlm_evaluation.py` - follows RAGAS pattern, evaluates multiple models, compares results, saves to `evaluation/results/vlm_evaluation_results.json`)
+       - ✅ **Model Comparison**: Evaluated GPT-4o vs Gemini 2.0 Flash
+         - **Best Model: Gemini 2.0 Flash** (composite score: 0.753 vs GPT-4o's 0.743)
+         - **Metrics**: Recall 69.66% vs 53.85%, Precision 70.24% vs 76.07%, Area Accuracy 66.59% vs 68.58%, Type Match 94.44% vs 100%, Latency 7.61s vs 13.53s
+         - **Decision**: Updated all defaults to use Gemini 2.0 Flash
+   - **Final Model Selection**: Gemini 2.0 Flash (better recall, faster, lower cost, comparable accuracy)
 
 Todo next:
 
-- ✅ **RAG Technique Validation COMPLETE**:
-  - Created evaluation notebook: `evaluation/rag_evaluation.py`
-  - Generated golden dataset using RAGAS TestsetGenerator (12 questions from building code PDFs)
-  - Evaluated 4 techniques: Dense-only, BM25-only, Hybrid (BM25 + Dense), Parent-Document Retrieval
-  - Used composite scoring (50% relevancy, 20% precision, 20% recall, 10% latency)
-  - **Result: BM25-only is best** (composite score: 0.422)
-  - Results saved to LangSmith dataset and local JSON
-  - Evaluation can be reloaded from LangSmith or local cache
-- ✅ **Frontend HTML template COMPLETE & TESTED** (`app/templates/index.html`):
-  - Plan viewer displaying `plan.png` with header and image wrapper
-  - Issues list fetching `/api/issues` with click handlers, severity badges, code references
-  - Chat panel posting to `/api/chat` with message rendering, citations display, loading states
-  - Modern CSS styling with responsive design, smooth animations, and professional UI
-  - JavaScript for API integration, error handling, and user interactions
-  - **Testing completed** - No issues found in console or terminal
-- ✅ **LLM Rule Extraction COMPLETE** (`app/services/rule_extractor.py`):
-  - Extracts rules from PDFs using LLM with structured output (JSON parsing)
-  - Uses BM25-only retrieval (validated best technique, composite score: 0.422)
-  - Project context filtering via `ProjectContext` model
-  - Filters out commercial, multi-story, fire exit, and accessibility rules when not applicable
-  - ID conflict resolution (renames conflicting rule IDs)
-  - Rule type validation (fixes invalid rule_type assignments)
-  - Integrated into `get_all_rules()` in `rules_seed.py`
-  - **Results**: 10 total rules (4 seeded + 6 extracted), 3 compliance issues (down from 28)
+- ⏸️ **Presentation Preparation ON HOLD**:
+  - Presentation preparation plan exists (`.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`)
+  - Deferred to focus on multimodal blueprint extraction feature
+  - Will resume after blueprint extraction implementation
+
+- ✅ **Multimodal Blueprint Extraction - ALL PHASES COMPLETE** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
+  - **Phase 1**: Core extraction service (1.5-2 days) - ✅ **COMPLETE**
+    - ✅ Vision LLM support (`app/core/llm.py` - `get_vision_llm()` defaults to Gemini 2.0 Flash)
+    - ✅ Blueprint extractor (`app/services/blueprint_extractor.py` - defaults to Gemini 2.0 Flash, semantic room extraction, multi-page PDF support)
+    - ✅ Extraction models (`BlueprintExtractionResult`, `ExtractionConfidence` in `domain.py`)
+    - ✅ Unit tests (`app/tests/test_blueprint_extractor.py` - 13/13 passing)
+  - **Phase 2**: API endpoint (0.5 day) - ✅ **COMPLETE** - POST /api/blueprint/extract (preview-only, no CSV save, multi-page PDF support)
+  - **Phase 3**: Frontend integration (1 day) - ✅ **COMPLETE** - File upload UI, drag-and-drop, optional scale input, preview table, JavaScript handling
+  - **Phase 4**: Validation & curated plan testing (1 day) - ✅ **COMPLETE**
+    - ✅ Enhanced validation logic (required fields, numeric ranges, type validation, confidence scoring with heuristics)
+    - ✅ Tested on 3 curated blueprint images with ground truth CSVs
+    - ✅ Quantitative evaluation: Average recall 45.56%, precision 55.79%, area accuracy 65.38%, type match rate 100%
+    - ✅ Results documented: `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` (297 lines, comprehensive analysis)
+    - ✅ Ground truth CSVs created: `example_plan_01a.csv`, `example_plan_01b.csv`, `example_plan_02.csv` (manually created)
+    - ✅ Test script: `backend/app/tests/test_curated_plans.py` (handles multi-page PDFs, ground truth comparison, JSON results export)
+    - ✅ Results JSON files: `curated_plan_results/*.json` (per-plan results + summary.json)
+  - **Phase 5**: Dependencies & configuration (0.5 day) - ✅ **COMPLETE** - Vision LLM dependencies documented, .env.example updated, README.md updated
+  - **Phase 6**: VLM Metrics & Evaluation Framework (1-1.5 days) - ✅ **COMPLETE**
+    - ✅ Custom metrics framework (`evaluation/vlm_extraction_metrics.py` - 8 metrics with fuzzy matching)
+    - ✅ Golden dataset creation (`evaluation/vlm_evaluation.py` - matches PDFs to CSVs automatically)
+    - ✅ Evaluation script (`evaluation/vlm_evaluation.py` - follows RAGAS pattern, model comparison)
+    - ✅ **Model Selection**: Gemini 2.0 Flash selected as best model (composite score: 0.753 vs GPT-4o's 0.743)
+    - ✅ **Defaults Updated**: All code updated to use Gemini 2.0 Flash as default
+  - **Scoped approach**: Room-only extraction (name, type, approx_area_m2), curated plans, preview-only, simple scale assumption (1:100 default)
+  - **Key focus**: Semantic understanding over geometry - VLM reads labels, classifies types, associates dimensions, produces structured JSON
+  - **Final Model**: Gemini 2.0 Flash (better recall 69.66% vs 53.85%, faster 7.61s vs 13.53s, lower cost, comparable accuracy)
+  - **Timeline**: All 6 phases complete (~5.5-7 days total)
+
+- ✅ **Blueprint Extraction Testing & Dynamic Overlays** (`.cursor/plans/blueprint_extraction_testing_and_dynamic_overlays_ac96230f.plan.md`):
+  - **Status**: ✅ Implementation complete (all plan todos marked completed; merge/branch steps were user-cancelled)
+  - **Backend additions/changes**:
+    - Added OCR deps in `backend/pyproject.toml`: `python-multipart`, `pytesseract`, `opencv-python` (OpenCV optional)
+    - Added `Overlay` model and `BlueprintExtractionResult.overlays` in `app/models/domain.py`
+    - Added `app/services/overlay_generator.py`:
+      - OCR text positioning (`pytesseract.image_to_data`) with preprocessing + multiple PSM configs
+      - Fuzzy matching via `rapidfuzz`
+      - Overlay generation now highlights **room label text** (not full-room bounding boxes) for stability
+      - Tesseract tessdata discovery attempts set `TESSDATA_PREFIX` when `eng.traineddata` is found
+    - Added `POST /api/blueprint/extract-and-check/` in `app/api/blueprint.py`:
+      - Extract rooms (VLM) → generate overlays (OCR) → run compliance → return extraction + issues + summary
+  - **Frontend changes**:
+    - `app/templates/index.html`:
+      - Plan viewer now displays the uploaded blueprint (images via FileReader; PDFs via PDF.js)
+      - Added “Check Compliance & Generate Overlays” button
+      - Renders API-generated overlays and highlights non-compliant rooms
+  - **Testing**:
+    - Added/updated `app/tests/test_overlay_generator.py` (26 tests passing)
+    - Integration path validated end-to-end via UI with sample PDFs
+  - **Issues encountered (and resolution)**:
+    - OCR initially returned 0 overlays due to missing Tesseract language data (`eng.traineddata`) / `TESSDATA_PREFIX`
+      - Fix: install language pack (e.g., `tesseract-ocr-eng`) and/or point `TESSDATA_PREFIX` to tessdata dir
+    - Whole-room bbox inference produced misaligned overlays → switched to **label-only overlays**
+  - **VLM Label Overlays Implementation** (`.cursor/plans/vlm_label_overlays_7c388fc1.plan.md`):
+    - **Status**: ✅ Backend complete, frontend rendering deferred to future
+    - **Completed**:
+      - ✅ Extended VLM prompt to request `label_bbox` (x, y, width, height) in pixel coordinates
+      - ✅ Parsed and validated `label_bbox` from VLM response, created `Overlay` objects
+      - ✅ Updated `POST /api/blueprint/extract-and-check/` to use VLM overlays by default (OCR as optional fallback)
+      - ✅ Added comprehensive unit tests (11 new tests, all passing)
+      - ✅ VLM overlays are now included in `BlueprintExtractionResult.overlays` automatically
+    - **Deferred to future**:
+      - Frontend rendering of VLM overlays in plan viewer (overlays are generated but not yet displayed)
+      - Integration with existing overlay rendering system in `index.html`
+  - **Known limitations (still open)**:
+    - Some overlays are missing (OCR misses labels or matching fails)
+    - Some overlays are wrong (false-positive match to unrelated OCR text)
+    - VLM overlays may also have accuracy issues (bbox coordinates may not perfectly align with label text)
+    - Next iteration should prioritize: OCR recall improvements, match gating, and frontend rendering integration
+- ✅ **UI Improvements for Blueprint Extraction - COMPLETE** (`.cursor/plans/ui_improvements_for_blueprint_extraction_e4cee6b1.plan.md`):
+  - **Status**: ✅ All 7 todos completed
+  - **Completed improvements**:
+    - ✅ **Empty Plan Viewer**: Replaced default `plan.png` with SVG placeholder showing "Upload a blueprint file to view the floor plan" until file is uploaded
+    - ✅ **Editable Area Column**: Area values are now editable input fields; user edits are tracked in `extractedRooms` array and sent to compliance check endpoint
+    - ✅ **New Compliance Endpoint**: Created `POST /api/blueprint/check-compliance/` that accepts `List[Room]` and returns issues + summary (allows re-checking with edited values)
+    - ✅ **Conditional Compliance Column**: Compliance column is hidden initially (`compliance-column-hidden` class) and shown after first compliance check (`complianceChecked` flag)
+    - ✅ **Hide Type/Level Columns**: Removed Type and Level columns from table header and body (data still available in room objects for compliance logic)
+    - ✅ **Fix Tooltip Z-Index**: Fixed tooltip to appear above table header using:
+      - `overflow: visible !important` on extraction-results, table, thead, tbody, and td elements
+      - Higher z-index (99999) for tooltip `::after` pseudo-element
+      - Proper stacking context setup
+    - ✅ **Tooltip Width**: Increased tooltip max-width from 300px to 500px with explicit width for better readability
+  - **Backend changes**:
+    - `app/api/blueprint.py`: Added `POST /api/blueprint/check-compliance/` endpoint (lines 190-256)
+      - Accepts `rooms: List[Room]` in JSON body
+      - Calls `check_compliance()` and `get_compliance_summary()`
+      - Returns `{"issues": List[Issue], "summary": dict}`
+  - **Frontend changes**:
+    - `app/templates/index.html`:
+      - Empty plan viewer: SVG placeholder instead of default image (line 110)
+      - Editable area inputs: `<input type="number">` with `blur` and `keypress` event listeners (lines 880-889)
+      - Area tracking: `updateRoomArea(roomId, newArea)` function to update `extractedRooms` array (lines 925-940)
+      - Compliance column visibility: `showComplianceColumn()` and `hideComplianceColumn()` functions (lines 1008-1037)
+      - Removed Type/Level columns from table header (lines 193, 196) and body (lines 929, 941)
+      - Tooltip CSS: Fixed z-index and overflow issues (lines 125-175)
+      - Per-room compliance check: Added checkmark button for individual room compliance checking (lines 907-917, 991-1088)
+      - Updated `checkComplianceAndGenerateOverlays()` to send edited room data to new endpoint (lines 1117-1176)
+  - **User workflow**:
+    1. User uploads blueprint → Plan viewer shows uploaded file
+    2. User clicks "Extract Rooms" → Table displays with editable area column
+    3. User edits area values → Changes tracked in `extractedRooms` array
+    4. User clicks "Check Compliance" → Sends edited rooms to backend, compliance column appears
+    5. User can click per-room check button (✓) to check individual rooms
+    6. Tooltips show compliance issues on hover (wider, above table header)
+  - **Timeline**: All improvements completed (~3-4 hours total)
+- ✅ **UI Layout Restructure - COMPLETE**:
+  - **Status**: ✅ Complete - Blueprint Extraction moved to right panel with tab toggle
+  - **Changes**:
+    - ✅ **Moved Blueprint Extraction to Right Panel**: Extracted the Blueprint Extraction panel from the left panel and moved it to the right panel
+    - ✅ **Added Tab Toggle System**: Created tab interface in right panel with two tabs:
+      - "💬 Q&A Chat" tab (default, active)
+      - "🔍 Blueprint Extraction" tab
+    - ✅ **Fixed Tab Visibility**: Only one tab content is visible at a time, taking full height of right panel
+    - ✅ **Fixed Scrolling**: Resolved scrolling issue in Blueprint Extraction tab by:
+      - Removing conflicting `overflow: visible !important` from `.extraction-content`
+      - Adding `overflow-y: auto !important` to `#content-extraction .extraction-content`
+      - Adding `min-height: 0` to enable proper flex scrolling
+  - **Layout Structure**:
+    - **Left Panel**: Now contains only the Floor Plan viewer (plan image with overlays)
+    - **Right Panel**: Contains tabbed interface with:
+      - Tab header with toggle buttons
+      - Chat view (when Chat tab is active)
+      - Extraction view (when Extraction tab is active)
+  - **Frontend changes**:
+    - `app/templates/index.html`:
+      - Removed extraction panel from left panel (lines 197-237 removed)
+      - Added tab system to right panel (lines 259-269: tab buttons, lines 271-303: chat content, lines 305-347: extraction content)
+      - Added `switchTab(tabName)` function (lines 817-850) to handle tab switching
+      - Added CSS for tab system (lines 179-245: tab buttons, tab content, extraction panel in tabs)
+    - `app/static/styles.css`:
+      - Updated `.right-panel` with `overflow: hidden` and `min-height: 0` (lines 516-521)
+      - Added `#content-extraction .extraction-panel` styles (lines 144-151)
+      - Added `#content-extraction .extraction-content` scrolling styles (lines 153-157)
+      - Added `#content-extraction .extraction-header` flex-shrink (lines 159-161)
+  - **User Experience**:
+    - Left panel is now dedicated to floor plan viewing
+    - Right panel provides easy switching between Q&A Chat and Blueprint Extraction
+    - Each tab takes full height when active
+    - Scrolling works properly in both tabs
+  - **Timeline**: Completed (~1-2 hours total)
+
+## Hugging Face VLM Evaluation (DEFERRED)
+
+- **Status**: ⏸️ Deferred for now (no CUDA GPU available in local environment).
+- **Why**: Current HF adapter uses **Unsloth** (`evaluation/hf_vlm_wrapper.py`), which requires a **CUDA-capable GPU** and fails on CPU-only machines.
+- **What we have**:
+  - `evaluation/hf_vlm_wrapper.py` + `evaluation/vlm_evaluation.py` code is in place.
+  - `evaluation/INSTALL_HF_DEPS.md` documents CPU/GPU installation options, but **evaluation still requires GPU** due to Unsloth.
+  - Added `evaluation/vlm_evaluation_colab.py` as a **Colab-friendly runner** for future GPU-based evaluation.
+- **Latest run**:
+  - GPT‑4o + Gemini evaluation runs locally; HF is skipped with a clear “CUDA required” message.
+
+### Colab attempt (dependency issues)
+
+- **Status**: Tried running the new Colab runner, but hit **dependency friction** in Colab.
+- **Known issues to watch**:
+  - **`transformers` vs `huggingface-hub` mismatch**: some installs pull `huggingface-hub>=1.0` which can break older/newer `transformers` expectations; pin `huggingface-hub>=0.34,<1.0` if needed.
+  - **LangChain version conflicts in Colab** (observed):
+    - `langchain-google-genai 4.2.0` requires `langchain-core>=1.2.5,<2.0.0`
+    - `langgraph-prebuilt 1.0.6` requires `langchain-core>=1.0.0`
+    - But this repo is on the **LangChain 0.3.x** line, where:
+      - `langchain 0.3.27` requires `langchain-core>=0.3.72,<1.0.0`
+      - `langchain-openai 0.3.35` requires `langchain-core>=0.3.78,<1.0.0`
+    - Result: upgrading `langchain-core` to satisfy `langchain-google-genai` breaks `langchain`/`langchain-openai`, and keeping `langchain-core 0.3.x` breaks `langchain-google-genai 4.2.0`/`langgraph-prebuilt`.
+    - **Implication**: In Colab, we must either (a) pin `langchain-google-genai`/`langgraph*` to versions compatible with LangChain 0.3.x, or (b) upgrade the whole LangChain stack to 1.x+ (larger change).
+  - **CUDA wheel selection**: `torch` must match the Colab runtime CUDA version (try `cu121` first, then `cu118` if needed).
+  - **Unsloth GPU requirement/import order**: Unsloth requires CUDA and is happiest when imported before `transformers`.
+- **Next step (future)**: Re-run HF evaluation in Colab with GPU enabled and pinned HF deps (see `evaluation/vlm_evaluation_colab.py` docstring + `evaluation/INSTALL_HF_DEPS.md`).
+
+## Next Task: Railway Deployment Prep + Testing
+
+- **Goal**: Prepare and validate a clean deployment on **Railway**.
+- **Scope**:
+  - Confirm required env vars are documented and set in Railway (OpenAI/Gemini keys as needed, optional Qdrant).
+  - Verify start command / PORT binding works reliably (no redirect/mixed-content regressions).
+  - Smoke test key routes: `GET /`, `GET /health`, `POST /api/chat/`, `POST /api/blueprint/extract/` (and other active endpoints).
+  - Confirm static assets + template render correctly in prod.
+
+## Future Improvements
+
+### Conversational Chat with Blueprint Context
+
+- **Current State**: Chat is **stateless Q&A only** - each query is processed independently without conversation context.
+- **Future Enhancement**: Add conversational chat capabilities with access to extracted room areas from uploaded blueprints.
+- **Key Features**:
+  - **Conversation History**: Maintain message history per session/conversation ID
+  - **Blueprint Context Integration**: Chat should have access to extracted room data from uploaded blueprints
+  - **Seamless Conversations**: Enable follow-up questions like "What about bathrooms?" after asking "What is the minimum bedroom area?"
+  - **Context-Aware Answers**: LLM can reference specific rooms and areas from the user's uploaded blueprint
+- **Implementation Considerations**:
+  - Add `conversation_id` or `session_id` to track conversations
+  - Store message history (in-memory, Redis, or database)
+  - Include previous messages in LLM prompt
+  - Pass extracted room data (from blueprint extraction) to chat context
+  - Update `ChatRequest` to optionally include `conversation_id` and `message_history`
+  - Frontend should maintain conversation state and send conversation ID with each message
+- **Benefits**:
+  - More natural conversation flow
+  - Context-aware responses about user's specific blueprint
+  - Better user experience for iterative compliance checking discussions
