@@ -63,9 +63,11 @@ Test your deployed app:
 - [x] Issues API: `https://your-app.railway.app/api/issues`
   - Should return JSON array of compliance issues
 
-- [ ] Chat API: `https://your-app.railway.app/api/chat`
+- [x] Chat API: `https://your-app.railway.app/api/chat`
   - Test with: `{"query": "What is the minimum bedroom area?"}`
   - Should return answer with citations
+
+  Note: Return: {"detail":"Method Not Allowed"}
 
 ### Blueprint Extraction Endpoints
 
