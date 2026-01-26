@@ -87,7 +87,7 @@ Test your deployed app:
 
 ### Frontend UI
 
-- [ ] Frontend: `https://your-app.railway.app/`
+- [x] Frontend: `https://your-app.railway.app/`
   - Should load the UI with plan viewer (left), issues list (bottom), and right panel with tabs
 
 - [ ] **Q&A Chat tab** (default):
