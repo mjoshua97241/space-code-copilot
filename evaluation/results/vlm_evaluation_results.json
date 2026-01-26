@@ -1,0 +1,131 @@
+[
+  {
+    "model_name": "gpt-4o",
+    "metrics_results": {
+      "area_accuracy": 0.8183232767993043,
+      "recall": 0.5416666666666666,
+      "precision": 1.0,
+      "type_match_rate": 0.8888888888888888,
+      "name_match_rate": 0.5416666666666666,
+      "semantic_understanding_score": 0.9651666666666665,
+      "confidence_calibration": 0.8272197080887149,
+      "avg_latency": 23.427457729975384,
+      "composite_score": 0.8112084712709285
+    },
+    "per_image_metrics": [
+      {
+        "plan_name": "example_plan_01a",
+        "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01a.pdf",
+        "error": "No valid rooms extracted after validation",
+        "extracted_count": 0,
+        "ground_truth_count": 13
+      },
+      {
+        "area_accuracy": 0.7953767123287672,
+        "recall": 0.3333333333333333,
+        "precision": 1.0,
+        "type_match_rate": 1.0,
+        "name_match_rate": 0.3333333333333333,
+        "semantic_understanding_score": 0.9969999999999999,
+        "confidence_calibration": 0.8121775114155252,
+        "latency_score": 0.03250448226928715,
+        "latency_seconds": 29.187387943267822,
+        "composite_score": 0.7724863869863015,
+        "plan_name": "example_plan_01b",
+        "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01b.pdf",
+        "extracted_count": 4,
+        "ground_truth_count": 12
+      },
+      {
+        "area_accuracy": 0.8412698412698413,
+        "recall": 0.75,
+        "precision": 1.0,
+        "type_match_rate": 0.7777777777777778,
+        "name_match_rate": 0.75,
+        "semantic_understanding_score": 0.9333333333333332,
+        "confidence_calibration": 0.8422619047619048,
+        "latency_score": 0.3557319355010986,
+        "latency_seconds": 21.106701612472534,
+        "composite_score": 0.8499305555555555,
+        "plan_name": "example_plan_02",
+        "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_02.pdf",
+        "extracted_count": 9,
+        "ground_truth_count": 12
+      }
+    ],
+    "avg_latency": 23.427457729975384,
+    "evaluated_at": "2026-01-25T21:25:32.810782",
+    "golden_dataset_size": 3,
+    "successful_extractions": 2,
+    "failed_extractions": 1
+  },
+  {
+    "model_name": "gemini-2.0-flash",
+    "metrics_results": {
+      "area_accuracy": 0.6795368475306529,
+      "recall": 0.7564102564102564,
+      "precision": 0.7897435897435897,
+      "type_match_rate": 0.9166666666666666,
+      "name_match_rate": 0.7564102564102564,
+      "semantic_understanding_score": 0.9316982905982907,
+      "confidence_calibration": 0.8105722460706973,
+      "avg_latency": 11.823192914326986,
+      "composite_score": 0.7881339352973092
+    },
+    "per_image_metrics": [
+      {
+        "area_accuracy": 0.4761907150246074,
+        "recall": 0.7692307692307693,
+        "precision": 0.7692307692307693,
+        "type_match_rate": 1.0,
+        "name_match_rate": 0.7692307692307693,
+        "semantic_understanding_score": 0.9544615384615386,
+        "confidence_calibration": 0.7782784479869209,
+        "latency_score": 0.6413538837432862,
+        "latency_seconds": 13.966152906417847,
+        "composite_score": 0.7495616011554979,
+        "plan_name": "example_plan_01a",
+        "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01a.pdf",
+        "extracted_count": 13,
+        "ground_truth_count": 13
+      },
+      {
+        "area_accuracy": 0.7524733637747336,
+        "recall": 0.5,
+        "precision": 0.6,
+        "type_match_rate": 1.0,
+        "name_match_rate": 0.5,
+        "semantic_understanding_score": 0.9408000000000001,
+        "confidence_calibration": 0.7451183409436835,
+        "latency_score": 0.7517147541046143,
+        "latency_seconds": 11.207131147384644,
+        "composite_score": 0.7144542579908676,
+        "plan_name": "example_plan_01b",
+        "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_01b.pdf",
+        "extracted_count": 10,
+        "ground_truth_count": 12
+      },
+      {
+        "area_accuracy": 0.8099464637926176,
+        "recall": 1.0,
+        "precision": 1.0,
+        "type_match_rate": 0.75,
+        "name_match_rate": 1.0,
+        "semantic_understanding_score": 0.8998333333333335,
+        "confidence_calibration": 0.9083199492814877,
+        "latency_score": 0.7881482124328614,
+        "latency_seconds": 10.296294689178467,
+        "composite_score": 0.9003859467455622,
+        "plan_name": "example_plan_02",
+        "image_path": "/home/mj/workspace/space-code-copilot/backend/../backend/app/data/floor-plans/example_plan_02.pdf",
+        "extracted_count": 12,
+        "ground_truth_count": 12
+      }
+    ],
+    "avg_latency": 11.823192914326986,
+    "evaluated_at": "2026-01-25T21:26:10.314567",
+    "golden_dataset_size": 3,
+    "successful_extractions": 3,
+    "failed_extractions": 0
+  }
+]
