@@ -13,10 +13,10 @@ todos:
     status: completed
   - id: update-prompt-template
     content: Update prompt template to include conversation history and blueprint context in system/user messages
-    status: pending
+    status: completed
   - id: frontend-conversation-state
     content: Add conversationId JavaScript variable and update sendChat() function to generate/maintain conversation_id and pass blueprint_context from extractedRooms
-    status: pending
+    status: completed
   - id: test-conversation-flow
     content: "Test conversation flow: first message generates conversation_id, follow-up messages maintain context, blueprint context integration works"
     status: pending

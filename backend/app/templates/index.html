@@ -368,6 +368,7 @@
       let extractedRooms = []; // Store extracted rooms for compliance checking
       let complianceIssues = []; // Store compliance issues from extract-and-check
       let complianceChecked = false; // Track if compliance has been checked at least once
+      let conversationId = null; // Track conversation ID for chat context
 
       // ====================================================================
       // Issues Fetching and Rendering
@@ -446,6 +447,18 @@
         const submitBtn = document.getElementById("chat-submit-btn");
         const input = document.getElementById("chat-input");
 
+        // Generate conversationId if null (use crypto.randomUUID() if available, otherwise timestamp-based)
+        if (!conversationId) {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            conversationId = crypto.randomUUID();
+          } else {
+            conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          }
+        }
+
+        // Prepare blueprint_context from extractedRooms array
+        const blueprintContext = extractedRooms.length > 0 ? extractedRooms : null;
+
         // Remove welcome message if present
         const welcomeMsg = messagesContainer.querySelector(".welcome-message");
         if (welcomeMsg) {
@@ -472,7 +485,11 @@
           const res = await fetch("/api/chat/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: query }),
+            body: JSON.stringify({
+              query: query,
+              conversation_id: conversationId,
+              blueprint_context: blueprintContext
+            }),
           });
 
           // Remove loading message
@@ -484,6 +501,11 @@
           }
 
           const data = await res.json();
+          
+          // Store conversation_id from response (in case backend generated a new one)
+          if (data.conversation_id) {
+            conversationId = data.conversation_id;
+          }
           
           // Add bot response with citations
           const botMessageDiv = createBotMessage(data.answer, data.citations || []);
