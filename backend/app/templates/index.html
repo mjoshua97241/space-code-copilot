@@ -418,6 +418,7 @@
       let complianceIssues = []; // Store compliance issues from extract-and-check
       let complianceChecked = false; // Track if compliance has been checked at least once
       let conversationId = null; // Track conversation ID for chat context
+      let uploadedCodes = []; // Track uploaded building code PDFs
 
       // ====================================================================
       // Issues Fetching and Rendering
@@ -1535,6 +1536,148 @@
 
       // updateIssuesPanel() removed - compliance issues are now shown in the Extracted Rooms table
       // (single panel approach per plan)
+
+      // ====================================================================
+      // Building Codes Upload Handlers
+      // ====================================================================
+
+      (function() {
+        const codesFileInput = document.getElementById('codes-file-input');
+        const codesUploadZone = document.getElementById('codes-upload-zone');
+        const codesUploadBtn = document.getElementById('codes-upload-btn');
+        const codesStatus = document.getElementById('codes-status');
+        const codesList = document.getElementById('uploaded-codes-list');
+        const codesListUl = document.getElementById('codes-list');
+        let selectedCodesFile = null;
+
+        // File input click handler
+        codesUploadZone.addEventListener('click', () => {
+          codesFileInput.click();
+        });
+
+        // Drag and drop (optional enhancement)
+        codesUploadZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          codesUploadZone.style.background = '#e9ecef';
+        });
+
+        codesUploadZone.addEventListener('dragleave', () => {
+          codesUploadZone.style.background = '';
+        });
+
+        codesUploadZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          codesUploadZone.style.background = '';
+          if (e.dataTransfer.files.length > 0) {
+            handleCodesFileSelect(e.dataTransfer.files[0]);
+          }
+        });
+
+        // File selection handler
+        codesFileInput.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+            handleCodesFileSelect(e.target.files[0]);
+          }
+        });
+
+        function handleCodesFileSelect(file) {
+          // Validate PDF only
+          if (!file.name.toLowerCase().endsWith('.pdf')) {
+            showCodesStatus('Only PDF files are allowed for building codes', 'error');
+            return;
+          }
+
+          selectedCodesFile = file;
+          codesUploadZone.innerHTML = `
+            <div class="upload-icon">✅</div>
+            <p><strong>${escapeHtml(file.name)}</strong></p>
+            <p class="upload-hint">${(file.size / 1024).toFixed(1)} KB - Click to change</p>
+            <input type="file" id="codes-file-input" accept=".pdf" hidden />
+          `;
+          // Re-attach event listener
+          document.getElementById('codes-file-input').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleCodesFileSelect(e.target.files[0]);
+          });
+          codesUploadBtn.disabled = false;
+          showCodesStatus('File selected. Click "Upload & Index PDF" to process.', 'info');
+        }
+
+        // Upload button handler
+        codesUploadBtn.addEventListener('click', async () => {
+          if (!selectedCodesFile) return;
+
+          codesUploadBtn.disabled = true;
+          showCodesStatus('Uploading and indexing PDF...', 'info');
+
+          const formData = new FormData();
+          formData.append('file', selectedCodesFile);
+
+          try {
+            const response = await fetch('/api/codes/upload/', {
+              method: 'POST',
+              body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.detail || 'Upload failed');
+            }
+
+            // Success
+            showCodesStatus(
+              `✅ Successfully indexed "${data.filename}" (${data.chunks} chunks)`,
+              'success'
+            );
+
+            // Add to uploaded list
+            uploadedCodes.push({
+              filename: data.filename,
+              chunks: data.chunks,
+              uploadedAt: new Date().toLocaleString()
+            });
+            updateCodesList();
+
+            // Reset file selection
+            selectedCodesFile = null;
+            codesUploadZone.innerHTML = `
+              <div class="upload-icon">📄</div>
+              <p>Upload building code PDF files</p>
+              <p class="upload-hint">PDF files will be indexed for RAG queries</p>
+              <input type="file" id="codes-file-input" accept=".pdf" hidden />
+            `;
+            document.getElementById('codes-file-input').addEventListener('change', (e) => {
+              if (e.target.files.length > 0) handleCodesFileSelect(e.target.files[0]);
+            });
+            codesUploadBtn.disabled = true;
+
+          } catch (error) {
+            showCodesStatus(`Error: ${error.message}`, 'error');
+            codesUploadBtn.disabled = false;
+          }
+        });
+
+        function showCodesStatus(message, type) {
+          codesStatus.textContent = message;
+          codesStatus.className = `extraction-status ${type}`;
+          codesStatus.style.display = 'block';
+        }
+
+        function updateCodesList() {
+          if (uploadedCodes.length === 0) {
+            codesList.style.display = 'none';
+            return;
+          }
+
+          codesList.style.display = 'block';
+          codesListUl.innerHTML = uploadedCodes.map(code => `
+            <li>
+              <strong>${escapeHtml(code.filename)}</strong>
+              <span class="upload-hint">(${code.chunks} chunks, uploaded ${code.uploadedAt})</span>
+            </li>
+          `).join('');
+        }
+      })();
 
       // ====================================================================
       // Event Listeners
