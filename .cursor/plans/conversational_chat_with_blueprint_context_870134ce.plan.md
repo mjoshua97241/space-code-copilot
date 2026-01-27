@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: test-conversation-flow
     content: "Test conversation flow: first message generates conversation_id, follow-up messages maintain context, blueprint context integration works"
-    status: pending
+    status: completed
 isProject: false
 ---
 

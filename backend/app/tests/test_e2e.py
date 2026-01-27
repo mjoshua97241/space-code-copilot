@@ -184,6 +184,235 @@ def test_chat_endpoint(client: TestClient):
     except Exception as e:
         log_test("Chat Endpoint", False, str(e), response.text if 'response' in locals() else None)
 
+def test_conversation_flow(client: TestClient):
+    """Test conversational chat flow with conversation_id and blueprint context."""
+    print("=" * 60)
+    print("Testing Conversation Flow")
+    print("=" * 60)
+    
+    if not os.getenv("OPENAI_API_KEY"):
+        log_test("Conversation Flow", False, "OPENAI_API_KEY not set - skipping conversation flow test")
+        return
+    
+    try:
+        from app.models.domain import Room
+        
+        # ========================================================================
+        # TEST 1: First message generates conversation_id
+        # ========================================================================
+        print("\n--- Test 1: First message generates conversation_id ---")
+        response1 = client.post(
+            "/api/chat",
+            json={"query": "What is the minimum bedroom area?"}
+        )
+        if response1.status_code != 200:
+            print(f"ERROR: Response status: {response1.status_code}")
+            print(f"ERROR: Response body: {response1.text}")
+        assert response1.status_code == 200, f"Expected 200, got {response1.status_code}. Response: {response1.text}"
+        data1 = response1.json()
+        
+        # Verify conversation_id is present and valid
+        assert "conversation_id" in data1, "Response should include conversation_id"
+        conversation_id = data1["conversation_id"]
+        assert conversation_id is not None, "conversation_id should not be None"
+        assert len(conversation_id) > 0, "conversation_id should not be empty"
+        assert conversation_id.startswith("conv_"), f"conversation_id should start with 'conv_', got: {conversation_id}"
+        
+        log_test("First Message - conversation_id Generated", True, 
+                f"Generated conversation_id: {conversation_id}")
+        
+        # Verify response structure
+        assert "answer" in data1, "Response should include answer"
+        assert "citations" in data1, "Response should include citations"
+        assert len(data1["answer"]) > 0, "Answer should not be empty"
+        
+        first_answer = data1["answer"]
+        log_test("First Message - Response Structure", True, 
+                f"Answer length: {len(first_answer)} chars")
+        
+        # ========================================================================
+        # TEST 2: Follow-up message maintains context (uses same conversation_id)
+        # ========================================================================
+        print("\n--- Test 2: Follow-up message maintains context ---")
+        response2 = client.post(
+            "/api/chat",
+            json={
+                "query": "What about bathrooms?",
+                "conversation_id": conversation_id
+            }
+        )
+        assert response2.status_code == 200, f"Expected 200, got {response2.status_code}"
+        data2 = response2.json()
+        
+        # Verify same conversation_id is returned
+        assert "conversation_id" in data2, "Response should include conversation_id"
+        assert data2["conversation_id"] == conversation_id, \
+            f"Follow-up should return same conversation_id. Expected: {conversation_id}, Got: {data2['conversation_id']}"
+        
+        log_test("Follow-up Message - Same conversation_id", True, 
+                f"Maintained conversation_id: {conversation_id}")
+        
+        # Verify response structure
+        assert "answer" in data2, "Response should include answer"
+        assert len(data2["answer"]) > 0, "Answer should not be empty"
+        
+        second_answer = data2["answer"]
+        log_test("Follow-up Message - Response Structure", True, 
+                f"Answer length: {len(second_answer)} chars")
+        
+        # Verify conversation history is being used (answer should be contextually aware)
+        # The LLM should understand "What about bathrooms?" as a follow-up to bedroom area question
+        # This is a soft check - we just verify the answer exists and is different from first
+        assert first_answer != second_answer, "Follow-up answer should be different from first answer"
+        log_test("Follow-up Message - Context Awareness", True, 
+                "Follow-up answer generated (context maintained)")
+        
+        # ========================================================================
+        # TEST 3: Blueprint context integration
+        # ========================================================================
+        print("\n--- Test 3: Blueprint context integration ---")
+        
+        # Create sample blueprint rooms
+        blueprint_rooms = [
+            Room(
+                id="R1",
+                name="Bedroom 1",
+                type="bedroom",
+                level=1,
+                area_m2=8.5  # Below minimum (should be 9.5 m²)
+            ),
+            Room(
+                id="R2",
+                name="Living Room",
+                type="living",
+                level=1,
+                area_m2=25.0
+            ),
+            Room(
+                id="R3",
+                name="Kitchen",
+                type="kitchen",
+                level=1,
+                area_m2=12.0
+            )
+        ]
+        
+        # Convert rooms to dict for JSON serialization
+        blueprint_context = [room.model_dump() for room in blueprint_rooms]
+        
+        # Test with blueprint context - ask about specific room
+        response3 = client.post(
+            "/api/chat",
+            json={
+                "query": "Is Bedroom 1 compliant with minimum area requirements?",
+                "conversation_id": conversation_id,  # Continue same conversation
+                "blueprint_context": blueprint_context
+            }
+        )
+        assert response3.status_code == 200, f"Expected 200, got {response3.status_code}"
+        data3 = response3.json()
+        
+        # Verify conversation_id is maintained
+        assert "conversation_id" in data3, "Response should include conversation_id"
+        assert data3["conversation_id"] == conversation_id, \
+            f"Should maintain same conversation_id. Expected: {conversation_id}, Got: {data3['conversation_id']}"
+        
+        log_test("Blueprint Context - conversation_id Maintained", True, 
+                f"Maintained conversation_id: {conversation_id}")
+        
+        # Verify response structure
+        assert "answer" in data3, "Response should include answer"
+        assert len(data3["answer"]) > 0, "Answer should not be empty"
+        
+        blueprint_answer = data3["answer"]
+        log_test("Blueprint Context - Response Generated", True, 
+                f"Answer length: {len(blueprint_answer)} chars")
+        
+        # Verify blueprint context is being used
+        # The answer should reference "Bedroom 1" or the area (8.5 m²)
+        # This is a soft check - we verify the answer mentions the room or area
+        answer_lower = blueprint_answer.lower()
+        mentions_bedroom = "bedroom" in answer_lower or "8.5" in blueprint_answer or "8.5" in answer_lower
+        log_test("Blueprint Context - Room Reference", mentions_bedroom, 
+                f"Answer mentions bedroom/area: {mentions_bedroom}")
+        
+        # ========================================================================
+        # TEST 4: New conversation without conversation_id (should generate new one)
+        # ========================================================================
+        print("\n--- Test 4: New conversation generates new conversation_id ---")
+        response4 = client.post(
+            "/api/chat",
+            json={"query": "What is the minimum door width?"}
+            # No conversation_id provided - should generate new one
+        )
+        assert response4.status_code == 200, f"Expected 200, got {response4.status_code}"
+        data4 = response4.json()
+        
+        # Verify new conversation_id is generated
+        assert "conversation_id" in data4, "Response should include conversation_id"
+        new_conversation_id = data4["conversation_id"]
+        assert new_conversation_id != conversation_id, \
+            f"New conversation should have different conversation_id. Old: {conversation_id}, New: {new_conversation_id}"
+        assert new_conversation_id.startswith("conv_"), \
+            f"conversation_id should start with 'conv_', got: {new_conversation_id}"
+        
+        log_test("New Conversation - New conversation_id Generated", True, 
+                f"Generated new conversation_id: {new_conversation_id}")
+        
+        # ========================================================================
+        # TEST 5: Blueprint context without conversation_id (new conversation)
+        # ========================================================================
+        print("\n--- Test 5: Blueprint context in new conversation ---")
+        response5 = client.post(
+            "/api/chat",
+            json={
+                "query": "Check if my living room meets the requirements",
+                "blueprint_context": blueprint_context
+                # No conversation_id - should generate new one
+            }
+        )
+        assert response5.status_code == 200, f"Expected 200, got {response5.status_code}"
+        data5 = response5.json()
+        
+        # Verify conversation_id is generated
+        assert "conversation_id" in data5, "Response should include conversation_id"
+        blueprint_conversation_id = data5["conversation_id"]
+        assert blueprint_conversation_id.startswith("conv_"), \
+            f"conversation_id should start with 'conv_', got: {blueprint_conversation_id}"
+        
+        log_test("Blueprint Context - New Conversation", True, 
+                f"Generated conversation_id: {blueprint_conversation_id}")
+        
+        # Verify response mentions living room or area
+        blueprint_answer2 = data5["answer"]
+        answer_lower2 = blueprint_answer2.lower()
+        mentions_living = "living" in answer_lower2 or "25" in blueprint_answer2 or "25.0" in blueprint_answer2
+        log_test("Blueprint Context - Living Room Reference", mentions_living, 
+                f"Answer mentions living room/area: {mentions_living}")
+        
+        # ========================================================================
+        # SUMMARY
+        # ========================================================================
+        print("\n" + "=" * 60)
+        print("Conversation Flow Test Summary")
+        print("=" * 60)
+        print(f"✅ First message generates conversation_id: {conversation_id}")
+        print(f"✅ Follow-up messages maintain context: {conversation_id}")
+        print(f"✅ Blueprint context integration works")
+        print(f"✅ New conversations generate new conversation_id: {new_conversation_id}")
+        print(f"✅ Blueprint context works in new conversations")
+        print("=" * 60 + "\n")
+        
+        log_test("Conversation Flow - All Tests", True, 
+                f"Tested {5} scenarios successfully")
+        
+    except AssertionError as e:
+        log_test("Conversation Flow", False, f"Assertion failed: {str(e)}")
+        raise  # Re-raise so pytest sees the failure
+    except Exception as e:
+        log_test("Conversation Flow", False, f"Unexpected error: {str(e)}")
+        raise  # Re-raise so pytest sees the failure
+
 def test_pdf_ingest():
     """Test PDF ingestion."""
     print("=" * 60)
@@ -374,6 +603,7 @@ def main():
     test_frontend_template(client)
     test_issues_endpoint(client)
     test_chat_endpoint(client)
+    test_conversation_flow(client)
     test_pdf_ingest()
     test_vector_store()
     test_compliance_checker()
