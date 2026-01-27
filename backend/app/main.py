@@ -8,6 +8,7 @@ from app.api.chat import router as chat_router
 
 from app.api.issues import router as issues_router
 from app.api.blueprint import router as blueprint_router
+from app.api.codes import router as codes_router
 
 app = FastAPI(title="Code-Aware Space Planning Copilot")
 
@@ -22,6 +23,7 @@ app.add_middleware(
 app.include_router(issues_router)
 app.include_router(chat_router)
 app.include_router(blueprint_router)
+app.include_router(codes_router)
 
 # Use absolute paths relative to this file
 BASE_DIR = Path(__file__).parent
