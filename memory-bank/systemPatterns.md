@@ -8,8 +8,9 @@ Backend patterns:
   - Setup templates: `Jinja2Templates(directory=...)`
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
-  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, and post-processing to fix LLM citations
+  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, post-processing to fix LLM citations, **conversational context support** (conversation_id, blueprint_context), and in-memory conversation history - **Status**: ✅ **COMPLETE** - Conversational chat with blueprint context integration complete
   - `app/api/blueprint.py` - Blueprint extraction endpoint (`POST /api/blueprint/extract`) - **Status**: ✅ **COMPLETE** - Accepts blueprint image upload (PNG/JPG/PDF), extracts room data using VLM, returns preview-only results, supports multi-page PDFs with optional page_index parameter
+  - `app/api/codes.py` - Building code PDF upload endpoint (`POST /api/codes/upload/`) - **Status**: ✅ **COMPLETE** - Uploads and indexes building code PDFs, saves to persistent storage for compliance checking, fixes source metadata to use actual filename
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ **COMPLETE** - Enhanced with page number extraction (PDF + document pages), section extraction, and metadata preservation
@@ -322,46 +323,46 @@ PDFs require more sophisticated caching due to expensive operations:
 
 ## Chat Patterns
 
-### Current Implementation: Stateless Q&A
+### Current Implementation: Conversational Chat with Blueprint Context ✅ COMPLETE
 
-**Pattern**: Each chat request is processed independently without conversation context.
+**Pattern**: Maintains conversation history and integrates blueprint extraction data for context-aware responses.
 
 **Implementation**:
-- `POST /api/chat/` endpoint accepts single `query` string
-- No conversation history or session management
-- Each request retrieves context from vector store and generates answer independently
-- Frontend displays messages visually but doesn't maintain conversation state
-
-**Limitations**:
-- No follow-up question context (e.g., "What about bathrooms?" after asking about bedrooms)
-- No access to extracted blueprint data in chat context
-- Each question must be self-contained
-
-### Future Pattern: Conversational Chat with Blueprint Context
-
-**Proposed Pattern**: Maintain conversation history and integrate blueprint extraction data.
+- `POST /api/chat/` endpoint accepts `query`, `conversation_id` (optional), and `blueprint_context` (optional)
+- In-memory conversation storage (`_conversations` dictionary) for MVP
+- Conversation history retrieved and included in LLM prompt
+- Blueprint context (extracted rooms) included in prompt when available
+- Frontend maintains `conversationId` and passes `blueprint_context` from `extractedRooms`
 
 **Key Components**:
-1. **Conversation Management**:
-   - `conversation_id` or `session_id` to track conversations
-   - Message history storage (in-memory for MVP, Redis/database for production)
-   - Previous messages included in LLM prompt
+1. **Conversation Management** ✅:
+   - `conversation_id` generated on first message (UUID-based: `conv_{uuid}`)
+   - Message history storage in-memory (`_conversations: Dict[str, List[Dict]]`)
+   - Previous messages included in LLM prompt as LangChain message format
+   - Helper functions: `_generate_conversation_id()`, `_get_conversation_history()`, `_save_message()`
 
-2. **Blueprint Context Integration**:
+2. **Blueprint Context Integration** ✅:
    - Extracted room data (from blueprint extraction) passed to chat context
    - LLM can reference specific rooms and areas from user's uploaded blueprint
    - Enables questions like "Is bedroom 1 compliant?" with context
+   - Blueprint context formatted as: "User's Blueprint Context: [room list with areas]"
 
-3. **Seamless Conversation Flow**:
+3. **Seamless Conversation Flow** ✅:
    - Follow-up questions maintain context from previous messages
    - Context-aware responses about user's specific blueprint
    - Integration between blueprint extraction and Q&A chat
 
-**Implementation Approach**:
-- Update `ChatRequest` to include `conversation_id`, `message_history`, and `blueprint_context`
-- Store conversation state per session
-- Include conversation history and blueprint context in LLM prompt
-- Frontend maintains conversation ID and passes extracted rooms to chat
+**Features**:
+- ✅ Conversation history maintained per conversation ID
+- ✅ Follow-up questions work with context (e.g., "What about bathrooms?" after asking about bedrooms)
+- ✅ Blueprint context integration (extracted rooms passed to chat)
+- ✅ Context-aware responses about specific blueprint rooms
+- ✅ New conversations generate new conversation_id automatically
+
+**Files Modified**:
+- `app/api/chat.py`: Conversation storage, updated models, modified endpoint
+- `app/templates/index.html`: Added `conversationId` variable, updated `sendChat()` function
+- `app/tests/test_e2e.py`: Added `test_conversation_flow()` comprehensive test
 
 ## Future Enhancements
 

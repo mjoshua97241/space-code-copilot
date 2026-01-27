@@ -170,7 +170,21 @@ Recent changes:
 - `app/services/pdf_ingest.py`: ✅ **COMPLETE** - Enhanced with page number extraction (PDF page + document page), section extraction, and metadata preservation
 - `app/services/vector_store.py`: ✅ **Updated** - Defaults to BM25-only (validated best, composite score: 0.422), hybrid and dense-only available as options
 - `app/services/rule_extractor.py`: ✅ **COMPLETE** - LLM-based rule extraction with project context filtering, uses BM25-only retrieval (default, validated best)
-- `app/api/chat.py`: ✅ **COMPLETE** - Chat endpoint with BM25-only retrieval, explicit page type indicators in citations, and post-processing to fix LLM citations
+- `app/api/chat.py`: ✅ **COMPLETE** - Chat endpoint with BM25-only retrieval, explicit page type indicators in citations, post-processing to fix LLM citations, **conversational context support** (conversation_id, blueprint_context), and in-memory conversation history
+- `app/api/codes.py`: ✅ **COMPLETE** - Building code PDF upload endpoint with persistent storage, source metadata fix, and integration with compliance checking
+
+**Recent Completions:**
+1. ✅ **Conversational Chat with Blueprint Context COMPLETE**: All features implemented and tested
+   - Conversation history management with in-memory storage
+   - Blueprint context integration (extracted rooms passed to chat)
+   - Follow-up questions work with context
+   - Comprehensive test suite validates all scenarios
+2. ✅ **PDF Upload Tab for Building Codes COMPLETE**: All features implemented, tested, and integrated
+   - PDF upload endpoint with persistent storage
+   - Integration with conversational chat (RAG queries)
+   - Integration with compliance checking (rule extraction)
+   - Source metadata fix (uses actual filename, not temp filename)
+   - Comprehensive test suite validates upload, indexing, RAG, and compliance integration
 
 **Next Priority:**
 1. ✅ **RAG Technique Validation COMPLETE**: Evaluated 4 techniques using RAGAS metrics
@@ -422,25 +436,72 @@ Todo next:
   - Smoke test key routes: `GET /`, `GET /health`, `POST /api/chat/`, `POST /api/blueprint/extract/` (and other active endpoints).
   - Confirm static assets + template render correctly in prod.
 
-## Future Improvements
+## Recent Feature Completions
 
-### Conversational Chat with Blueprint Context
+### ✅ Conversational Chat with Blueprint Context - COMPLETE
 
-- **Current State**: Chat is **stateless Q&A only** - each query is processed independently without conversation context.
-- **Future Enhancement**: Add conversational chat capabilities with access to extracted room areas from uploaded blueprints.
+- **Status**: ✅ **COMPLETE** - All features implemented and tested
+- **Plan**: `.cursor/plans/conversational_chat_with_blueprint_context_870134ce.plan.md` - **ALL TODOS COMPLETE**
+- **Implementation**:
+  - ✅ **Backend**: Added in-memory conversation storage with `_conversations` dictionary
+  - ✅ **Backend**: Updated `ChatRequest` model to include `conversation_id` and `blueprint_context` fields
+  - ✅ **Backend**: Updated `ChatResponse` model to always return `conversation_id`
+  - ✅ **Backend**: Modified `chat()` endpoint to:
+    - Generate or use existing `conversation_id`
+    - Retrieve and format conversation history
+    - Build blueprint context string from extracted rooms
+    - Include conversation history and blueprint context in LLM prompt
+    - Store new messages in conversation history
+  - ✅ **Frontend**: Added `conversationId` JavaScript variable
+  - ✅ **Frontend**: Updated `sendChat()` to generate/maintain `conversation_id` and pass `blueprint_context` from `extractedRooms`
+  - ✅ **Testing**: Comprehensive test suite in `test_e2e.py` - `test_conversation_flow()` validates all scenarios
 - **Key Features**:
-  - **Conversation History**: Maintain message history per session/conversation ID
-  - **Blueprint Context Integration**: Chat should have access to extracted room data from uploaded blueprints
-  - **Seamless Conversations**: Enable follow-up questions like "What about bathrooms?" after asking "What is the minimum bedroom area?"
-  - **Context-Aware Answers**: LLM can reference specific rooms and areas from the user's uploaded blueprint
-- **Implementation Considerations**:
-  - Add `conversation_id` or `session_id` to track conversations
-  - Store message history (in-memory, Redis, or database)
-  - Include previous messages in LLM prompt
-  - Pass extracted room data (from blueprint extraction) to chat context
-  - Update `ChatRequest` to optionally include `conversation_id` and `message_history`
-  - Frontend should maintain conversation state and send conversation ID with each message
+  - **Conversation History**: Maintains message history per conversation ID (in-memory for MVP)
+  - **Blueprint Context Integration**: Chat has access to extracted room data from uploaded blueprints
+  - **Seamless Conversations**: Follow-up questions like "What about bathrooms?" work with context
+  - **Context-Aware Answers**: LLM can reference specific rooms and areas from user's uploaded blueprint
 - **Benefits**:
-  - More natural conversation flow
-  - Context-aware responses about user's specific blueprint
-  - Better user experience for iterative compliance checking discussions
+  - ✅ More natural conversation flow
+  - ✅ Context-aware responses about user's specific blueprint
+  - ✅ Better user experience for iterative compliance checking discussions
+- **Timeline**: Completed (~2-3 hours total)
+
+### ✅ PDF Upload Tab for Building Codes - COMPLETE
+
+- **Status**: ✅ **COMPLETE** - All features implemented, tested, and integrated
+- **Plan**: `.cursor/plans/pdf_upload_tab_for_building_codes_6aa7a65b.plan.md` - **ALL TODOS COMPLETE**
+- **Implementation**:
+  - ✅ **Backend**: Created `POST /api/codes/upload/` endpoint (`app/api/codes.py`):
+    - Validates PDF file type
+    - Saves to temporary file, ingests and chunks PDF
+    - Adds to vector store for RAG queries
+    - Saves to persistent storage (`app/data/uploads/`) for compliance checking
+    - Handles duplicate filenames (appends `_1`, `_2`, etc.)
+    - Fixes source metadata to use actual filename (not temp filename)
+    - Returns metadata (filename, chunk count)
+  - ✅ **Backend**: Updated `get_all_rules()` in `app/services/rules_seed.py`:
+    - Scans both `app/data/*.pdf` (existing PDFs) and `app/data/uploads/*.pdf` (uploaded PDFs)
+    - Uploaded PDFs are now included in rule extraction for compliance checking
+  - ✅ **Frontend**: Added third tab "📚 Upload Building Codes" to right panel:
+    - File upload UI with drag-and-drop support
+    - Status messages with proper CSS classes (`status-success`, `status-error`, `status-info`)
+    - Uploaded codes list showing filename, chunk count, and upload timestamp
+    - Fixed CSS class mismatch (was using `${type}`, now uses `status-${type}`)
+  - ✅ **Testing**: Comprehensive test in `test_e2e.py` - `test_pdf_upload_and_rag()`:
+    - Tests PDF upload endpoint
+    - Verifies indexing in vector store
+    - Tests RAG queries with uploaded PDF
+    - Verifies uploaded PDF is used in compliance checking
+    - Tests error handling for non-PDF files
+- **Key Features**:
+  - **PDF Upload**: Users can upload building code PDFs via UI
+  - **Immediate RAG Access**: Uploaded PDFs immediately available for chat queries
+  - **Compliance Integration**: Uploaded PDFs automatically included in rule extraction
+  - **Persistent Storage**: PDFs saved to `app/data/uploads/` for persistence across server restarts
+  - **Source Metadata Fix**: Uploaded PDFs use correct filename in citations (not temp filename)
+- **Integration Points**:
+  - ✅ **Conversational Chat**: Uploaded PDFs accessible via RAG queries
+  - ✅ **Compliance Checking**: Uploaded PDFs used for rule extraction via `get_all_rules()`
+- **Timeline**: Completed (~3-5 hours total)
+
+## Future Improvements

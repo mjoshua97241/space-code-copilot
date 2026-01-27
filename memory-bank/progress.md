@@ -333,6 +333,68 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
      - `app/static/styles.css`: Right panel overflow, extraction panel in tabs, scrolling fixes
    - **Timeline**: Completed (~1-2 hours total)
 
+13. ✅ Conversational Chat with Blueprint Context - **COMPLETE**:
+   - **Status**: ✅ All features implemented and tested
+   - **Plan**: `.cursor/plans/conversational_chat_with_blueprint_context_870134ce.plan.md` - **ALL TODOS COMPLETE**
+   - **Backend changes**:
+     - `app/api/chat.py`:
+       - Added in-memory conversation storage (`_conversations` dictionary)
+       - Updated `ChatRequest` model: `conversation_id: Optional[str]`, `blueprint_context: Optional[List[Room]]`
+       - Updated `ChatResponse` model: `conversation_id: str` (always returned)
+       - Modified `chat()` endpoint to handle conversation history and blueprint context
+       - Helper functions: `_generate_conversation_id()`, `_get_conversation_history()`, `_save_message()`
+       - Updated prompt template to include conversation history and blueprint context
+   - **Frontend changes**:
+     - `app/templates/index.html`:
+       - Added `conversationId` JavaScript variable
+       - Updated `sendChat()` to generate/maintain `conversation_id` and pass `blueprint_context` from `extractedRooms`
+   - **Testing**:
+     - `app/tests/test_e2e.py`: Added `test_conversation_flow()` - validates all scenarios:
+       - First message generates conversation_id
+       - Follow-up messages maintain context
+       - Blueprint context integration works
+       - New conversations generate new conversation_id
+   - **Features**:
+     - Conversation history maintained per conversation ID
+     - Blueprint context integration (extracted rooms passed to chat)
+     - Follow-up questions work with context
+     - Context-aware responses about specific blueprint rooms
+   - **Timeline**: Completed (~2-3 hours total)
+
+14. ✅ PDF Upload Tab for Building Codes - **COMPLETE**:
+   - **Status**: ✅ All features implemented, tested, and integrated
+   - **Plan**: `.cursor/plans/pdf_upload_tab_for_building_codes_6aa7a65b.plan.md` - **ALL TODOS COMPLETE**
+   - **Backend changes**:
+     - `app/api/codes.py`: Created `POST /api/codes/upload/` endpoint:
+       - Validates PDF file type
+       - Ingests and chunks PDF using `ingest_pdf()`
+       - Adds to vector store for RAG queries
+       - Saves to persistent storage (`app/data/uploads/`) for compliance checking
+       - Fixes source metadata to use actual filename (not temp filename)
+       - Handles duplicate filenames (appends `_1`, `_2`, etc.)
+     - `app/services/rules_seed.py`: Updated `get_all_rules()`:
+       - Scans both `app/data/*.pdf` and `app/data/uploads/*.pdf`
+       - Uploaded PDFs included in rule extraction for compliance checking
+     - `app/main.py`: Registered codes router via `app.include_router(codes_router)`
+   - **Frontend changes**:
+     - `app/templates/index.html`:
+       - Added third tab "📚 Upload Building Codes" to right panel
+       - File upload UI with drag-and-drop support
+       - Status messages with proper CSS classes (`status-success`, `status-error`, `status-info`)
+       - Uploaded codes list showing filename, chunk count, upload timestamp
+       - Fixed CSS class mismatch (was using `${type}`, now uses `status-${type}`)
+   - **Testing**:
+     - `app/tests/test_e2e.py`: Added `test_pdf_upload_and_rag()`:
+       - Tests PDF upload endpoint
+       - Verifies indexing in vector store
+       - Tests RAG queries with uploaded PDF
+       - Verifies uploaded PDF is used in compliance checking
+       - Tests error handling for non-PDF files
+   - **Integration**:
+     - ✅ **Conversational Chat**: Uploaded PDFs immediately accessible via RAG queries
+     - ✅ **Compliance Checking**: Uploaded PDFs automatically included in rule extraction
+   - **Timeline**: Completed (~3-5 hours total)
+
 ## Future Enhancements
 
 ### Overlay Rendering and Accuracy Improvements
