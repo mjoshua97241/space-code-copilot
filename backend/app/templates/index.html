@@ -244,6 +244,27 @@
         padding: 16px;
         min-height: 0; /* Allow flex child to shrink and enable scrolling */
       }
+      #content-codes.active {
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #content-codes .extraction-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: white;
+        border: none;
+      }
+      #content-codes .extraction-content {
+        flex: 1;
+        overflow-y: auto !important; /* Allow scrolling in codes tab */
+        overflow-x: hidden;
+        padding: 16px;
+        min-height: 0; /* Allow flex child to shrink and enable scrolling */
+      }
     </style>
   </head>
   <body>
@@ -273,6 +294,9 @@
             </button>
             <button class="tab-btn" id="tab-extraction" onclick="switchTab('extraction')">
               🔍 Blueprint Extraction
+            </button>
+            <button class="tab-btn" id="tab-codes" onclick="switchTab('codes')">
+              📚 Upload Building Codes
             </button>
           </div>
         </div>
@@ -350,6 +374,31 @@
                 <button class="compliance-btn" id="compliance-btn" style="display: none;">
                   Check Compliance
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload Building Codes View -->
+        <div class="tab-content" id="content-codes">
+          <div class="extraction-panel" id="codes-panel">
+            <div class="extraction-header">
+              <h3>📚 Upload Building Codes</h3>
+            </div>
+            <div class="extraction-content" id="codes-content">
+              <div class="upload-zone" id="codes-upload-zone">
+                <div class="upload-icon">📄</div>
+                <p>Upload building code PDF files</p>
+                <p class="upload-hint">PDF files will be indexed for RAG queries</p>
+                <input type="file" id="codes-file-input" accept=".pdf" hidden />
+              </div>
+              <button class="extract-btn" id="codes-upload-btn" disabled>
+                Upload & Index PDF
+              </button>
+              <div class="extraction-status" id="codes-status"></div>
+              <div class="uploaded-codes-list" id="uploaded-codes-list" style="display: none;">
+                <h4>Uploaded Building Codes</h4>
+                <ul id="codes-list"></ul>
               </div>
             </div>
           </div>
@@ -842,16 +891,20 @@
         // Get elements
         const chatTab = document.getElementById('tab-chat');
         const extractionTab = document.getElementById('tab-extraction');
+        const codesTab = document.getElementById('tab-codes');
         const chatContent = document.getElementById('content-chat');
         const extractionContent = document.getElementById('content-extraction');
+        const codesContent = document.getElementById('content-codes');
         
         // Update tab buttons - remove all active, then add to selected
         chatTab.classList.remove('active');
         extractionTab.classList.remove('active');
+        codesTab.classList.remove('active');
         
         // Hide all content
         chatContent.classList.remove('active');
         extractionContent.classList.remove('active');
+        codesContent.classList.remove('active');
         
         // Show selected tab and content
         if (tabName === 'chat') {
@@ -867,6 +920,9 @@
             extractionContentPanel.classList.remove('collapsed');
             document.getElementById('toggle-extraction').textContent = '▼';
           }
+        } else if (tabName === 'codes') {
+          codesTab.classList.add('active');
+          codesContent.classList.add('active');
         }
       }
 
