@@ -24,6 +24,7 @@ if env_path.exists():
 from app.core.llm import get_llm, setup_llm_cache
 from app.services.vector_store import VectorStore
 from app.services.pdf_ingest import ingest_pdf
+from app.models.domain import Room
 
 
 # ============================================================================
@@ -36,12 +37,22 @@ class ChatRequest(BaseModel):
     
     Fields:
     - query: User's question about building codes
+    - conversation_id: Optional conversation ID for maintaining context across messages
+    - blueprint_context: Optional list of rooms from uploaded blueprint for context-aware responses
     """
     query: str = Field(
         ...,
         min_length=1,
         max_length=500,
         description="User's question about building codes"
+    )
+    conversation_id: Optional[str] = Field(
+        None,
+        description="Conversation ID for maintaining context across messages"
+    )
+    blueprint_context: Optional[List[Room]] = Field(
+        None,
+        description="List of rooms from uploaded blueprint for context-aware responses"
     )
 
 
@@ -64,12 +75,14 @@ class ChatResponse(BaseModel):
     Fields:
     - answer: LLM-generated answer to the user's question
     - citations: List of source citations supporting the answer
+    - conversation_id: Conversation ID (always returned, even if newly generated)
     """
     answer: str = Field(..., description="LLM-generated answer to the question")
     citations: List[Citation] = Field(
         default_factory=list,
         description="List of source citations"
     )
+    conversation_id: str = Field(..., description="Conversation ID for maintaining context across messages")
 
 
 # ============================================================================
