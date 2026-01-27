@@ -429,10 +429,16 @@ def chat(request: ChatRequest) -> ChatResponse:
         context = "\n\n---\n\n".join(context_parts)
         
         # ========================================================================
-        # STEP 6: Build System Prompt with Blueprint Context
+        # STEP 6: Build System Prompt with Conversation and Blueprint Context
         # ========================================================================
-        # Update the system prompt to mention blueprint context if available
-        system_prompt = """You are an expert building code assistant. Answer questions about building codes based on the provided context.
+        # Update the system prompt to mention conversation context and blueprint context
+        system_prompt = """You are an expert building code assistant having a conversation with a user about building codes.
+
+**Conversation Context:**
+- You are in an ongoing conversation with the user
+- Previous messages in this conversation are provided below for context
+- You can reference previous questions and answers when responding
+- If the user asks follow-up questions (e.g., "What about bathrooms?"), use the conversation history to understand what they're referring to
 
 **Instructions:**
 - Answer the question using ONLY information from the provided context
@@ -452,8 +458,9 @@ def chat(request: ChatRequest) -> ChatResponse:
         # Add blueprint context instructions if blueprint is provided
         if blueprint_context_str:
             system_prompt += "\n\n**Blueprint Context:**\n"
-            system_prompt += "The user has uploaded a blueprint. You can reference specific rooms from their blueprint "
-            system_prompt += "when answering questions. Use the room names and areas provided in the blueprint context."
+            system_prompt += "The user has uploaded a blueprint with specific rooms. You can reference these specific rooms "
+            system_prompt += "when answering questions. Use the room names and areas provided in the blueprint context below. "
+            system_prompt += "For example, if asked 'Is bedroom 1 compliant?', you can check the area against building code requirements."
         
         system_prompt += """
 
