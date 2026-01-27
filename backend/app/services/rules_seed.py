@@ -112,12 +112,22 @@ def get_all_rules(project_context: ProjectContext | None = None) -> List[Rule]:
     
     seeded = get_seeded_rules()
     
-    # Find PDFs in app/data/ directory
+    # Find PDFs in app/data/ directory (both root and uploads subdirectory)
     data_dir = Path(__file__).parent.parent / "data"
+    
+    # Get PDFs from data root (existing PDFs)
     pdf_paths = list(data_dir.glob("*.pdf"))
     
+    # Get PDFs from uploads directory (user-uploaded PDFs)
+    uploads_dir = data_dir / "uploads"
+    if uploads_dir.exists():
+        uploaded_pdfs = list(uploads_dir.glob("*.pdf"))
+        pdf_paths.extend(uploaded_pdfs)
+        if uploaded_pdfs:
+            print(f"Found {len(uploaded_pdfs)} uploaded PDF(s) in uploads/ directory")
+    
     if not pdf_paths:
-        print("No PDFs found in app/data/, using seeded rules only")
+        print("No PDFs found in app/data/ or app/data/uploads/, using seeded rules only")
         return seeded
     
     try:
