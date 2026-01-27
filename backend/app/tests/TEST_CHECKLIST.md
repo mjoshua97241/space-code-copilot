@@ -9,7 +9,7 @@ Use this checklist to verify all features work together before deployment.
 - [ ] Required files exist:
   - `app/data/rooms.csv`
   - `app/data/doors.csv`
-  - `app/data/National-Building-Code.pdf` (or `code_sample.pdf`)
+  - `app/data/PD1096-National-Building-Code.pdf` (or `National-Building-Code.pdf` / `code_sample.pdf` as fallback)
   - `app/data/overlays.json`
   - `app/static/plan.png`
   - `app/static/styles.css`

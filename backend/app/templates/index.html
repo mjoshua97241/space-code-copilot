@@ -244,6 +244,27 @@
         padding: 16px;
         min-height: 0; /* Allow flex child to shrink and enable scrolling */
       }
+      #content-codes.active {
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #content-codes .extraction-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: white;
+        border: none;
+      }
+      #content-codes .extraction-content {
+        flex: 1;
+        overflow-y: auto !important; /* Allow scrolling in codes tab */
+        overflow-x: hidden;
+        padding: 16px;
+        min-height: 0; /* Allow flex child to shrink and enable scrolling */
+      }
     </style>
   </head>
   <body>
@@ -273,6 +294,9 @@
             </button>
             <button class="tab-btn" id="tab-extraction" onclick="switchTab('extraction')">
               🔍 Blueprint Extraction
+            </button>
+            <button class="tab-btn" id="tab-codes" onclick="switchTab('codes')">
+              📚 Upload Building Codes
             </button>
           </div>
         </div>
@@ -354,6 +378,31 @@
             </div>
           </div>
         </div>
+
+        <!-- Upload Building Codes View -->
+        <div class="tab-content" id="content-codes">
+          <div class="extraction-panel" id="codes-panel">
+            <div class="extraction-header">
+              <h3>📚 Upload Building Codes</h3>
+            </div>
+            <div class="extraction-content" id="codes-content">
+              <div class="upload-zone" id="codes-upload-zone">
+                <div class="upload-icon">📄</div>
+                <p>Upload building code PDF files</p>
+                <p class="upload-hint">PDF files will be indexed for RAG queries</p>
+                <input type="file" id="codes-file-input" accept=".pdf" hidden />
+              </div>
+              <button class="extract-btn" id="codes-upload-btn" disabled>
+                Upload & Index PDF
+              </button>
+              <div class="extraction-status" id="codes-status"></div>
+              <div class="uploaded-codes-list" id="uploaded-codes-list" style="display: none;">
+                <h4>Uploaded Building Codes</h4>
+                <ul id="codes-list"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -368,6 +417,8 @@
       let extractedRooms = []; // Store extracted rooms for compliance checking
       let complianceIssues = []; // Store compliance issues from extract-and-check
       let complianceChecked = false; // Track if compliance has been checked at least once
+      let conversationId = null; // Track conversation ID for chat context
+      let uploadedCodes = []; // Track uploaded building code PDFs
 
       // ====================================================================
       // Issues Fetching and Rendering
@@ -446,6 +497,18 @@
         const submitBtn = document.getElementById("chat-submit-btn");
         const input = document.getElementById("chat-input");
 
+        // Generate conversationId if null (use crypto.randomUUID() if available, otherwise timestamp-based)
+        if (!conversationId) {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            conversationId = crypto.randomUUID();
+          } else {
+            conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          }
+        }
+
+        // Prepare blueprint_context from extractedRooms array
+        const blueprintContext = extractedRooms.length > 0 ? extractedRooms : null;
+
         // Remove welcome message if present
         const welcomeMsg = messagesContainer.querySelector(".welcome-message");
         if (welcomeMsg) {
@@ -472,7 +535,11 @@
           const res = await fetch("/api/chat/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: query }),
+            body: JSON.stringify({
+              query: query,
+              conversation_id: conversationId,
+              blueprint_context: blueprintContext
+            }),
           });
 
           // Remove loading message
@@ -484,6 +551,11 @@
           }
 
           const data = await res.json();
+          
+          // Store conversation_id from response (in case backend generated a new one)
+          if (data.conversation_id) {
+            conversationId = data.conversation_id;
+          }
           
           // Add bot response with citations
           const botMessageDiv = createBotMessage(data.answer, data.citations || []);
@@ -820,16 +892,20 @@
         // Get elements
         const chatTab = document.getElementById('tab-chat');
         const extractionTab = document.getElementById('tab-extraction');
+        const codesTab = document.getElementById('tab-codes');
         const chatContent = document.getElementById('content-chat');
         const extractionContent = document.getElementById('content-extraction');
+        const codesContent = document.getElementById('content-codes');
         
         // Update tab buttons - remove all active, then add to selected
         chatTab.classList.remove('active');
         extractionTab.classList.remove('active');
+        codesTab.classList.remove('active');
         
         // Hide all content
         chatContent.classList.remove('active');
         extractionContent.classList.remove('active');
+        codesContent.classList.remove('active');
         
         // Show selected tab and content
         if (tabName === 'chat') {
@@ -845,6 +921,9 @@
             extractionContentPanel.classList.remove('collapsed');
             document.getElementById('toggle-extraction').textContent = '▼';
           }
+        } else if (tabName === 'codes') {
+          codesTab.classList.add('active');
+          codesContent.classList.add('active');
         }
       }
 
@@ -1457,6 +1536,148 @@
 
       // updateIssuesPanel() removed - compliance issues are now shown in the Extracted Rooms table
       // (single panel approach per plan)
+
+      // ====================================================================
+      // Building Codes Upload Handlers
+      // ====================================================================
+
+      (function() {
+        const codesFileInput = document.getElementById('codes-file-input');
+        const codesUploadZone = document.getElementById('codes-upload-zone');
+        const codesUploadBtn = document.getElementById('codes-upload-btn');
+        const codesStatus = document.getElementById('codes-status');
+        const codesList = document.getElementById('uploaded-codes-list');
+        const codesListUl = document.getElementById('codes-list');
+        let selectedCodesFile = null;
+
+        // File input click handler
+        codesUploadZone.addEventListener('click', () => {
+          codesFileInput.click();
+        });
+
+        // Drag and drop (optional enhancement)
+        codesUploadZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          codesUploadZone.style.background = '#e9ecef';
+        });
+
+        codesUploadZone.addEventListener('dragleave', () => {
+          codesUploadZone.style.background = '';
+        });
+
+        codesUploadZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          codesUploadZone.style.background = '';
+          if (e.dataTransfer.files.length > 0) {
+            handleCodesFileSelect(e.dataTransfer.files[0]);
+          }
+        });
+
+        // File selection handler
+        codesFileInput.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+            handleCodesFileSelect(e.target.files[0]);
+          }
+        });
+
+        function handleCodesFileSelect(file) {
+          // Validate PDF only
+          if (!file.name.toLowerCase().endsWith('.pdf')) {
+            showCodesStatus('Only PDF files are allowed for building codes', 'error');
+            return;
+          }
+
+          selectedCodesFile = file;
+          codesUploadZone.innerHTML = `
+            <div class="upload-icon">✅</div>
+            <p><strong>${escapeHtml(file.name)}</strong></p>
+            <p class="upload-hint">${(file.size / 1024).toFixed(1)} KB - Click to change</p>
+            <input type="file" id="codes-file-input" accept=".pdf" hidden />
+          `;
+          // Re-attach event listener
+          document.getElementById('codes-file-input').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleCodesFileSelect(e.target.files[0]);
+          });
+          codesUploadBtn.disabled = false;
+          showCodesStatus('File selected. Click "Upload & Index PDF" to process.', 'info');
+        }
+
+        // Upload button handler
+        codesUploadBtn.addEventListener('click', async () => {
+          if (!selectedCodesFile) return;
+
+          codesUploadBtn.disabled = true;
+          showCodesStatus('Uploading and indexing PDF...', 'info');
+
+          const formData = new FormData();
+          formData.append('file', selectedCodesFile);
+
+          try {
+            const response = await fetch('/api/codes/upload/', {
+              method: 'POST',
+              body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.detail || 'Upload failed');
+            }
+
+            // Success
+            showCodesStatus(
+              `✅ Successfully indexed "${data.filename}" (${data.chunks} chunks)`,
+              'success'
+            );
+
+            // Add to uploaded list
+            uploadedCodes.push({
+              filename: data.filename,
+              chunks: data.chunks,
+              uploadedAt: new Date().toLocaleString()
+            });
+            updateCodesList();
+
+            // Reset file selection
+            selectedCodesFile = null;
+            codesUploadZone.innerHTML = `
+              <div class="upload-icon">📄</div>
+              <p>Upload building code PDF files</p>
+              <p class="upload-hint">PDF files will be indexed for RAG queries</p>
+              <input type="file" id="codes-file-input" accept=".pdf" hidden />
+            `;
+            document.getElementById('codes-file-input').addEventListener('change', (e) => {
+              if (e.target.files.length > 0) handleCodesFileSelect(e.target.files[0]);
+            });
+            codesUploadBtn.disabled = true;
+
+          } catch (error) {
+            showCodesStatus(`Error: ${error.message}`, 'error');
+            codesUploadBtn.disabled = false;
+          }
+        });
+
+        function showCodesStatus(message, type) {
+          codesStatus.textContent = message;
+          codesStatus.className = `extraction-status status-${type}`;
+          codesStatus.style.display = 'block';
+        }
+
+        function updateCodesList() {
+          if (uploadedCodes.length === 0) {
+            codesList.style.display = 'none';
+            return;
+          }
+
+          codesList.style.display = 'block';
+          codesListUl.innerHTML = uploadedCodes.map(code => `
+            <li>
+              <strong>${escapeHtml(code.filename)}</strong>
+              <span class="upload-hint">(${code.chunks} chunks, uploaded ${code.uploadedAt})</span>
+            </li>
+          `).join('');
+        }
+      })();
 
       // ====================================================================
       // Event Listeners
