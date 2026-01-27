@@ -5,7 +5,7 @@ Run with: uv run python app/tests/test_vector_store.py
 
 Requires:
 - OPENAI_API_KEY environment variable set
-- PDF file at app/data/National-Building-Code.pdf
+- PDF file at app/data/PD1096-National-Building-Code.pdf (or National-Building-Code.pdf as fallback)
 """
 import sys
 import os
@@ -37,11 +37,15 @@ def main():
     print("Creating vector store...")
     vs = VectorStore()
     
-    # Check if PDF exists
-    pdf_path = backend_dir / "app" / "data" / "National-Building-Code.pdf"
+    # Check if PDF exists (try new filename first, then fallback)
+    pdf_path = backend_dir / "app" / "data" / "PD1096-National-Building-Code.pdf"
     if not pdf_path.exists():
-        print(f"Error: PDF not found at {pdf_path}")
-        print("Please ensure the PDF file exists in app/data/")
+        pdf_path = backend_dir / "app" / "data" / "National-Building-Code.pdf"
+    if not pdf_path.exists():
+        print(f"Error: PDF not found. Tried:")
+        print(f"  - app/data/PD1096-National-Building-Code.pdf")
+        print(f"  - app/data/National-Building-Code.pdf")
+        print("Please ensure a PDF file exists in app/data/")
         return
     
     print(f"Loading PDF from {pdf_path}...")

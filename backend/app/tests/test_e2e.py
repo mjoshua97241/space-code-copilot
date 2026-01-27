@@ -419,9 +419,11 @@ def test_pdf_ingest():
     print("Testing PDF Ingest")
     print("=" * 60)
     
-    pdf_path = backend_dir / "app" / "data" / "National-Building-Code.pdf"
+    # Try new filename first, then fallback to old names for compatibility
+    pdf_path = backend_dir / "app" / "data" / "PD1096-National-Building-Code.pdf"
     if not pdf_path.exists():
-        # Try alternative name
+        pdf_path = backend_dir / "app" / "data" / "National-Building-Code.pdf"
+    if not pdf_path.exists():
         pdf_path = backend_dir / "app" / "data" / "code_sample.pdf"
     
     if not pdf_path.exists():
@@ -463,7 +465,10 @@ def test_vector_store():
         from app.services.vector_store import VectorStore
         from app.services.pdf_ingest import ingest_pdf
         
-        pdf_path = backend_dir / "app" / "data" / "National-Building-Code.pdf"
+        # Try new filename first, then fallback to old names for compatibility
+        pdf_path = backend_dir / "app" / "data" / "PD1096-National-Building-Code.pdf"
+        if not pdf_path.exists():
+            pdf_path = backend_dir / "app" / "data" / "National-Building-Code.pdf"
         if not pdf_path.exists():
             pdf_path = backend_dir / "app" / "data" / "code_sample.pdf"
         
