@@ -10,9 +10,10 @@ Pattern adapted from:
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pathlib import Path
 import os
+import uuid
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -82,6 +83,15 @@ router = APIRouter(
 
 
 # ============================================================================
+# Conversation Storage (In-Memory)
+# ============================================================================
+
+# Global conversation storage (in-memory for MVP)
+# Format: {conversation_id: [{"role": "human"|"ai", "content": "..."}, ...]}
+_conversations: Dict[str, List[Dict[str, str]]] = {}
+
+
+# ============================================================================
 # Vector Store Initialization (Singleton Pattern)
 # ============================================================================
 
@@ -145,6 +155,53 @@ if not _setup_cache_done:
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
+def _generate_conversation_id() -> str:
+    """
+    Generate a unique conversation ID.
+    
+    Uses UUID4 to generate a unique identifier for each conversation.
+    
+    Returns:
+        A unique conversation ID string (e.g., "conv_550e8400-e29b-41d4-a716-446655440000")
+    """
+    return f"conv_{uuid.uuid4().hex}"
+
+
+def _get_conversation_history(conversation_id: str) -> List[Dict[str, str]]:
+    """
+    Retrieve conversation history for a given conversation ID.
+    
+    Args:
+        conversation_id: The unique identifier for the conversation
+    
+    Returns:
+        List of message dictionaries with "role" and "content" keys.
+        Returns empty list if conversation doesn't exist.
+    """
+    return _conversations.get(conversation_id, [])
+
+
+def _save_message(conversation_id: str, role: str, content: str) -> None:
+    """
+    Save a message to the conversation history.
+    
+    Args:
+        conversation_id: The unique identifier for the conversation
+        role: Message role, either "human" or "ai"
+        content: The message content
+    
+    Note:
+        Creates a new conversation entry if the conversation_id doesn't exist.
+    """
+    if conversation_id not in _conversations:
+        _conversations[conversation_id] = []
+    
+    _conversations[conversation_id].append({
+        "role": role,
+        "content": content
+    })
+
 
 def _fix_citations_in_answer(answer: str, retrieved_docs: list) -> str:
     """

@@ -4,7 +4,7 @@ overview: Add conversational context to the chat system, enabling follow-up ques
 todos:
   - id: add-conversation-storage
     content: Add in-memory conversation storage dictionary and helper functions (_get_conversation_history, _save_message, _generate_conversation_id) in backend/app/api/chat.py
-    status: pending
+    status: completed
   - id: update-request-response-models
     content: Update ChatRequest model to include conversation_id and blueprint_context fields. Update ChatResponse to include conversation_id field.
     status: pending
