@@ -7,10 +7,10 @@ todos:
     status: completed
   - id: update-request-response-models
     content: Update ChatRequest model to include conversation_id and blueprint_context fields. Update ChatResponse to include conversation_id field.
-    status: pending
+    status: completed
   - id: update-chat-endpoint
     content: Modify chat() endpoint to handle conversation_id, retrieve/store conversation history, and integrate blueprint context into prompt
-    status: pending
+    status: completed
   - id: update-prompt-template
     content: Update prompt template to include conversation history and blueprint context in system/user messages
     status: pending

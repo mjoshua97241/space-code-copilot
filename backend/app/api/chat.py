@@ -288,70 +288,120 @@ def _fix_citations_in_answer(answer: str, retrieved_docs: list) -> str:
 @router.post("/", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     """
-    Answer building code questions using RAG (Retrieval-Augmented Generation).
+    Answer building code questions using RAG (Retrieval-Augmented Generation)
+    with conversational context and blueprint integration.
     
-    This endpoint:
-    1. Retrieves relevant context from building code PDFs using BM25-only retrieval (validated best)
-    2. Passes context + user query to LLM
-    3. Extracts citations from the response
-    4. Returns answer with citations
+    **NEW FEATURES:**
+    - Maintains conversation history across messages
+    - Integrates extracted blueprint room data into context
+    - Enables follow-up questions and context-aware responses
     
     **How it works:**
-    - Uses BM25-only retrieval (validated via RAGAS evaluation, composite score: 0.422)
-    - BM25 catches exact terms (section numbers, citations, legal phrases)
-    - Building codes benefit more from exact term matching than semantic similarity
-    - LLM generates answer based on retrieved context
-    - Citations extracted from metadata of retrieved documents
+    1. Handles conversation_id (generates new or uses existing)
+    2. Retrieves conversation history if conversation_id exists
+    3. Builds blueprint context string from extracted rooms (if provided)
+    4. Retrieves relevant documents using BM25-only retrieval
+    5. Constructs prompt with conversation history + blueprint context + current query
+    6. Calls LLM with full context
+    7. Stores new messages in conversation history
+    8. Returns response with conversation_id
     
     Args:
-        request: ChatRequest with user's question
+        request: ChatRequest with:
+            - query: User's question
+            - conversation_id: Optional conversation ID (generated if not provided)
+            - blueprint_context: Optional list of extracted Room objects
     
     Returns:
-        ChatResponse with answer and citations
-    
-    Raises:
-        HTTPException: If vector store is not initialized or LLM fails
-    
-    Example request:
-        {
-            "query": "What is the minimum bedroom area required?"
-        }
-    
-    Example response:
-        {
-            "answer": "According to the National Building Code, the minimum bedroom area is 9.5 square meters...",
-            "citations": [
-                {
-                    "source": "National-Building-Code",
-                    "page": 125,
-                    "section": "5.2.3",
-                    "text": "Minimum habitable room area shall be 9.5 m²..."
-                }
-            ]
-        }
+        ChatResponse with answer, citations, and conversation_id
     """
     try:
-        # Get vector store (initializes and indexes PDFs if needed)
+        # ========================================================================
+        # STEP 1: Handle Conversation ID
+        # ========================================================================
+        # If no conversation_id provided, generate a new one
+        # If provided, we'll use it to retrieve conversation history
+        conversation_id = request.conversation_id
+        
+        if not conversation_id:
+            # Generate new conversation ID using UUID
+            # This creates a unique identifier for this conversation session
+            conversation_id = _generate_conversation_id()
+            print(f"Generated new conversation_id: {conversation_id}")
+        else:
+            print(f"Using existing conversation_id: {conversation_id}")
+        
+        # ========================================================================
+        # STEP 2: Retrieve Conversation History
+        # ========================================================================
+        # Get previous messages from this conversation (if any)
+        # This allows the LLM to understand context from earlier messages
+        conversation_history = _get_conversation_history(conversation_id)
+        
+        # Convert stored messages to LangChain message format
+        # LangChain expects tuples: ("human", content) or ("ai", content)
+        langchain_history = []
+        for msg in conversation_history:
+            if msg["role"] == "human":
+                langchain_history.append(("human", msg["content"]))
+            elif msg["role"] == "ai":
+                langchain_history.append(("ai", msg["content"]))
+        
+        print(f"Retrieved {len(langchain_history)} previous messages from conversation")
+        
+        # ========================================================================
+        # STEP 3: Build Blueprint Context String (if provided)
+        # ========================================================================
+        # If user has uploaded a blueprint and extracted rooms, include them in context
+        # This allows the LLM to reference specific rooms when answering questions
+        blueprint_context_str = ""
+        if request.blueprint_context and len(request.blueprint_context) > 0:
+            # Build a formatted string listing all extracted rooms
+            blueprint_context_str = "\n\n**User's Blueprint Context:**\n"
+            blueprint_context_str += "The user has uploaded a blueprint with the following rooms:\n"
+            
+            for room in request.blueprint_context:
+                # Format: Room Name (Type): Area m²
+                # Example: "Bedroom 1 (bedroom): 14.5 m²"
+                blueprint_context_str += f"- {room.name} ({room.type}): {room.area_m2} m²\n"
+            
+            blueprint_context_str += "\nYou can reference these specific rooms when answering questions. "
+            blueprint_context_str += "For example, if asked 'Is bedroom 1 compliant?', you can check the area "
+            blueprint_context_str += "against building code requirements.\n"
+            
+            print(f"Including blueprint context with {len(request.blueprint_context)} rooms")
+        
+        # ========================================================================
+        # STEP 4: Retrieve Relevant Documents (RAG)
+        # ========================================================================
+        # This part remains the same - we still use RAG to find relevant building code sections
         vector_store = get_vector_store()
+        retriever = vector_store.get_retriever(k=5)  # Get top 5 documents
         
-        # Get BM25-only retriever (validated as best technique via RAGAS evaluation)
-        # k=5 means retrieve top 5 documents
-        # Default is BM25-only (composite score: 0.422, best among 4 techniques)
-        retriever = vector_store.get_retriever(k=5)
-        
-        # Retrieve relevant context documents
-        # Uses BM25-only retrieval: Exact term matching for section numbers, citations, legal phrases
+        # Retrieve documents based on the current query
+        # Note: We could also consider previous queries for better retrieval, but for MVP
+        # we'll use just the current query
         retrieved_docs = retriever.invoke(request.query)
         
         if not retrieved_docs:
-            # No relevant documents found
+            # No relevant documents found - still return a response but with conversation_id
+            # Store the user's question and our response in conversation history
+            _save_message(conversation_id, "human", request.query)
+            _save_message(conversation_id, "ai", 
+                "I couldn't find relevant information in the building codes to answer your question. "
+                "Please try rephrasing or asking about a different topic.")
+            
             return ChatResponse(
                 answer="I couldn't find relevant information in the building codes to answer your question. Please try rephrasing or asking about a different topic.",
-                citations=[]
+                citations=[],
+                conversation_id=conversation_id  # NEW: Return conversation_id
             )
         
-        # Build context string from retrieved documents
-        # Format: Combine all document contents with source metadata
+        # ========================================================================
+        # STEP 5: Build Document Context String
+        # ========================================================================
+        # Format retrieved documents into a readable context string
+        # This is the same as before
         context_parts = []
         for i, doc in enumerate(retrieved_docs, 1):
             source = doc.metadata.get("source", "Unknown")
@@ -378,12 +428,11 @@ def chat(request: ChatRequest) -> ChatResponse:
         
         context = "\n\n---\n\n".join(context_parts)
         
-        # Create prompt template
-        # This tells the LLM how to answer questions with citations
-        from langchain_core.prompts import ChatPromptTemplate
-        
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are an expert building code assistant. Answer questions about building codes based on the provided context.
+        # ========================================================================
+        # STEP 6: Build System Prompt with Blueprint Context
+        # ========================================================================
+        # Update the system prompt to mention blueprint context if available
+        system_prompt = """You are an expert building code assistant. Answer questions about building codes based on the provided context.
 
 **Instructions:**
 - Answer the question using ONLY information from the provided context
@@ -398,16 +447,38 @@ def chat(request: ChatRequest) -> ChatResponse:
   - [Source: Document-Name, Page: 99 (PDF page)]  (if no section)
 - Be precise with numbers, units, and requirements
 - If multiple sources have conflicting information, mention this
-- Use SI units (meters, square meters, millimeters) as specified in the context
+- Use SI units (meters, square meters, millimeters) as specified in the context"""
+        
+        # Add blueprint context instructions if blueprint is provided
+        if blueprint_context_str:
+            system_prompt += "\n\n**Blueprint Context:**\n"
+            system_prompt += "The user has uploaded a blueprint. You can reference specific rooms from their blueprint "
+            system_prompt += "when answering questions. Use the room names and areas provided in the blueprint context."
+        
+        system_prompt += """
 
 **Important:**
 - Never make up building code requirements
 - If you're uncertain, state that clearly
-- This is informational only, not legal advice"""),
-            ("human", """Answer this question about building codes:
+- This is informational only, not legal advice"""
+        
+        # ========================================================================
+        # STEP 7: Build Human Message with Full Context
+        # ========================================================================
+        # Construct the human message that includes:
+        # 1. The current query
+        # 2. Blueprint context (if available)
+        # 3. Document context from RAG
+        human_message_template = """Answer this question about building codes:
 
 Question: {query}
-
+"""
+        
+        # Add blueprint context to human message if available
+        if blueprint_context_str:
+            human_message_template += blueprint_context_str
+        
+        human_message_template += """
 Context from building code documents:
 {context}
 
@@ -415,29 +486,66 @@ Provide a clear, accurate answer with citations.
 
 IMPORTANT: When citing pages, use the EXACT format from the context above, including "(PDF page)" or "(document page)" after the page number. For example:
 - [Source: Document-Name, Page: 99 (PDF page), Section: 10.2.5.2]
-- [Source: Document-Name, Page: 20 (document page), Section: 5.2.3]""")
-        ])
+- [Source: Document-Name, Page: 20 (document page), Section: 5.2.3]"""
         
-        # Get LLM instance
+        # ========================================================================
+        # STEP 8: Create Prompt Template with Conversation History
+        # ========================================================================
+        # Build the complete message list for LangChain:
+        # 1. System prompt (instructions)
+        # 2. Conversation history (previous messages)
+        # 3. Current human message (query + context)
+        from langchain_core.prompts import ChatPromptTemplate
+        
+        # Start with system message
+        messages = [("system", system_prompt)]
+        
+        # Add conversation history (previous messages in this conversation)
+        # This is what makes it conversational - the LLM can see what was said before
+        messages.extend(langchain_history)
+        
+        # Add current human message
+        messages.append(("human", human_message_template))
+        
+        # Create the prompt template
+        prompt = ChatPromptTemplate.from_messages(messages)
+        
+        # ========================================================================
+        # STEP 9: Call LLM with Full Context
+        # ========================================================================
+        # Get LLM instance (same as before)
         llm = get_llm(provider="openai", temperature=0.0)  # temperature=0 for deterministic answers
         
         # Create chain: prompt → LLM → response
         chain = prompt | llm
         
-        # Invoke chain with query and context
+        # Invoke chain with all context variables
+        # The prompt template will substitute {query} and {context} with actual values
         response = chain.invoke({
             "query": request.query,
             "context": context
         })
         
-        # Extract answer text
+        # Extract answer text from LLM response
         answer = response.content if hasattr(response, 'content') else str(response)
         
         # Post-process answer to fix citations (add page type indicators if missing)
         answer = _fix_citations_in_answer(answer, retrieved_docs)
         
-        # Extract citations from retrieved documents
-        # We use the metadata from the documents that were actually retrieved
+        # ========================================================================
+        # STEP 10: Store Messages in Conversation History
+        # ========================================================================
+        # Save the user's question to conversation history
+        _save_message(conversation_id, "human", request.query)
+        
+        # Save the AI's response to conversation history
+        _save_message(conversation_id, "ai", answer)
+        
+        print(f"Stored new messages in conversation {conversation_id}")
+        
+        # ========================================================================
+        # STEP 11: Extract Citations (same as before)
+        # ========================================================================
         citations = []
         seen_sources = set()  # Avoid duplicate citations
         
@@ -459,7 +567,6 @@ IMPORTANT: When citing pages, use the EXACT format from the context above, inclu
             section = doc.metadata.get("section")
             
             # Create unique key for citation (avoid duplicates)
-            # Use raw page numbers for uniqueness check
             citation_key = (source, page_document or page_pdf, section)
             if citation_key not in seen_sources:
                 citations.append(Citation(
@@ -470,10 +577,14 @@ IMPORTANT: When citing pages, use the EXACT format from the context above, inclu
                 ))
                 seen_sources.add(citation_key)
         
-        # Return response with answer and citations
+        # ========================================================================
+        # STEP 12: Return Response with Conversation ID
+        # ========================================================================
+        # Return the response, now including conversation_id so frontend can maintain it
         return ChatResponse(
             answer=answer,
-            citations=citations
+            citations=citations,
+            conversation_id=conversation_id  # NEW: Always return conversation_id
         )
         
     except ValueError as e:
