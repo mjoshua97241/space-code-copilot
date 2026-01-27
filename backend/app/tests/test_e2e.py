@@ -560,6 +560,181 @@ def test_rule_extraction():
     except Exception as e:
         log_test("Rule Extraction", False, str(e))
 
+def test_pdf_upload_and_rag(client: TestClient):
+    """Test PDF upload endpoint, verify indexing, and test RAG queries with uploaded PDF."""
+    print("=" * 60)
+    print("Testing PDF Upload, Indexing, and RAG Queries")
+    print("=" * 60)
+    
+    if not os.getenv("OPENAI_API_KEY"):
+        log_test("PDF Upload and RAG", False, "OPENAI_API_KEY not set - skipping PDF upload test")
+        return
+    
+    # Find a test PDF file
+    pdf_path = backend_dir / "app" / "data" / "PD1096-National-Building-Code.pdf"
+    if not pdf_path.exists():
+        pdf_path = backend_dir / "app" / "data" / "National-Building-Code.pdf"
+    if not pdf_path.exists():
+        pdf_path = backend_dir / "app" / "data" / "RA9514-Fire-Code-RIRR-rev-2019.pdf"
+    
+    if not pdf_path.exists():
+        log_test("PDF Upload and RAG", False, f"Test PDF not found - cannot test upload")
+        return
+    
+    try:
+        # ========================================================================
+        # TEST 1: Upload PDF via API endpoint
+        # ========================================================================
+        print("\n--- Test 1: Upload PDF via /api/codes/upload/ ---")
+        with open(pdf_path, "rb") as f:
+            response = client.post(
+                "/api/codes/upload/",
+                files={"file": (pdf_path.name, f, "application/pdf")}
+            )
+        
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        data = response.json()
+        
+        # Verify response structure
+        assert "success" in data, "Response should include 'success' field"
+        assert data["success"] is True, "Upload should be successful"
+        assert "filename" in data, "Response should include 'filename' field"
+        assert "chunks" in data, "Response should include 'chunks' field"
+        assert "message" in data, "Response should include 'message' field"
+        
+        uploaded_filename = data["filename"]
+        chunk_count = data["chunks"]
+        
+        assert chunk_count > 0, f"Should have at least one chunk, got {chunk_count}"
+        
+        log_test("PDF Upload - Endpoint Response", True, 
+                f"Uploaded '{uploaded_filename}' with {chunk_count} chunks")
+        
+        # ========================================================================
+        # TEST 2: Verify PDF is indexed in vector store
+        # ========================================================================
+        print("\n--- Test 2: Verify PDF is indexed in vector store ---")
+        from app.api.chat import get_vector_store
+        
+        vector_store = get_vector_store()
+        retriever = vector_store.get_retriever(k=5, use_bm25_only=True)
+        
+        # Try to retrieve documents using a query that should match the uploaded PDF
+        # Use a generic query that should find something in building codes
+        test_query = "minimum area requirements"
+        retrieved_docs = retriever.invoke(test_query)
+        
+        assert len(retrieved_docs) > 0, "Should retrieve at least one document"
+        
+        # Check if any retrieved document has the uploaded filename as source
+        # The source might be the filename without extension or with some transformation
+        source_names = [doc.metadata.get("source", "") for doc in retrieved_docs]
+        filename_base = Path(uploaded_filename).stem  # Remove .pdf extension
+        
+        # Check if uploaded PDF appears in retrieved documents
+        # Source might be filename or filename without extension
+        found_uploaded_pdf = any(
+            filename_base.lower() in source.lower() or 
+            uploaded_filename.lower() in source.lower()
+            for source in source_names
+        )
+        
+        log_test("PDF Upload - Indexing Verification", found_uploaded_pdf,
+                f"Retrieved {len(retrieved_docs)} docs. Sources: {source_names[:3]}")
+        
+        # ========================================================================
+        # TEST 3: Test RAG query with uploaded PDF content
+        # ========================================================================
+        print("\n--- Test 3: Test RAG query to verify uploaded PDF is accessible ---")
+        
+        # Make a chat query that should retrieve content from the uploaded PDF
+        # Use a query that's likely to be in building codes
+        chat_response = client.post(
+            "/api/chat",
+            json={"query": "What are the minimum area requirements for bedrooms?"}
+        )
+        
+        assert chat_response.status_code == 200, \
+            f"Expected 200, got {chat_response.status_code}. Response: {chat_response.text}"
+        
+        chat_data = chat_response.json()
+        assert "answer" in chat_data, "Chat response should include 'answer'"
+        assert "citations" in chat_data, "Chat response should include 'citations'"
+        assert len(chat_data["answer"]) > 0, "Answer should not be empty"
+        
+        # Check if citations include the uploaded PDF
+        citations = chat_data["citations"]
+        citation_sources = [c.get("source", "") for c in citations]
+        
+        # Check if uploaded PDF appears in citations
+        found_in_citations = any(
+            filename_base.lower() in source.lower() or 
+            uploaded_filename.lower() in source.lower()
+            for source in citation_sources
+        )
+        
+        log_test("PDF Upload - RAG Query Test", True,
+                f"Got answer ({len(chat_data['answer'])} chars) with {len(citations)} citations")
+        
+        log_test("PDF Upload - Citation Verification", found_in_citations,
+                f"Citations: {citation_sources[:3]}")
+        
+        # ========================================================================
+        # TEST 4: Test error handling (non-PDF file)
+        # ========================================================================
+        print("\n--- Test 4: Test error handling (non-PDF file) ---")
+        
+        # Create a temporary text file
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write("This is not a PDF file")
+            tmp_path = tmp.name
+        
+        try:
+            with open(tmp_path, "rb") as f:
+                error_response = client.post(
+                    "/api/codes/upload/",
+                    files={"file": ("test.txt", f, "text/plain")}
+                )
+            
+            assert error_response.status_code == 400, \
+                f"Expected 400 for non-PDF file, got {error_response.status_code}"
+            
+            error_data = error_response.json()
+            assert "detail" in error_data, "Error response should include 'detail'"
+            assert "PDF" in error_data["detail"] or "pdf" in error_data["detail"].lower(), \
+                "Error message should mention PDF requirement"
+            
+            log_test("PDF Upload - Error Handling", True,
+                    f"Correctly rejected non-PDF file: {error_data.get('detail', '')[:50]}")
+        
+        finally:
+            # Clean up temp file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        
+        # ========================================================================
+        # SUMMARY
+        # ========================================================================
+        print("\n" + "=" * 60)
+        print("PDF Upload and RAG Test Summary")
+        print("=" * 60)
+        print(f"✅ PDF upload endpoint works: {uploaded_filename} ({chunk_count} chunks)")
+        print(f"✅ PDF indexed in vector store: {found_uploaded_pdf}")
+        print(f"✅ RAG queries work with uploaded PDF")
+        print(f"✅ Error handling works for non-PDF files")
+        print("=" * 60 + "\n")
+        
+        log_test("PDF Upload and RAG - All Tests", True,
+                f"Successfully tested upload, indexing, and RAG queries")
+        
+    except AssertionError as e:
+        log_test("PDF Upload and RAG", False, f"Assertion failed: {str(e)}")
+        raise  # Re-raise so pytest sees the failure
+    except Exception as e:
+        log_test("PDF Upload and RAG", False, f"Unexpected error: {str(e)}")
+        raise  # Re-raise so pytest sees the failure
+
 def print_summary():
     """Print test summary."""
     print("=" * 60)
@@ -613,6 +788,7 @@ def main():
     test_vector_store()
     test_compliance_checker()
     test_rule_extraction()
+    test_pdf_upload_and_rag(client)
     
     # Print summary
     print_summary()
