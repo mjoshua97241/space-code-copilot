@@ -279,6 +279,12 @@ flowchart LR
 - Visual highlighting: Display VLM-generated overlays on uploaded blueprint images
 - Merge overlays: Intelligently combine VLM and OCR overlays (prefer VLM, fallback to OCR)
 - HF VLM evaluation: Run in Colab or GPU environment when available
+- **Blueprint Data Storage & Embedding**: Currently, blueprint extraction results (extracted rooms) are passed directly in chat requests as `blueprint_context`. For future multi-blueprint search capabilities, consider:
+  - Embedding structured room data (name, type, area, level) for semantic search across multiple blueprints
+  - Enabling queries like "Find all bedrooms larger than 20m² across all projects"
+  - Cross-project room similarity search ("Find rooms similar to this office layout")
+  - Historical blueprint analysis and comparison
+  - **Note**: Current MVP uses direct pass-through (simpler, sufficient for single-blueprint sessions). Vector store embedding would require different strategy than text document embeddings (structured data vs. unstructured text). Consider separate structured data store (database) vs. vector store depending on use case.
 
 ## Future Integration
 

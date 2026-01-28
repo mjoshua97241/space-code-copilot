@@ -250,6 +250,15 @@
    - GPU-based evaluation of HF VLM models (currently deferred, requires CUDA)
    - Colab runner available for future GPU evaluation
 
+6. **Blueprint Data Storage & Embedding**
+   - Currently, blueprint extraction results are passed directly in chat requests
+   - For multi-blueprint search capabilities, consider embedding structured room data
+   - Enable queries like "Find all bedrooms larger than 20m² across all projects"
+   - Cross-project room similarity search and historical blueprint analysis
+   - **Note**: Current MVP uses direct pass-through (simpler, sufficient for single-blueprint sessions)
+   - Would require different embedding strategy than text documents (structured data vs. unstructured text)
+   - Consider separate structured data store (database) vs. vector store depending on use case
+
 **MVP Status:** Ready for CAD software integration
 
 ---

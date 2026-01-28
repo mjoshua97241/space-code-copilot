@@ -46,7 +46,8 @@ AI patterns:
   - room label reading and type classification
   - dimension annotation association with rooms
   - structured extraction (blueprint → Room models → compliance checking)
-- **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing
+- **Blueprint Data Storage**: Currently, blueprint extraction results are passed directly in chat requests (`blueprint_context` field). For future multi-blueprint search capabilities, consider embedding structured room data or using a separate structured data store (database) rather than vector store, as structured data requires different embedding/retrieval strategies than text documents.
+- **Deferred to post-MVP**: Cross-encoder re-ranking, multi-hop retrieval, conflict resolution, structured hierarchy parsing, blueprint data embedding/storage
 
 ## HF VLM Evaluation Pattern (Deferred)
 
