@@ -30,6 +30,7 @@ flowchart LR
   CHATAPI["Chat API\n(Conversational RAG)"]
   CONVSTORE["Conversation\nStorage\n(In-memory)"]
   CODESAPI["Codes API\n(PDF Upload)"]
+  BLUEPRINTAPI["Blueprint API\n(Room Extraction)"]
   ISSUESAPI["Issues API"]
   
   FRONT["Frontend UI\n(HTML/CSS/JS)\n[CAD UI Proxy]"]
@@ -39,13 +40,14 @@ flowchart LR
   BLUEPRINT["Blueprint\nExtraction Tab"]
   UPLOAD["Upload Codes\nTab"]
   
-  LLM["LLM Client\n(OpenAI/Gemini\nAbstraction)"]
+  LLM["Text LLM Client\n(OpenAI/Gemini\nfor RAG & Rules)"]
+  VLM["Vision LLM Client\n(Gemini 2.0 Flash\nDefault)"]
   CACHE["LLM Cache\n(SQLite/Memory)"]
   LOG["Logging\n(Optional)"]
   
   subgraph HOST["LLM Hosting"]
-    OPENAI["OpenAI API"]
-    GEMINI["Gemini API\n(Placeholder)"]
+    OPENAI["OpenAI API\n(GPT-4o)"]
+    GEMINI["Gemini API\n(Gemini 2.0 Flash)"]
   end
   
   %% ---------- Contextual / indexing (dashed gray) - D ----------
@@ -64,10 +66,13 @@ flowchart LR
   CODESAPI -.->|D| PINGEST
   CHATAPI -.->|D| CONVSTORE
   CONVSTORE -.->|D| CHATAPI
+  BLUEPRINTAPI -.->|D| COMP
+  BLUEPRINTAPI -.->|D| RULES
   
   %% ---------- Prompts (black) - P ----------
   RULEX -->|P| LLM
   CHATAPI -->|P| LLM
+  BLUEPRINTAPI -->|P| VLM
   
   %% ---------- Query path through retrieval (blue) - Q ----------
   CHATAPI -->|Q| VDB
@@ -77,11 +82,13 @@ flowchart LR
   %% ---------- User query + app hosting (blue in / red out) - Q/A ----------
   FRONT -->|Q| CHATAPI
   FRONT -->|Q| CODESAPI
+  FRONT -->|Q| BLUEPRINTAPI
   FRONT -->|Q| ISSUESAPI
   COMP -->|Q| ISSUESAPI
   ISSUESAPI -->|A| FRONT
   CHATAPI -->|A| FRONT
   CODESAPI -->|A| FRONT
+  BLUEPRINTAPI -->|A| FRONT
   
   FRONT -->|Q| PLAN
   FRONT -->|Q| ISSUES
@@ -92,6 +99,7 @@ flowchart LR
   %% ---------- Blueprint context flow (green) - BC ----------
   BLUEPRINT -.->|BC| CHAT
   CHAT -.->|BC| CHATAPI
+  BLUEPRINTAPI -.->|BC| BLUEPRINT
   
   %% ---------- Orchestration ↔ Cache (dashed/blue/red) - D/Q/A ----------
   LLM -.->|D| CACHE
@@ -102,11 +110,20 @@ flowchart LR
   CACHE -.->|D| OPENAI
   CACHE -->|Q| OPENAI
   OPENAI -->|A| CACHE
+  VLM -->|Q| GEMINI
+  GEMINI -->|A| VLM
+  LLM -->|Q| OPENAI
+  LLM -->|Q| GEMINI
+  OPENAI -->|A| LLM
+  GEMINI -->|A| LLM
   
   %% ---------- Orchestration ↔ Logging (dashed/blue/red) - D/Q/A ----------
   LLM -.->|D| LOG
   LLM -->|Q| LOG
   LOG -->|A| LLM
+  VLM -.->|D| LOG
+  VLM -->|Q| LOG
+  LOG -->|A| VLM
   
   %% ---------- Hosting internal relationships (dashed) - D ----------
   OPENAI -.->|D| HOST
@@ -133,7 +150,7 @@ flowchart LR
   
   %% ---------- Styling ----------
   classDef box fill:#efefef,stroke:#bbb,stroke-width:1px,color:#111;
-  class CSV,PDF,PDFUP,DLOAD,PINGEST,EM,VDB,RULES,COMP,RULEX,CHATAPI,CONVSTORE,CODESAPI,ISSUESAPI,FRONT,PLAN,ISSUES,CHAT,BLUEPRINT,UPLOAD,LLM,CACHE,LOG,OPENAI,GEMINI box;
+  class CSV,PDF,PDFUP,DLOAD,PINGEST,EM,VDB,RULES,COMP,RULEX,CHATAPI,CONVSTORE,CODESAPI,BLUEPRINTAPI,ISSUESAPI,FRONT,PLAN,ISSUES,CHAT,BLUEPRINT,UPLOAD,LLM,VLM,CACHE,LOG,OPENAI,GEMINI box;
 ```
 
 ## Component Breakdown
@@ -176,8 +193,17 @@ flowchart LR
    - PDF saved to `app/data/uploads/` for compliance rule extraction
    - Source metadata fixed to use actual filename (not temp filename)
 
+### Blueprint Extraction Flow (VLM)
+6. **Blueprint Image** → Blueprint API → Vision LLM → Extracted Rooms → Compliance Checker
+   - User uploads blueprint image (PNG/JPG/PDF) via Blueprint Extraction tab
+   - Blueprint API calls Vision LLM (Gemini 2.0 Flash, default)
+   - VLM performs semantic understanding: reads room labels, classifies types, associates dimensions
+   - Returns structured room data (name, type, area) with confidence scores
+   - Extracted rooms can be checked for compliance
+   - Extracted rooms passed to chat as blueprint context
+
 ### Conversational Chat Flow
-6. **User Query** → Chat API → Conversation Storage → LLM (with history + blueprint context)
+7. **User Query** → Chat API → Conversation Storage → Text LLM (with history + blueprint context)
    - Chat API generates or retrieves conversation_id
    - Retrieves conversation history from in-memory storage
    - Integrates blueprint context (extracted rooms) if available
@@ -193,7 +219,8 @@ flowchart LR
   - Conversation storage
   
 - **P (Black)**: Prompts/LLM calls
-  - Direct LLM API calls for rule extraction and chat
+  - Direct LLM API calls for rule extraction and chat (Text LLM)
+  - Direct VLM API calls for blueprint extraction (Vision LLM)
   
 - **Q (Blue)**: Queries/Requests
   - User queries, API requests, retrieval operations
@@ -231,6 +258,13 @@ flowchart LR
    - PDFs indexed in vector store for immediate RAG queries
    - Source metadata uses actual filename (not temp filename) for accurate citations
    - Enables multi-jurisdiction support and custom code sets
+
+7. **VLM-Based Blueprint Extraction**: Vision LLM (Gemini 2.0 Flash) for semantic room extraction
+   - VLM performs semantic understanding (not just OCR)
+   - Reads room labels, classifies types, associates dimensions with rooms
+   - Selected via evaluation: Gemini 2.0 Flash (composite score: 0.753 vs GPT-4o's 0.743)
+   - Better recall (69.66% vs 53.85%), faster latency (7.61s vs 13.53s), lower cost
+   - Extracted rooms integrated with compliance checking and conversational chat
 
 ## Known Limitations & Deferred Features
 
