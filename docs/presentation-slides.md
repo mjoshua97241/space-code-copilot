@@ -41,15 +41,23 @@
 
 1. **Automated Compliance Checking**
    - Loads design data (rooms, doors) from CAD software
-   - Checks against extracted building code rules
+   - Checks against extracted building code rules (seeded + LLM-extracted from PDFs)
    - Returns structured violations with code references
 
-2. **RAG-Based Code Q&A**
-   - Ingest building code PDFs
-   - Answer questions about requirements
+2. **Conversational RAG-Based Code Q&A**
+   - Ingest building code PDFs (pre-loaded + user-uploaded)
+   - Answer questions about requirements with conversation history
+   - Integrates with extracted blueprint room data for context-aware responses
    - Provide citations with page numbers
+   - Supports follow-up questions and context-aware answers
 
-3. **Visual Issue Highlighting**
+3. **PDF Upload for Custom Building Codes**
+   - Users can upload their own building code PDFs
+   - Uploaded PDFs immediately indexed for RAG queries
+   - Uploaded PDFs included in compliance rule extraction
+   - Enables multi-jurisdiction support
+
+4. **Visual Issue Highlighting**
    - Interactive floor plan viewer
    - Highlights non-compliant elements
    - Click issue → see highlighted area on plan
@@ -68,8 +76,10 @@
 
 **What's Included:**
 - ✅ Single floor plan with CSV schedules (rooms, doors)
-- ✅ 1-2 building code PDFs with RAG-based Q&A
+- ✅ Pre-loaded + user-uploaded building code PDFs with RAG-based Q&A
 - ✅ Automated compliance checking (room area, door width)
+- ✅ Conversational chat with blueprint context integration
+- ✅ PDF upload tab for custom building codes
 - ✅ Interactive plan viewer with issue highlighting
 - ✅ Plain HTML/CSS/JS frontend (no build toolchain)
 - ✅ Project context filtering (reduces false positives)
@@ -97,8 +107,9 @@
    - In production: Direct CAD integration (AutoCAD/Revit APIs)
 
 2. **RAG Flow (PDF → Chat)**
-   - Building Code PDFs → PDF Ingest → Embedding Model → Vector Store → Chat API
+   - Building Code PDFs (pre-loaded + uploaded) → PDF Ingest → Embedding Model → Vector Store → Chat API
    - BM25 retrieval (validated best for building codes)
+   - Uploaded PDFs saved to persistent storage for compliance checking
 
 3. **LLM Flow (Rule Extraction + Chat)**
    - Rule Extractor/Chat API → LLM Client → Cache → OpenAI API
@@ -157,20 +168,29 @@
    - List of violations (room area, door width)
    - Click issue → red highlight on floor plan overlay
 
-3. **Interactive Chat**
+3. **Conversational Chat**
    - Ask: "What is the minimum bedroom area?"
    - RAG response with citations from building code PDFs
-   - Ask: "Why is room R101 non-compliant?"
-   - Context-aware answer referencing current issues
+   - Ask follow-up: "What about bathrooms?"
+   - System maintains conversation context
+   - Ask: "Tell me about ramp width from [uploaded PDF]"
+   - Demonstrates uploaded PDF integration
 
-4. **Visual Highlighting**
+4. **PDF Upload**
+   - Switch to "Upload Building Codes" tab
+   - Upload a building code PDF
+   - Show success message and indexing status
+   - Demonstrate uploaded PDF is immediately searchable
+
+5. **Visual Highlighting**
    - Select issue from list
    - Corresponding overlay highlights in red on plan
    - Shows exact location of violation
 
 **Key Features Demonstrated:**
 - Automated compliance checking
-- RAG-powered code Q&A
+- Conversational RAG-powered code Q&A with blueprint context
+- PDF upload for custom building codes
 - Visual issue highlighting
 - Add-In architecture concept
 
@@ -182,7 +202,9 @@
 
 **What We Built:**
 - ✅ Automated compliance checker with rule extraction
-- ✅ RAG-based building code Q&A with citations
+- ✅ Conversational RAG-based building code Q&A with citations
+- ✅ Blueprint context integration (extracted rooms in chat)
+- ✅ PDF upload for custom building codes (multi-jurisdiction support)
 - ✅ Interactive floor plan viewer with issue highlighting
 - ✅ Project context filtering (reduces false positives)
 - ✅ Validated BM25 retrieval for building codes
@@ -219,15 +241,16 @@
 - **Slide 4 (Scope & Limitations)**: 30 seconds
 - **Slide 5 (Architecture)**: 1.5 minutes
 - **Slide 6 (Metrics)**: 1 minute
-- **Slide 7 (Demo)**: 2.5 minutes
+- **Slide 7 (Demo)**: 2.5 minutes (includes conversational chat and PDF upload)
 - **Slide 8 (Takeaways)**: 30 seconds
 
 ### Key Talking Points
 
 1. **Emphasize Add-In architecture**: This is not just a web app—it's designed to integrate into CAD software
 2. **Highlight validation**: BM25 retrieval was validated via RAGAS evaluation
-3. **Show real results**: 6 compliance issues found, RAG answers with citations
-4. **Demonstrate interactivity**: Click issue → see highlight on plan
+3. **Show real results**: Compliance issues found, conversational RAG answers with citations
+4. **Demonstrate interactivity**: Click issue → see highlight on plan, follow-up questions work, PDF upload integrates seamlessly
+5. **Show multi-jurisdiction support**: Upload PDFs from different jurisdictions, immediately available for queries and compliance
 
 ### Q&A Preparation
 

@@ -1,6 +1,6 @@
 # Demo Script - Code-Aware Space Planning Copilot
 
-**Duration:** 2.5 minutes  
+**Duration:** 3.5 minutes  
 **Context:** MVP is proof-of-concept Add-In for CAD software (AutoCAD/Revit)
 
 ---
@@ -16,7 +16,7 @@
 
 ---
 
-## Demo Flow (2.5 minutes)
+## Demo Flow (3.5 minutes)
 
 ### Step 1: Context & Overview (15 seconds)
 
@@ -95,70 +95,103 @@
 
 ---
 
-### Step 4: RAG-Powered Chat (60 seconds)
+### Step 4: Conversational Chat with Blueprint Context (60 seconds)
 
 **Talking Points:**
-- "The system can answer questions about building code requirements"
-- "It uses RAG (Retrieval-Augmented Generation) to find relevant code sections"
-- "Answers include citations with page numbers"
+- "The system supports conversational chat with context awareness"
+- "It maintains conversation history and integrates with extracted blueprint data"
+- "You can ask follow-up questions and reference specific rooms from uploaded blueprints"
 
-**Action 1: Ask about minimum bedroom area (20 seconds)**
+**Action 1: Ask about minimum bedroom area (15 seconds)**
 - Type: **"What is the minimum bedroom area?"**
 - Click Send
 - Wait for response
+- **Note:** System generates a `conversation_id` automatically (shown in response)
 
 **Expected Response:**
 - Answer mentions minimum bedroom area requirements
 - May reference 9.5 m² (from seeded rules) or values from PDFs
 - Includes citations with page numbers
-- Example citations:
-  - `RA9514-RIRR-rev-2019-compressed, Page: 96 (PDF page)`
-  - `RA9514-RIRR-rev-2019-compressed, Page: 220 (PDF page)`
+- Response includes `conversation_id` for maintaining context
 
-**Note:** The actual response may vary. The system may say it doesn't have information if the PDFs don't contain explicit bedroom area requirements, but it should still provide relevant context.
-
-**Action 2: Ask about R101 non-compliance (20 seconds)**
-- Type: **"Why is room R101 non-compliant?"**
+**Action 2: Follow-up question (15 seconds)**
+- Type: **"What about bathrooms?"**
 - Click Send
 - Wait for response
 
 **Expected Response:**
-- Answer explains that R101 has area 8.5 m², which is below the 9.5 m² minimum
-- May reference exit access requirements (from PDFs)
-- Includes citations from building code PDFs
-- Example citations:
-  - `RA9514-RIRR-rev-2019-compressed, Page: 165 (PDF page), Section: 10.2.5.2`
-  - `RA9514-RIRR-rev-2019-compressed, Page: 273 (PDF page)`
+- Answer understands this is a follow-up about bathroom requirements
+- Uses conversation history to provide context-aware response
+- May reference previous bedroom question implicitly
 
-**Action 3: Ask about door width requirements (20 seconds)**
-- Type: **"What are the door width requirements?"**
+**Action 3: Ask about uploaded PDF (15 seconds)**
+- Switch to "📚 Upload Building Codes" tab
+- Upload a building code PDF (e.g., `B344_AccessibilityLaw_2.pdf`)
+- Wait for "✅ Successfully indexed" message
+- Switch back to "💬 Q&A Chat" tab
+- Type: **"Tell me about the minimum ramp width based on the B344_AccessibilityLaw_2.pdf"**
 - Click Send
 - Wait for response
 
 **Expected Response:**
-- Answer lists door width requirements (e.g., 710 mm minimum, 800 mm for accessible doors)
-- May mention multiple requirements from different code sections
-- Includes citations with page numbers
-- Example citations:
-  - `RA9514-RIRR-rev-2019-compressed, Page: 99 (PDF page), Section: 10.2.5.2`
-  - `RA9514-RIRR-rev-2019-compressed, Page: 98 (PDF page)`
-  - `National-Building-Code, Page: 192 (PDF page)`
+- Answer retrieves information from the uploaded PDF
+- Citations show the uploaded PDF filename (e.g., `B344_AccessibilityLaw_2`)
+- Demonstrates that uploaded PDFs are immediately available for RAG queries
+
+**Action 4: Ask about blueprint context (15 seconds)**
+- If you have extracted rooms from a blueprint:
+  - Type: **"Is bedroom 1 compliant with minimum area requirements?"**
+  - Click Send
+  - Wait for response
+
+**Expected Response:**
+- Answer references the specific room from extracted blueprint data
+- Mentions actual room area and compares to requirements
+- Demonstrates blueprint context integration
 
 ---
 
-### Step 5: Closing (20 seconds)
+### Step 5: PDF Upload for Building Codes (30 seconds)
+
+**Talking Points:**
+- "Users can upload their own building code PDFs"
+- "Uploaded PDFs are immediately indexed and available for both chat queries and compliance checking"
+- "This enables multi-jurisdiction support and custom code sets"
+
+**Action:**
+1. Switch to "📚 Upload Building Codes" tab
+2. Show the upload interface
+3. Upload a sample PDF (if not already done)
+4. Show success message with chunk count
+5. Show uploaded codes list (if any previous uploads)
+6. Explain that uploaded PDFs are:
+   - Available for RAG queries in chat
+   - Included in rule extraction for compliance checking
+   - Saved persistently for future use
+
+**Expected Behavior:**
+- Upload shows "Uploading and indexing PDF..." status
+- Success message: "✅ Successfully indexed 'filename.pdf' (X chunks)"
+- Uploaded PDF appears in list with filename, chunk count, and timestamp
+- PDF is immediately searchable in chat queries
+- PDF is included in compliance rule extraction
+
+---
+
+### Step 6: Closing (20 seconds)
 
 **Talking Points:**
 - "This MVP demonstrates core functionality for CAD Add-In integration"
+- "Key features: Automated compliance checking, conversational chat with blueprint context, PDF upload for custom codes"
 - "Future enhancements: Direct CAD integration, user-provided API keys, advanced features"
-- "The system successfully combines automated compliance checking with RAG-powered code Q&A"
 
 **Action:**
 - Show the full UI one more time
-- Highlight the three key features:
+- Highlight the key features:
   1. Automated compliance checking
   2. Visual issue highlighting
-  3. RAG-powered code Q&A
+  3. Conversational RAG-powered code Q&A with blueprint context
+  4. PDF upload for custom building codes
 
 ---
 
@@ -235,9 +268,10 @@ If live demo fails:
 
 **Common Questions:**
 - **"How accurate is the rule extraction?"** → Explain that it's a proof-of-concept, some rules need refinement, but core violations are correct
-- **"Can it handle multiple jurisdictions?"** → Yes, the system can ingest multiple PDFs from different jurisdictions
+- **"Can it handle multiple jurisdictions?"** → Yes, users can upload PDFs from different jurisdictions via the Upload Building Codes tab. Uploaded PDFs are immediately available for both chat queries and compliance checking
+- **"How does conversational chat work?"** → System maintains conversation history per conversation_id, enabling follow-up questions. Blueprint context integration allows referencing specific extracted rooms
 - **"What about BIM integration?"** → This is post-MVP; CSV is a proxy for CAD data export
-- **"How does RAG work?"** → BM25 retrieval (validated best for building codes), then LLM generates answers with citations
+- **"How does RAG work?"** → BM25 retrieval (validated best for building codes), then LLM generates answers with citations. Uploaded PDFs are indexed and searchable immediately
 
 ---
 

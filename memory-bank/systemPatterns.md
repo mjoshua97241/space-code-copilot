@@ -8,9 +8,9 @@ Backend patterns:
   - Setup templates: `Jinja2Templates(directory=...)`
 - API routes in app/api/\*.py, mounted in app/main.py via include_router:
   - `app/api/issues.py` - Compliance issues endpoints (`GET /api/issues`, `GET /api/issues/summary`)
-  - `app/api/chat.py` - RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, post-processing to fix LLM citations, **conversational context support** (conversation_id, blueprint_context), and in-memory conversation history - **Status**: ✅ **COMPLETE** - Conversational chat with blueprint context integration complete
+  - `app/api/chat.py` - Conversational RAG-based chat endpoint (`POST /api/chat`) with BM25-only retrieval (validated best), explicit page type indicators in citations, post-processing to fix LLM citations, **conversational context support** (conversation_id, blueprint_context), and in-memory conversation history - **Status**: ✅ **COMPLETE** - Conversational chat with blueprint context integration complete, supports follow-up questions and context-aware responses about extracted blueprint rooms
   - `app/api/blueprint.py` - Blueprint extraction endpoint (`POST /api/blueprint/extract`) - **Status**: ✅ **COMPLETE** - Accepts blueprint image upload (PNG/JPG/PDF), extracts room data using VLM, returns preview-only results, supports multi-page PDFs with optional page_index parameter
-  - `app/api/codes.py` - Building code PDF upload endpoint (`POST /api/codes/upload/`) - **Status**: ✅ **COMPLETE** - Uploads and indexes building code PDFs, saves to persistent storage for compliance checking, fixes source metadata to use actual filename
+  - `app/api/codes.py` - Building code PDF upload endpoint (`POST /api/codes/upload/`) - **Status**: ✅ **COMPLETE** - Uploads and indexes building code PDFs, saves to persistent storage (`app/data/uploads/`) for compliance checking, fixes source metadata to use actual filename (not temp filename), handles duplicate filenames, immediately available for RAG queries and rule extraction
 - Services in app/services/\*.py encapsulate:
   - design_loader (CSV → Room/Door models)
   - pdf_ingest (PDF → chunks) - **Status**: ✅ **COMPLETE** - Enhanced with page number extraction (PDF + document pages), section extraction, and metadata preservation
@@ -29,8 +29,12 @@ AI patterns:
   - Why BM25-only: Building codes are term-heavy with exact legal phrasing; exact term matching outperforms semantic similarity for this domain
   - See `memory-bank/implementationPlan.md` for evaluation details
   - **Status**: `vector_store.py` defaults to BM25-only retrieval (updated based on evaluation results)
-- Supports multiple code documents simultaneously (multi-jurisdiction support).
-- Architects can query across different building codes without switching contexts.
+- Supports multiple code documents simultaneously (multi-jurisdiction support):
+  - Pre-loaded PDFs in `app/data/*.pdf` (indexed on server startup)
+  - User-uploaded PDFs via `POST /api/codes/upload/` (saved to `app/data/uploads/`)
+  - Uploaded PDFs immediately available for RAG queries and compliance rule extraction
+  - Architects can query across different building codes without switching contexts
+  - Uploaded PDFs persist across server restarts (saved to disk)
 - Use deterministic Python for simple numeric compliance (area, widths).
 - Use LLM for:
   - summarizing issues

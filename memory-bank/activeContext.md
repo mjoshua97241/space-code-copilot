@@ -175,16 +175,21 @@ Recent changes:
 
 **Recent Completions:**
 1. ✅ **Conversational Chat with Blueprint Context COMPLETE**: All features implemented and tested
-   - Conversation history management with in-memory storage
-   - Blueprint context integration (extracted rooms passed to chat)
-   - Follow-up questions work with context
-   - Comprehensive test suite validates all scenarios
+   - Conversation history management with in-memory storage (`_conversations` dictionary)
+   - Blueprint context integration (extracted rooms passed to chat via `blueprint_context` field)
+   - Follow-up questions work with context (e.g., "What about bathrooms?" after asking about bedrooms)
+   - Context-aware responses about specific blueprint rooms
+   - Comprehensive test suite (`test_conversation_flow()`) validates all scenarios
+   - Frontend maintains `conversationId` and passes `blueprint_context` from `extractedRooms`
 2. ✅ **PDF Upload Tab for Building Codes COMPLETE**: All features implemented, tested, and integrated
-   - PDF upload endpoint with persistent storage
-   - Integration with conversational chat (RAG queries)
-   - Integration with compliance checking (rule extraction)
-   - Source metadata fix (uses actual filename, not temp filename)
-   - Comprehensive test suite validates upload, indexing, RAG, and compliance integration
+   - PDF upload endpoint (`POST /api/codes/upload/`) with persistent storage (`app/data/uploads/`)
+   - Integration with conversational chat (uploaded PDFs immediately accessible via RAG queries)
+   - Integration with compliance checking (uploaded PDFs automatically included in rule extraction via `get_all_rules()`)
+   - Source metadata fix (uses actual filename, not temp filename) - fixed issue where temp filenames appeared in citations
+   - Handles duplicate filenames (appends `_1`, `_2`, etc.)
+   - Frontend: Third tab "📚 Upload Building Codes" with drag-and-drop, status messages, uploaded codes list
+   - Fixed CSS class mismatch (was using `${type}`, now uses `status-${type}` for proper styling)
+   - Comprehensive test suite (`test_pdf_upload_and_rag()`) validates upload, indexing, RAG, and compliance integration
 
 **Next Priority:**
 1. ✅ **RAG Technique Validation COMPLETE**: Evaluated 4 techniques using RAGAS metrics

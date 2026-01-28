@@ -35,6 +35,7 @@ todos:
   - id: metrics-endpoint-optional
     content: (Optional) Create app/api/metrics.py with performance metrics, LLM usage stats, RAG quality metrics. Mount router and document in docs/metrics-endpoint.md
     status: pending
+isProject: false
 ---
 
 # Presentation Preparation Plan
@@ -156,6 +157,8 @@ flowchart LR
   class CSV,PDF,DLOAD,PINGEST,EM,VDB,RULES,COMP,RULEX,CHATAPI,ISSUESAPI,FRONT,PLAN,ISSUES,CHAT,LLM,CACHE,LOG,OPENAI,GEMINI box;
 ```
 
+
+
 ## Implementation Tasks
 
 ### 1. Create Visual Aids
@@ -164,16 +167,16 @@ flowchart LR
 
 - Create diagram in the style of `internal/lessons/day_1/architecture-diagram.md`:
 - **Important Context Note**: Add a note/clarification that:
-    - CSV files are a proxy for data from CAD software (AutoCAD/Revit)
-    - Standalone web UI is a proxy for CAD software UI
-    - MVP demonstrates Add-In architecture (would integrate into CAD software)
+  - CSV files are a proxy for data from CAD software (AutoCAD/Revit)
+  - Standalone web UI is a proxy for CAD software UI
+  - MVP demonstrates Add-In architecture (would integrate into CAD software)
 - Color-coded edges: dashed gray (contextual data/indexing), black (prompts/LLM calls), blue (queries/requests), red (outputs/responses)
 - Legend showing edge type meanings
 - Component breakdown showing:
-    - Data flow: CAD Software (CSV proxy) → Design Loader → Compliance Checker → Issues API
-    - RAG flow: PDF → PDF Ingest → Embedding Model → Vector Store → Chat API
-    - LLM flow: Rule Extractor/Chat API → LLM Client → Cache → OpenAI API
-    - Frontend components: Plan Viewer (CAD UI proxy), Issues List, Chat Panel
+  - Data flow: CAD Software (CSV proxy) → Design Loader → Compliance Checker → Issues API
+  - RAG flow: PDF → PDF Ingest → Embedding Model → Vector Store → Chat API
+  - LLM flow: Rule Extractor/Chat API → LLM Client → Cache → OpenAI API
+  - Frontend components: Plan Viewer (CAD UI proxy), Issues List, Chat Panel
 - Include caching, logging, and LLM abstraction layers
 - Format: Mermaid diagram (for docs) or export to image (PNG/SVG) for slides
 - Location: Save to `docs/architecture-diagram.md` or `docs/architecture-diagram.png`
@@ -189,18 +192,18 @@ flowchart LR
 - **Note**: MVP is proof-of-concept Add-In for CAD software (AutoCAD/Revit)
 - CSV is proxy for CAD data, web UI is proxy for CAD UI
 
-4. Architecture: System diagram with component breakdown
+1. Architecture: System diagram with component breakdown
 
 - Show Add-In integration concept (would embed in CAD software)
 - Clarify CSV and web UI are proxies for CAD integration
 
-5. Metrics: Performance and quality metrics summary
-6. Demo: Screenshots and key features
+1. Metrics: Performance and quality metrics summary
+2. Demo: Screenshots and key features
 
 - Clarify that standalone UI demonstrates Add-In functionality
 - Explain CSV represents CAD software data export
 
-7. Takeaways: Key achievements and future enhancements
+1. Takeaways: Key achievements and future enhancements
 
 - Future: Direct CAD integration (AutoCAD/Revit Add-In)
 - Format: Markdown (for version control) or PowerPoint/Google Slides
@@ -246,12 +249,12 @@ flowchart LR
 - CSV files represent data exported from AutoCAD/Revit
 - Web UI demonstrates functionality that would embed in CAD software
 
-2. Show CSV input files (explain these come from CAD software in production)
-3. Navigate to frontend (Railway URL) - explain this is proxy for CAD UI
-4. Show compliance issues list
-5. Click issue → highlight overlay on plan
-6. Ask chat question → show RAG response with citations
-7. **Closing**: Mention future integration would be direct Add-In within CAD software
+1. Show CSV input files (explain these come from CAD software in production)
+2. Navigate to frontend (Railway URL) - explain this is proxy for CAD UI
+3. Show compliance issues list
+4. Click issue → highlight overlay on plan
+5. Ask chat question → show RAG response with citations
+6. **Closing**: Mention future integration would be direct Add-In within CAD software
 
 - Location: `docs/demo-script.md`
 - Include timing for each step (total 2.5 minutes)
@@ -327,3 +330,4 @@ flowchart LR
 - `docs/demo-script.md`
 - `docs/presentation-timings.md`
 - `docs/qa-preparation.md`
+

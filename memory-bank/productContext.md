@@ -22,7 +22,7 @@ Primary problem:
 
 - **Rule extraction**: LLM can automatically extract structured rules from code PDFs, reducing the need to manually identify and codify requirements.
 
-- **Multi-code support**: The system can handle multiple code documents simultaneously, allowing architects to check against different jurisdictions without switching contexts.
+- **Multi-code support**: The system can handle multiple code documents simultaneously (pre-loaded + user-uploaded), allowing architects to check against different jurisdictions without switching contexts. Users can upload their own building code PDFs via the Upload Building Codes tab, and these PDFs are immediately available for both chat queries and compliance checking.
 
 Inputs:
 
@@ -39,22 +39,42 @@ Core features (MVP):
   - loads CSVs and seeded Rule models,
   - runs compliance_checker,
   - returns Issue[] with element_id, rule_id, message, code_ref.
-- Backend endpoint /api/chat:
-  - combines RAG results from code PDFs with current issues,
-  - answers questions about code requirements and current design issues.
+- Backend endpoint /api/chat (Conversational with Blueprint Context):
+  - maintains conversation history per conversation_id (in-memory for MVP),
+  - integrates extracted blueprint room data for context-aware responses,
+  - combines RAG results from code PDFs (pre-loaded + uploaded) with current issues,
+  - answers questions about code requirements and current design issues,
+  - supports follow-up questions (e.g., "What about bathrooms?" after asking about bedrooms),
+  - can reference specific rooms from uploaded blueprints.
+- Backend endpoint /api/codes/upload/:
+  - accepts PDF file uploads,
+  - ingests and indexes PDFs for RAG queries,
+  - saves to persistent storage (`app/data/uploads/`) for compliance checking,
+  - uploaded PDFs immediately available for chat queries and rule extraction.
 - Frontend (single-page HTML/CSS/JS served directly by FastAPI):
   - Plan viewer with overlay highlighting when an issue is selected.
   - Issues list panel below viewer.
-  - Chat panel on the right side.
+  - Right panel with three tabs:
+    - "💬 Q&A Chat" - Conversational chat with blueprint context integration
+    - "🔍 Blueprint Extraction" - Upload and extract rooms from blueprint images
+    - "📚 Upload Building Codes" - Upload custom building code PDFs
   - No separate frontend server or build process; all served from `GET /` endpoint.
 
 Success criteria:
 
 - Returns correct violations for a small sample dataset.
-- Chat can:
+- Conversational chat can:
+  - maintain conversation history across messages,
+  - support follow-up questions with context,
+  - integrate with extracted blueprint data for context-aware responses,
   - list current issues,
   - explain why a room/door is non-compliant,
-  - quote relevant code text when available.
+  - quote relevant code text when available (from pre-loaded and uploaded PDFs).
+- PDF upload enables:
+  - users to upload custom building code PDFs,
+  - immediate availability for RAG queries,
+  - automatic inclusion in compliance rule extraction,
+  - multi-jurisdiction support.
 
 ## Project Intent & Learning Goals
 
