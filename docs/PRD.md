@@ -357,6 +357,19 @@ AI-assisted web app that helps architects and designers check early space planni
 - No React, no SPA framework, no Node/npm-based build tooling.
 - No websocket-based live updates (simple request/response only).
 
+## 6.1 Deferred Features (Future Work)
+
+**Backend Complete, Frontend Deferred:**
+- ⏸️ **VLM Label Overlays Frontend Rendering**: Backend generates VLM label bounding boxes alongside extracted rooms, but frontend rendering in plan viewer is deferred to future. Overlays are generated and returned in API responses but not yet displayed in the UI.
+
+**Evaluation Deferred:**
+- ⏸️ **Hugging Face VLM Evaluation**: HF VLM evaluation is deferred because it requires CUDA-capable GPU (uses Unsloth). Evaluation code exists (`evaluation/hf_vlm_wrapper.py`, `evaluation/vlm_evaluation_colab.py`) but requires GPU environment. Current VLM evaluation uses GPT-4o and Gemini 2.0 Flash (selected as default model).
+
+**Future Recommendations:**
+- Frontend overlay rendering: Integrate VLM overlays with existing overlay rendering system
+- Visual highlighting: Display VLM-generated overlays on uploaded blueprint images
+- HF VLM evaluation: Run in Colab or GPU environment when available
+
 ---
 
 ## 7. System Architecture (High Level)

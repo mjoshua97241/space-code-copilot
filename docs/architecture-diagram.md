@@ -232,6 +232,20 @@ flowchart LR
    - Source metadata uses actual filename (not temp filename) for accurate citations
    - Enables multi-jurisdiction support and custom code sets
 
+## Known Limitations & Deferred Features
+
+**Backend Complete, Frontend Deferred:**
+- ⏸️ **VLM Label Overlays Frontend Rendering**: Backend generates VLM label bounding boxes (`label_bbox`) alongside extracted rooms, but frontend rendering in plan viewer is deferred to future. Overlays are generated and returned in `BlueprintExtractionResult.overlays` but not yet displayed in the UI.
+
+**Evaluation Deferred:**
+- ⏸️ **Hugging Face VLM Evaluation**: HF VLM evaluation is deferred because it requires CUDA-capable GPU (uses Unsloth). Evaluation code exists (`evaluation/hf_vlm_wrapper.py`, `evaluation/vlm_evaluation_colab.py`) but requires GPU environment. Current VLM evaluation uses GPT-4o and Gemini 2.0 Flash (selected as default model based on evaluation).
+
+**Future Recommendations:**
+- Frontend overlay rendering: Integrate VLM overlays with existing overlay rendering system in `index.html`
+- Visual highlighting: Display VLM-generated overlays on uploaded blueprint images
+- Merge overlays: Intelligently combine VLM and OCR overlays (prefer VLM, fallback to OCR)
+- HF VLM evaluation: Run in Colab or GPU environment when available
+
 ## Future Integration
 
 **Production Add-In Architecture:**

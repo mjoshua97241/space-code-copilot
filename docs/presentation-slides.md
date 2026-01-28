@@ -44,20 +44,27 @@
    - Checks against extracted building code rules (seeded + LLM-extracted from PDFs)
    - Returns structured violations with code references
 
-2. **Conversational RAG-Based Code Q&A**
+2. **VLM-Based Blueprint Extraction**
+   - Extracts structured room data directly from blueprint images using Vision LLM
+   - Semantic understanding: reads room labels, classifies types, associates dimensions
+   - Editable areas for user correction
+   - Direct compliance checking on extracted data
+   - Eliminates need to manually create CSV schedules
+
+3. **Conversational RAG-Based Code Q&A**
    - Ingest building code PDFs (pre-loaded + user-uploaded)
    - Answer questions about requirements with conversation history
    - Integrates with extracted blueprint room data for context-aware responses
    - Provide citations with page numbers
    - Supports follow-up questions and context-aware answers
 
-3. **PDF Upload for Custom Building Codes**
+4. **PDF Upload for Custom Building Codes**
    - Users can upload their own building code PDFs
    - Uploaded PDFs immediately indexed for RAG queries
    - Uploaded PDFs included in compliance rule extraction
    - Enables multi-jurisdiction support
 
-4. **Visual Issue Highlighting**
+5. **Visual Issue Highlighting**
    - Interactive floor plan viewer
    - Highlights non-compliant elements
    - Click issue → see highlighted area on plan
@@ -76,6 +83,7 @@
 
 **What's Included:**
 - ✅ Single floor plan with CSV schedules (rooms, doors)
+- ✅ VLM-based blueprint extraction (semantic room extraction from images)
 - ✅ Pre-loaded + user-uploaded building code PDFs with RAG-based Q&A
 - ✅ Automated compliance checking (room area, door width)
 - ✅ Conversational chat with blueprint context integration
@@ -91,6 +99,10 @@
 - ❌ Complex authentication/authorization
 - ❌ Real-time collaboration
 - ❌ Advanced RAG features (cross-encoder re-ranking, multi-hop retrieval)
+
+**Deferred to Future:**
+- ⏸️ Frontend rendering of VLM label overlays (backend complete, frontend rendering deferred)
+- ⏸️ Hugging Face VLM evaluation (requires CUDA GPU, deferred to future GPU-based evaluation)
 
 **Current Status:** Proof-of-concept demonstrating core functionality for CAD Add-In integration
 
@@ -189,6 +201,7 @@
 
 **Key Features Demonstrated:**
 - Automated compliance checking
+- VLM-based blueprint extraction (semantic understanding)
 - Conversational RAG-powered code Q&A with blueprint context
 - PDF upload for custom building codes
 - Visual issue highlighting
@@ -202,6 +215,7 @@
 
 **What We Built:**
 - ✅ Automated compliance checker with rule extraction
+- ✅ VLM-based blueprint extraction (semantic room extraction from images)
 - ✅ Conversational RAG-based building code Q&A with citations
 - ✅ Blueprint context integration (extracted rooms in chat)
 - ✅ PDF upload for custom building codes (multi-jurisdiction support)
@@ -227,6 +241,15 @@
    - Batch compliance checking
    - Export compliance reports
 
+4. **Frontend Overlay Rendering**
+   - VLM label overlays rendering in plan viewer (backend complete, frontend deferred)
+   - Visual highlighting of non-compliant rooms using VLM-generated overlays
+   - Integration with existing overlay rendering system
+
+5. **Hugging Face VLM Evaluation**
+   - GPU-based evaluation of HF VLM models (currently deferred, requires CUDA)
+   - Colab runner available for future GPU evaluation
+
 **MVP Status:** Ready for CAD software integration
 
 ---
@@ -241,16 +264,17 @@
 - **Slide 4 (Scope & Limitations)**: 30 seconds
 - **Slide 5 (Architecture)**: 1.5 minutes
 - **Slide 6 (Metrics)**: 1 minute
-- **Slide 7 (Demo)**: 2.5 minutes (includes conversational chat and PDF upload)
+- **Slide 7 (Demo)**: 2.5 minutes (includes blueprint extraction, conversational chat, and PDF upload)
 - **Slide 8 (Takeaways)**: 30 seconds
 
 ### Key Talking Points
 
 1. **Emphasize Add-In architecture**: This is not just a web app—it's designed to integrate into CAD software
-2. **Highlight validation**: BM25 retrieval was validated via RAGAS evaluation
-3. **Show real results**: Compliance issues found, conversational RAG answers with citations
-4. **Demonstrate interactivity**: Click issue → see highlight on plan, follow-up questions work, PDF upload integrates seamlessly
+2. **Highlight validation**: BM25 retrieval was validated via RAGAS evaluation; VLM model (Gemini 2.0 Flash) selected via evaluation
+3. **Show real results**: Compliance issues found, VLM extraction results, conversational RAG answers with citations
+4. **Demonstrate interactivity**: Click issue → see highlight on plan, upload blueprint → extract rooms → check compliance, follow-up questions work, PDF upload integrates seamlessly
 5. **Show multi-jurisdiction support**: Upload PDFs from different jurisdictions, immediately available for queries and compliance
+6. **Highlight VLM capabilities**: Semantic understanding of blueprints (not just OCR), room type classification, dimension association
 
 ### Q&A Preparation
 
