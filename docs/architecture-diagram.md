@@ -153,6 +153,102 @@ flowchart LR
   class CSV,PDF,PDFUP,DLOAD,PINGEST,EM,VDB,RULES,COMP,RULEX,CHATAPI,CONVSTORE,CODESAPI,BLUEPRINTAPI,ISSUESAPI,FRONT,PLAN,ISSUES,CHAT,BLUEPRINT,UPLOAD,LLM,VLM,CACHE,LOG,OPENAI,GEMINI box;
 ```
 
+### Simplified Architecture (same flows, fewer nodes)
+
+```mermaid
+flowchart LR
+  %% ---------- Simplified nodes ----------
+  DATA["Data\n(CSV + PDFs)"]
+  INGEST["Ingest\n(Design Loader +\nPDF Ingest)"]
+  VDB2["Vector Store\n(BM25 + Qdrant)"]
+  RULES2["Rules"]
+  COMP2["Compliance"]
+  RULEX2["Rule Extractor"]
+  CHATAPI2["Chat API"]
+  CODESAPI2["Codes API"]
+  BLUEPRINTAPI2["Blueprint API"]
+  ISSUESAPI2["Issues API"]
+  FRONT2["Frontend"]
+  LLM2["Text LLM"]
+  VLM2["Vision LLM"]
+  CACHE2["LLM Cache"]
+
+  %% ---------- Data/indexing (D) ----------
+  DATA -.->|D| INGEST
+  INGEST -.->|D| VDB2
+  INGEST -.->|D| COMP2
+  VDB2 -.->|D| RULEX2
+  VDB2 -.->|D| CHATAPI2
+  RULEX2 -.->|D| RULES2
+  RULES2 -.->|D| COMP2
+  CODESAPI2 -.->|D| INGEST
+  BLUEPRINTAPI2 -.->|D| COMP2
+  BLUEPRINTAPI2 -.->|D| RULES2
+
+  %% ---------- Prompts (P) ----------
+  RULEX2 -->|P| LLM2
+  CHATAPI2 -->|P| LLM2
+  BLUEPRINTAPI2 -->|P| VLM2
+
+  %% ---------- Query / retrieval (Q) ----------
+  CHATAPI2 -->|Q| VDB2
+  RULEX2 -->|Q| VDB2
+
+  %% ---------- User request/response (Q/A) ----------
+  FRONT2 -->|Q| CHATAPI2
+  FRONT2 -->|Q| CODESAPI2
+  FRONT2 -->|Q| BLUEPRINTAPI2
+  FRONT2 -->|Q| ISSUESAPI2
+  COMP2 -->|Q| ISSUESAPI2
+  ISSUESAPI2 -->|A| FRONT2
+  CHATAPI2 -->|A| FRONT2
+  CODESAPI2 -->|A| FRONT2
+  BLUEPRINTAPI2 -->|A| FRONT2
+
+  %% ---------- Blueprint context (BC) ----------
+  BLUEPRINTAPI2 -.->|BC| CHATAPI2
+
+  %% ---------- LLM ↔ Cache (D/Q/A) ----------
+  LLM2 -.->|D| CACHE2
+  LLM2 -->|Q| CACHE2
+  CACHE2 -->|A| LLM2
+
+  %% ---------- Legend ----------
+  subgraph LEGEND2["LEGEND"]
+    direction LR
+    L1((D)) -.-> T1["Data/indexing"]
+    L2((P)) --> T2["Prompts"]
+    L3((Q)) --> T3["Query"]
+    L4((A)) --> T4["Response"]
+    L5((BC)) -.-> T5["Blueprint context"]
+  end
+
+  classDef box fill:#efefef,stroke:#bbb,stroke-width:1px,color:#111;
+  class DATA,INGEST,VDB2,RULES2,COMP2,RULEX2,CHATAPI2,CODESAPI2,BLUEPRINTAPI2,ISSUESAPI2,FRONT2,LLM2,VLM2,CACHE2 box;
+```
+
+#### Simplified diagram verification (vs codebase)
+
+| Element | Diagram | Codebase | Status |
+|--------|---------|----------|--------|
+| **Data** | CSV + PDFs (pre-loaded + uploads) | `app/data/` (rooms.csv, doors.csv, PD1096/RA9514 PDFs), `app/data/uploads/` | ✓ |
+| **Ingest** | Design Loader + PDF Ingest | `design_loader.py` (@lru_cache), `pdf_ingest.py` (PyMuPDFLoader, TextSplitter) | ✓ |
+| **Vector Store** | BM25 + Qdrant in-memory | `vector_store.py`: BM25Retriever + QdrantVectorStore, `use_memory=True` | ✓ |
+| **Rules** | Seeded + LLM-extracted | `rules_seed.py`, `rule_extractor.py` (RAG + LLM) | ✓ |
+| **Compliance** | Checker | `compliance_checker.py`, used by Issues API and Blueprint API | ✓ |
+| **Rule Extractor** | LLM-based, uses VDB | `rule_extractor.py`: get_llm, VectorStore retrieval | ✓ |
+| **Chat API** | Conversational RAG, conv storage | `api/chat.py`: `/api/chat`, `_conversations` in-memory, VectorStore, blueprint_context | ✓ |
+| **Codes API** | PDF upload | `api/codes.py`: `/api/codes/upload/`, triggers ingest | ✓ |
+| **Blueprint API** | Room extraction (VLM) | `api/blueprint.py`: `/api/blueprint/extract/`, `extract_rooms_from_blueprint`, VLM, compliance | ✓ |
+| **Issues API** | Issues list | `api/issues.py`: `/api/issues/`, load_design → check_compliance | ✓ |
+| **Frontend** | UI (Plan, Issues, Chat, Blueprint, Upload tabs) | `templates/index.html` + static (HTML/CSS/JS), plan viewer, issues list, chat panel, blueprint tab, upload tab | ✓ |
+| **Text LLM** | OpenAI/Gemini for RAG & Rules | `core/llm.py`: `get_llm()` supports **OpenAI only** (Gemini for text not wired) | ⚠️ Diagram is aspirational for Gemini text |
+| **Vision LLM** | Gemini 2.0 Flash default | `core/llm.py`: `get_vision_llm()` default provider `gemini`, model `gemini-2.0-flash` | ✓ |
+| **LLM Cache** | SQLite/Memory | `core/llm.py`: `setup_llm_cache("memory")` in chat/rule_extractor | ✓ |
+| **Blueprint context** | Blueprint → Chat | Chat request accepts `blueprint_context` (Room list); Blueprint tab feeds chat | ✓ |
+
+**Note:** Conversation storage and Logging are implied in the simplified diagram (Chat API handles in-memory conversations; logging is optional). Text RAG and Rules use OpenAI only in the current code; the detailed diagram’s “OpenAI/Gemini for RAG & Rules” reflects possible future Gemini text support.
+
 ## Component Breakdown
 
 ### Data Flow
