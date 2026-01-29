@@ -190,9 +190,19 @@ flowchart LR
   CHATAPI2 -->|P| LLM2
   BLUEPRINTAPI2 -->|P| VLM2
 
+  %% ---------- LLM responses (R) ----------
+  LLM2 -->|R| CHATAPI2
+  LLM2 -->|R| RULEX2
+  VLM2 -->|R| BLUEPRINTAPI2
+
   %% ---------- Query / retrieval (Q) ----------
   CHATAPI2 -->|Q| VDB2
   RULEX2 -->|Q| VDB2
+
+  %% ---------- Retrieval / compliance responses (R) ----------
+  VDB2 -->|R| CHATAPI2
+  VDB2 -->|R| RULEX2
+  COMP2 -->|R| ISSUESAPI2
 
   %% ---------- User request/response (Q/R) ----------
   FRONT2 -->|Q| CHATAPI2
