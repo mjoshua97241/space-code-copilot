@@ -80,7 +80,6 @@
 - ✅ Pre-loaded + user-uploaded building code PDFs with RAG-based Q&A
 - ✅ Conversational chat with blueprint context integration
 - ✅ PDF upload tab for custom building codes
-- ✅ Interactive plan viewer; issues list (visual highlighting on plan deferred)
 - ✅ Plain HTML/CSS/JS frontend (no build toolchain)
 - ✅ Project context filtering (reduces false positives)
 
