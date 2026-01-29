@@ -79,16 +79,16 @@ flowchart LR
   RULEX -->|Q| VDB
   VDB -->|Q| EM
   
-  %% ---------- User query + app hosting (blue in / red out) - Q/A ----------
+  %% ---------- User query + app hosting (blue in / red out) - Q/R ----------
   FRONT -->|Q| CHATAPI
   FRONT -->|Q| CODESAPI
   FRONT -->|Q| BLUEPRINTAPI
   FRONT -->|Q| ISSUESAPI
   COMP -->|Q| ISSUESAPI
-  ISSUESAPI -->|A| FRONT
-  CHATAPI -->|A| FRONT
-  CODESAPI -->|A| FRONT
-  BLUEPRINTAPI -->|A| FRONT
+  ISSUESAPI -->|R| FRONT
+  CHATAPI -->|R| FRONT
+  CODESAPI -->|R| FRONT
+  BLUEPRINTAPI -->|R| FRONT
   
   FRONT -->|Q| PLAN
   FRONT -->|Q| ISSUES
@@ -101,29 +101,29 @@ flowchart LR
   CHAT -.->|BC| CHATAPI
   BLUEPRINTAPI -.->|BC| BLUEPRINT
   
-  %% ---------- Orchestration ↔ Cache (dashed/blue/red) - D/Q/A ----------
+  %% ---------- Orchestration ↔ Cache (dashed/blue/red) - D/Q/R ----------
   LLM -.->|D| CACHE
   LLM -->|Q| CACHE
-  CACHE -->|A| LLM
+  CACHE -->|R| LLM
   
-  %% ---------- Cache ↔ LLM API (dashed/blue/red) - D/Q/A ----------
+  %% ---------- Cache ↔ LLM API (dashed/blue/red) - D/Q/R ----------
   CACHE -.->|D| OPENAI
   CACHE -->|Q| OPENAI
-  OPENAI -->|A| CACHE
+  OPENAI -->|R| CACHE
   VLM -->|Q| GEMINI
-  GEMINI -->|A| VLM
+  GEMINI -->|R| VLM
   LLM -->|Q| OPENAI
   LLM -->|Q| GEMINI
-  OPENAI -->|A| LLM
-  GEMINI -->|A| LLM
+  OPENAI -->|R| LLM
+  GEMINI -->|R| LLM
   
-  %% ---------- Orchestration ↔ Logging (dashed/blue/red) - D/Q/A ----------
+  %% ---------- Orchestration ↔ Logging (dashed/blue/red) - D/Q/R ----------
   LLM -.->|D| LOG
   LLM -->|Q| LOG
-  LOG -->|A| LLM
+  LOG -->|R| LLM
   VLM -.->|D| LOG
   VLM -->|Q| LOG
-  LOG -->|A| VLM
+  LOG -->|R| VLM
   
   %% ---------- Hosting internal relationships (dashed) - D ----------
   OPENAI -.->|D| HOST
@@ -137,14 +137,14 @@ flowchart LR
     T2["Prompts / LLM calls (black)"]
     L3((Q))
     T3["Queries / Requests (blue)"]
-    L4((A))
-    T4["Outputs / Responses (red)"]
+    L4((R))
+    T4["Responses (red)"]
     L5((BC))
     T5["Blueprint context (dashed green)"]
     L1 -.->|D| T1
     L2 -->|P| T2
     L3 -->|Q| T3
-    L4 -->|A| T4
+    L4 -->|R| T4
     L5 -.->|BC| T5
   end
   
@@ -194,24 +194,24 @@ flowchart LR
   CHATAPI2 -->|Q| VDB2
   RULEX2 -->|Q| VDB2
 
-  %% ---------- User request/response (Q/A) ----------
+  %% ---------- User request/response (Q/R) ----------
   FRONT2 -->|Q| CHATAPI2
   FRONT2 -->|Q| CODESAPI2
   FRONT2 -->|Q| BLUEPRINTAPI2
   FRONT2 -->|Q| ISSUESAPI2
   COMP2 -->|Q| ISSUESAPI2
-  ISSUESAPI2 -->|A| FRONT2
-  CHATAPI2 -->|A| FRONT2
-  CODESAPI2 -->|A| FRONT2
-  BLUEPRINTAPI2 -->|A| FRONT2
+  ISSUESAPI2 -->|R| FRONT2
+  CHATAPI2 -->|R| FRONT2
+  CODESAPI2 -->|R| FRONT2
+  BLUEPRINTAPI2 -->|R| FRONT2
 
   %% ---------- Blueprint context (BC) ----------
   BLUEPRINTAPI2 -.->|BC| CHATAPI2
 
-  %% ---------- LLM ↔ Cache (D/Q/A) ----------
+  %% ---------- LLM ↔ Cache (D/Q/R) ----------
   LLM2 -.->|D| CACHE2
   LLM2 -->|Q| CACHE2
-  CACHE2 -->|A| LLM2
+  CACHE2 -->|R| LLM2
 
   %% ---------- Legend ----------
   subgraph LEGEND2["LEGEND"]
@@ -219,7 +219,7 @@ flowchart LR
     L1((D)) -.-> T1["Data/indexing"]
     L2((P)) --> T2["Prompts"]
     L3((Q)) --> T3["Query"]
-    L4((A)) --> T4["Response"]
+    L4((R)) --> T4["Responses"]
     L5((BC)) -.-> T5["Blueprint context"]
   end
 
@@ -321,7 +321,7 @@ flowchart LR
 - **Q (Blue)**: Queries/Requests
   - User queries, API requests, retrieval operations
   
-- **A (Red)**: Outputs/Responses
+- **R (Red)**: Responses
   - API responses, LLM outputs, cache hits
   
 - **BC (Dashed Green)**: Blueprint context flow
