@@ -39,35 +39,28 @@
 
 **Core Features:**
 
-1. **Automated Compliance Checking**
-   - Loads design data (rooms, doors) from CAD software
-   - Checks against extracted building code rules (seeded + LLM-extracted from PDFs)
-   - Returns structured violations with code references
-
-2. **VLM-Based Blueprint Extraction**
+1. **VLM-Based Blueprint Extraction & Compliance**
    - Extracts structured room data directly from blueprint images using Vision LLM
    - Semantic understanding: reads room labels, classifies types, associates dimensions
    - Editable areas for user correction
-   - Direct compliance checking on extracted data
-   - Eliminates need to manually create CSV schedules
+   - Integrated compliance checking on extracted data (seeded + LLM-extracted rules from PDFs)
+   - Returns structured violations with code references
+   - Eliminates need to manually create CSV schedules (CSV path still available for plan viewer / issues list)
 
-3. **Conversational RAG-Based Code Q&A**
+2. **Conversational RAG-Based Code Q&A**
    - Ingest building code PDFs (pre-loaded + user-uploaded)
    - Answer questions about requirements with conversation history
    - Integrates with extracted blueprint room data for context-aware responses
    - Provide citations with page numbers
    - Supports follow-up questions and context-aware answers
 
-4. **PDF Upload for Custom Building Codes**
+3. **PDF Upload for Custom Building Codes**
    - Users can upload their own building code PDFs
    - Uploaded PDFs immediately indexed for RAG queries
    - Uploaded PDFs included in compliance rule extraction
    - Enables multi-jurisdiction support
 
-5. **Visual Issue Highlighting**
-   - Interactive floor plan viewer
-   - Highlights non-compliant elements
-   - Click issue → see highlighted area on plan
+*Deferred (not in core features):* Visual issue highlighting on plan (click issue → see highlighted area) — backend/overlays ready, frontend rendering deferred.
 
 **MVP Context:**
 - **This is a proof-of-concept Add-In for CAD software (AutoCAD/Revit)**
@@ -83,12 +76,11 @@
 
 **What's Included:**
 - ✅ Single floor plan with CSV schedules (rooms, doors)
-- ✅ VLM-based blueprint extraction (semantic room extraction from images)
+- ✅ VLM-based blueprint extraction with integrated compliance checking (room area, door width)
 - ✅ Pre-loaded + user-uploaded building code PDFs with RAG-based Q&A
-- ✅ Automated compliance checking (room area, door width)
 - ✅ Conversational chat with blueprint context integration
 - ✅ PDF upload tab for custom building codes
-- ✅ Interactive plan viewer with issue highlighting
+- ✅ Interactive plan viewer; issues list (visual highlighting on plan deferred)
 - ✅ Plain HTML/CSS/JS frontend (no build toolchain)
 - ✅ Project context filtering (reduces false positives)
 
@@ -101,6 +93,7 @@
 - ❌ Advanced RAG features (cross-encoder re-ranking, multi-hop retrieval)
 
 **Deferred to Future:**
+- ⏸️ Visual issue highlighting on plan (click issue → see highlighted area on plan; backend/overlays ready)
 - ⏸️ Frontend rendering of VLM label overlays (backend complete, frontend rendering deferred)
 - ⏸️ Hugging Face VLM evaluation (requires CUDA GPU, deferred to future GPU-based evaluation)
 
