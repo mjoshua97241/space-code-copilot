@@ -106,29 +106,33 @@
 
 **Key Components:**
 
-1. **Data Flow (CAD → Compliance)**
-   - CAD Software (CSV proxy) → Design Loader → Compliance Checker → Issues API
+1. **Data Flow (CAD + Blueprint → Compliance)**
+   - CSV (CAD proxy) → Design Loader → Compliance Checker
+   - Blueprint API (VLM extraction) → Compliance Checker; Compliance → Issues API (responses)
    - In production: Direct CAD integration (AutoCAD/Revit APIs)
 
-2. **RAG Flow (PDF → Chat)**
-   - Building Code PDFs (pre-loaded + uploaded) → PDF Ingest → Embedding Model → Vector Store → Chat API
+2. **RAG Flow (PDF → Vector Store → Chat / Rule Extractor)**
+   - Building Code PDFs (pre-loaded + uploaded) → PDF Ingest → Embedding Model → Vector Store
+   - Chat API and Rule Extractor query Vector Store (Q); Vector Store returns retrieved docs (R)
    - BM25 retrieval (validated best for building codes)
-   - Uploaded PDFs saved to persistent storage for compliance checking
+   - Uploaded PDFs saved to persistent storage for compliance rule extraction
 
-3. **LLM Flow (Rule Extraction + Chat)**
-   - Rule Extractor/Chat API → LLM Client → Cache → OpenAI API
+3. **LLM Flow (Prompts P, Responses R)**
+   - **Text LLM:** Rule Extractor / Chat API → prompts (P) → LLM; LLM → responses (R) → Rule Extractor / Chat API. LLM ↔ Cache ↔ OpenAI API.
+   - **Vision LLM:** Blueprint API → prompts (P) → VLM; VLM → responses (R) → Blueprint API (Gemini 2.0 Flash default).
    - Caching reduces API costs and latency
 
 4. **Frontend (CAD UI Proxy)**
-   - Plan Viewer, Issues List, Chat Panel
+   - Left: Plan Viewer, Issues List. Right: Tabs — Q&A Chat, Blueprint Extraction, Upload Building Codes
    - In production: Embedded within CAD software UI
 
 **Design Decisions:**
 - BM25-only retrieval (validated via RAGAS: composite score 0.422)
 - Project context filtering (reduces irrelevant rules: 28 → 3 issues)
 - Multi-layer caching (CSV, embeddings, LLM responses)
+- Diagram edge types: D (data/indexing), P (prompts), Q (queries), R (responses), BC (blueprint context)
 
-*See `docs/architecture-diagram.md` for detailed diagram*
+*See `docs/architecture-diagram.md` for detailed and simplified diagrams*
 
 ---
 
@@ -250,6 +254,14 @@
    - **Note**: Current MVP uses direct pass-through (simpler, sufficient for single-blueprint sessions)
    - Would require different embedding strategy than text documents (structured data vs. unstructured text)
    - Consider separate structured data store (database) vs. vector store depending on use case
+
+**Short version (for slide bullets):**
+- **CAD integration:** Add-In for AutoCAD/Revit; real-time data; embedded UI
+- **User API keys:** Own OpenAI/Gemini credits; lower cost; no key abuse
+- **Advanced:** Multi-jurisdiction; custom rules; batch check; export reports
+- **Overlays:** VLM labels in plan viewer (backend done, frontend deferred)
+- **HF VLM eval:** GPU evaluation deferred; Colab runner for later; if it surpasses current models we will integrate it
+- **Blueprint storage:** Multi-blueprint search via structured room data (separate store); MVP uses pass-through
 
 **MVP Status:** Ready for CAD software integration
 
