@@ -120,3 +120,6 @@ evaluation/__marimo__/
 evaluation/OpenAI_key.txt
 evaluation/langsmith-api.txt
 secret-replacements.txt
+
+# PDFs
+backend/app/data/uploads/
