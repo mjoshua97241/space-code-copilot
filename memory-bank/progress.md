@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. **Deployed to Railway.app** - Public URL working, all endpoints functional. **Presentation preparation ON HOLD** - Deferred to focus on new feature development. **Multimodal Blueprint Extraction - ALL PHASES COMPLETE** ✅ - Full implementation complete with VLM evaluation framework and model comparison (Gemini 2.0 Flash remains the default choice for reliability). **Hugging Face VLM evaluation is DEFERRED** ⏸️ because the current HF path uses **Unsloth (CUDA-only)** and cannot run on CPU-only machines; a Colab runner script was added for future GPU evaluation (`evaluation/vlm_evaluation_colab.py`). **UI Improvements for Blueprint Extraction - COMPLETE** ✅ - All 7 improvements implemented: empty plan viewer, editable area column, new compliance endpoint, conditional compliance column visibility, removed Type/Level columns, fixed tooltip z-index, and increased tooltip width. **UI Layout Restructure - COMPLETE** ✅ - Blueprint Extraction moved to right panel with tab toggle system, left panel now dedicated to floor plan viewing, scrolling fixed in extraction tab.
+Foundation is working. Domain models, CSV loaders, seeded rules, compliance checker, `/api/issues` endpoint, **Phase 2 (Hybrid Retrieval)**, **Phase 3 (Chat Endpoint)**, **RAG Technique Validation**, **Phase 6 (Frontend Implementation)**, **LLM Rule Extraction with Project Context Filtering**, **Overlays with Highlight Behavior**, **End-to-End Testing**, and **Deployment Setup** are complete. Evaluation results validated **BM25-only** as best technique (composite score: 0.422). **Vector store updated** to default to BM25-only retrieval. **Frontend UI complete and tested** - no issues found during testing. **Rule extraction integrated** with project context filtering (reduced issues from 28 to 3 by filtering commercial/multi-story rules). **Overlays implemented** - room and door overlays with red highlight on issue selection, room type-specific rule matching. **End-to-end testing complete** - 16/16 tests passed (100% success rate). **Deployment files created** - Dockerfile, railway.json, .env.example, .dockerignore, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md. **Deployed to Railway.app** - Public URL working, all endpoints functional. **Presentation delivered; project closed.** Documentation updated for closure (README, memory-bank). **Multimodal Blueprint Extraction - ALL PHASES COMPLETE** ✅ - Full implementation complete with VLM evaluation framework and model comparison (Gemini 2.0 Flash remains the default choice for reliability). **Hugging Face VLM evaluation is DEFERRED** ⏸️ because the current HF path uses **Unsloth (CUDA-only)** and cannot run on CPU-only machines; a Colab runner script was added for future GPU evaluation (`evaluation/vlm_evaluation_colab.py`). **UI Improvements for Blueprint Extraction - COMPLETE** ✅ - All 7 improvements implemented: empty plan viewer, editable area column, new compliance endpoint, conditional compliance column visibility, removed Type/Level columns, fixed tooltip z-index, and increased tooltip width. **UI Layout Restructure - COMPLETE** ✅ - Blueprint Extraction moved to right panel with tab toggle system, left panel now dedicated to floor plan viewing, scrolling fixed in extraction tab.
 
 ## What Works
 
@@ -160,15 +160,11 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
 
 ## Next Steps
 
-### Railway Deployment Prep + Testing (NEXT)
+### Project closed
 
-1. Prepare Railway deployment environment (env vars, start command/PORT, optional Qdrant).
-2. Deploy and run smoke tests:
-   - `GET /` (UI renders)
-   - `GET /health`
-   - `POST /api/chat/`
-   - `POST /api/blueprint/extract/` (PNG/JPG/PDF)
-3. Verify static assets and template rendering (no mixed-content/redirect regressions).
+- **Status**: MVP complete; presentation delivered; project closed.
+- No further development planned. The checklists below reflect state at project closure.
+- Future enhancements (CAD integration, user API keys, overlay rendering, HF VLM eval) remain as reference only.
 
 1. Implement backend Phase 1-3 (complete):
 
@@ -225,14 +221,11 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
      - Resolved 307 redirects and Mixed Content errors
    - [x] **Deployed to Railway.app** - Public URL available for mentors/cohorts
 
-7. ⏸️ Presentation preparation (ON HOLD - see `memory-bank/presentation.md`):
-   - [ ] Implement metrics tracking (LangSmith setup, metrics endpoint) - Optional
-   - [ ] Prepare demo data and test results
-   - [ ] Create visual aids (architecture diagram, slides)
-   - [ ] Practice 7-minute presentation flow
-   - [ ] Prepare for Q&A (technical details, scalability, future enhancements)
-   - **Status**: Deferred to focus on multimodal blueprint extraction feature
-   - **Plan**: `.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`
+7. ✅ Presentation preparation - **COMPLETE** (presentation delivered; project closed):
+   - [x] Visual aids (architecture diagram, slides in `docs/`)
+   - [x] Demo flow and Q&A prep in `docs/presentation-slides.md`
+   - [x] Documentation updated for closure (README, memory-bank)
+   - **Status**: Project closed. **Plan**: `.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`
 
 8. ✅ Multimodal Blueprint Extraction - **ALL PHASES COMPLETE**:
    - [x] Phase 1: Core extraction service - ✅ **COMPLETE**

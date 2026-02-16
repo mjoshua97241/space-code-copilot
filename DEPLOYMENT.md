@@ -1,5 +1,7 @@
 # Deployment Guide for Assessors
 
+Project completed and presented; this guide is for assessors and future reference.
+
 ## Quick Start (Local)
 
 1. Clone: `git clone <repo-url>`
