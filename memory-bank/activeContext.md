@@ -259,10 +259,8 @@ Recent changes:
 
 Todo next:
 
-- ⏸️ **Presentation Preparation ON HOLD**:
-  - Presentation preparation plan exists (`.cursor/plans/presentation_preparation_plan_3ed00397.plan.md`)
-  - Deferred to focus on multimodal blueprint extraction feature
-  - Will resume after blueprint extraction implementation
+- ✅ **Presentation Preparation COMPLETE**: Presentation delivered; project closed.
+- **Project closed**: MVP complete, presentation delivered, documentation updated for closure. No further development planned.
 
 - ✅ **Multimodal Blueprint Extraction - ALL PHASES COMPLETE** (`.cursor/plans/multimodal_blueprint_extraction_5b8750f3.plan.md`):
   - **Phase 1**: Core extraction service (1.5-2 days) - ✅ **COMPLETE**
@@ -432,14 +430,11 @@ Todo next:
   - **Unsloth GPU requirement/import order**: Unsloth requires CUDA and is happiest when imported before `transformers`.
 - **Next step (future)**: Re-run HF evaluation in Colab with GPU enabled and pinned HF deps (see `evaluation/vlm_evaluation_colab.py` docstring + `evaluation/INSTALL_HF_DEPS.md`).
 
-## Next Task: Railway Deployment Prep + Testing
+## Project closed
 
-- **Goal**: Prepare and validate a clean deployment on **Railway**.
-- **Scope**:
-  - Confirm required env vars are documented and set in Railway (OpenAI/Gemini keys as needed, optional Qdrant).
-  - Verify start command / PORT binding works reliably (no redirect/mixed-content regressions).
-  - Smoke test key routes: `GET /`, `GET /health`, `POST /api/chat/`, `POST /api/blueprint/extract/` (and other active endpoints).
-  - Confirm static assets + template render correctly in prod.
+- **Status**: MVP complete; presentation delivered; project closed.
+- **Documentation**: README, memory-bank, and related docs updated for closure (see close-project plan).
+- No further development planned. Future enhancements (CAD integration, user API keys, overlay rendering, HF VLM eval) remain as reference only.
 
 ## Recent Feature Completions
 

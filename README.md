@@ -2,22 +2,24 @@
 
 A tool to help architects and designers check early space planning (rooms, doors, corridors) against building codes and internal standards, without relying on full BIM.
 
+**Proof-of-concept CAD Add-In:** This MVP uses CSV files and a standalone web UI as proxies for CAD data and an embedded Add-In UI (e.g. AutoCAD/Revit).
+
 ## Overview
 
-This MVP focuses on a single floor plan workflow:
-- Parse CSV schedules (rooms, doors) into structured models
-- Load building code PDFs, chunk, embed, and store in vector DB
-- Run compliance checks against seeded rules
-- Provide chat interface with RAG over code PDFs and current issues
+This MVP delivers three main capabilities:
+
+1. **VLM-based blueprint extraction and integrated compliance** — Extract structured room data from blueprint images using a Vision LLM (Gemini 2.0 Flash default). Editable area fields let users correct results; deterministic compliance checks run against a rule set (seeded + LLM-extracted from building code PDFs).
+2. **Conversational RAG over building codes** — Pre-loaded and user-uploaded PDFs are chunked, embedded, and stored; chat provides Q&A with citations and optional blueprint context (conversation history and extracted rooms).
+3. **PDF upload for custom building codes** — Users can upload building code PDFs; they are indexed immediately for RAG and included in rule extraction for compliance (multi-jurisdiction support).
 
 ## Tech Stack
 
 **Backend:**
 - Python 3.11+
 - FastAPI + uvicorn
-- LangChain + LangGraph for LLM orchestration
-- Qdrant for vector storage (FAISS fallback)
-- OpenAI/Gemini/Claude via config
+- LangChain for LLM orchestration (RAG, rule extraction, chat)
+- Qdrant in-memory for vector storage; BM25 retrieval (validated via RAGAS; no FAISS in current setup)
+- OpenAI for text (RAG, rule extraction); Gemini 2.0 Flash (default) or GPT-4o for vision (blueprint extraction)
 
 **Frontend:**
 - Plain HTML + CSS + vanilla JavaScript
@@ -49,8 +51,8 @@ GEMINI_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 
 # Vision LLM Configuration (for blueprint extraction)
-# Provider: "openai" (GPT-4o) or "gemini" (Gemini 1.5 Flash)
-VISION_LLM_PROVIDER=openai
+# Provider: "openai" (GPT-4o) or "gemini" (Gemini 2.0 Flash, default)
+VISION_LLM_PROVIDER=gemini
 
 # Vision LLM API Keys (required if using vision features)
 # For OpenAI (GPT-4o): Use OPENAI_API_KEY above
@@ -101,22 +103,22 @@ Place your project data in `backend/app/data/`:
 
 ## Development
 
+### Project Status
+
+**MVP complete.** Proof-of-concept CAD Add-In (CSV and standalone web UI as proxy). Presentation delivered; project closed.
+
+Key docs: `docs/architecture-diagram.md`, `docs/presentation-slides.md`, `docs/demo-script.md`.
+
 ### Current Status
 
-**Implemented:**
-- Basic FastAPI app with `/health` endpoint
-- Static file serving and template setup
-- Project structure initialized
-
 **Implemented (MVP):**
-- CSV loaders for rooms and doors
-- Domain models (Room, Door, Rule, Issue)
-- Compliance checker
-- `/api/issues` endpoint
-- PDF ingest and vector store
-- `/api/chat` endpoint with RAG
-- Frontend HTML template with plan viewer, issues list, and chat
-- Blueprint extraction (preview) - multimodal VLM extraction from blueprint images
+- CSV loaders for rooms and doors; domain models (Room, Door, Rule, Issue); compliance checker
+- `GET /api/issues/`, `GET /api/issues/summary` — list compliance issues
+- PDF ingest, vector store (BM25-only default, validated via RAGAS), rule extraction with project context
+- `POST /api/chat/` — conversational RAG with citations and optional blueprint context
+- Blueprint extraction (VLM): `POST /api/blueprint/extract/`, `POST /api/blueprint/extract-and-check/`, `POST /api/blueprint/check-compliance/` — editable areas, compliance on extracted rooms
+- `POST /api/codes/upload/` — upload building code PDFs (persistent storage, immediate RAG and rule extraction)
+- Frontend: plan viewer, issues list, three tabs (Q&A Chat, Blueprint Extraction, Upload Building Codes)
 
 See `memory-bank/progress.md` for detailed status.
 
@@ -129,42 +131,45 @@ See `memory-bank/progress.md` for detailed status.
 
 ## API Endpoints
 
-- `GET /health` - Health check
-- `GET /` - Frontend UI (HTML template)
-- `GET /api/issues` - List compliance issues
-- `POST /api/chat` - Chat with RAG context
-- `POST /api/blueprint/extract` - Extract room data from blueprint images (preview-only)
+- `GET /health` — Health check
+- `GET /` — Frontend UI (HTML template)
+- `GET /api/issues/` — List compliance issues
+- `GET /api/issues/summary` — Compliance issue summary
+- `POST /api/chat/` — Conversational chat with RAG and optional blueprint context
+- `POST /api/codes/upload/` — Upload building code PDF (indexed for RAG and rule extraction)
+- `POST /api/blueprint/extract/` — Extract room data from blueprint image/PDF
+- `POST /api/blueprint/extract-and-check/` — Extract rooms and run compliance check
+- `POST /api/blueprint/check-compliance/` — Run compliance check on provided room list (e.g. edited areas)
 
-## Blueprint Extraction (Preview)
+## Blueprint Extraction
 
-The system includes a multimodal blueprint extraction feature that uses Vision LLMs (GPT-4o or Gemini 1.5 Flash) to extract structured room data from architectural blueprint images.
+The system uses a Vision LLM to extract structured room data from blueprint images. **Default model: Gemini 2.0 Flash** (evaluation-selected); OpenAI GPT-4o is available as an alternative.
 
 ### Features
 
-- **Semantic Understanding**: VLM reads room labels, classifies types, and associates dimensions with rooms
-- **Multi-format Support**: Accepts PNG, JPG, or PDF blueprints
-- **Multi-page PDFs**: Automatically combines all pages or extracts specific page
-- **Structured Output**: Returns Room models (name, type, area, level) ready for compliance checking
-- **Preview Mode**: Extraction results are preview-only; CSV pipeline remains ground truth
+- **Semantic understanding**: VLM reads room labels, classifies types, and associates dimensions with rooms
+- **Integrated compliance**: Extracted rooms feed deterministic compliance checks (rules from seeded + LLM-extracted PDFs); editable area fields let users correct results before re-checking
+- **Multi-format support**: Accepts PNG, JPG, or PDF blueprints; multi-page PDFs combined or per-page
+- **Structured output**: Room models (name, type, area, level) returned for compliance and chat context
 
 ### Usage
 
-1. Upload a blueprint image via the frontend UI (drag-and-drop or file picker)
-2. Optionally specify scale factor (default: 1.0 for 1:100 scale)
-3. System extracts rooms using VLM semantic understanding
-4. Preview results in table with confidence scores
+1. Upload a blueprint image via the frontend (Blueprint Extraction tab)
+2. Optionally specify scale factor (default 1.0 for 1:100)
+3. Edit area values if needed, then run "Check Compliance" on the extracted (or edited) room list
+4. Use Q&A Chat with blueprint context to ask about specific rooms
 
 ### Configuration
 
 Set vision LLM provider in `.env`:
 
 ```bash
-# Choose vision LLM provider
-VISION_LLM_PROVIDER=openai  # or "gemini"
+# Default: Gemini 2.0 Flash (evaluation-selected)
+VISION_LLM_PROVIDER=gemini  # or "openai" for GPT-4o
 
 # API keys (required)
-OPENAI_API_KEY=your_key_here  # For GPT-4o
-GOOGLE_API_KEY=your_key_here  # For Gemini 1.5 Flash
+GOOGLE_API_KEY=your_key_here   # For Gemini 2.0 Flash
+OPENAI_API_KEY=your_key_here   # For GPT-4o (if using openai)
 ```
 
 ### Limitations
@@ -172,16 +177,12 @@ GOOGLE_API_KEY=your_key_here  # For Gemini 1.5 Flash
 - Areas are approximate (depends on scale assumption)
 - Works best with clear, labeled blueprints
 - Room extraction only (no door extraction in MVP)
-- Preview-only results (CSV pipeline remains ground truth)
+- **Deferred:** Visual issue highlighting on plan (backend/overlays ready, frontend rendering deferred); VLM label overlay rendering in plan viewer deferred
 
-### Known Issues
+### Evaluation (Gemini 2.0 Flash default)
 
-- Recall: ~45% (some rooms missed, especially small spaces)
-- Precision: ~56% (room splitting occurs with combined labels)
-- Area accuracy: ~65% (good for matched rooms, affected by splitting)
-- Type classification: 100% (excellent)
-
-See `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` for detailed evaluation results.
+- Composite score: 0.753 (vs GPT-4o 0.743); recall 69.66%; latency ~7.6s
+- See `evaluation/results/vlm_evaluation_results.json` and `backend/app/tests/CURATED_PLAN_TEST_RESULTS.md` for full metrics
 
 ## Constraints
 
@@ -239,9 +240,12 @@ See `DEPLOYMENT.md` for detailed deployment instructions.
 
 ## Documentation
 
-- `memory-bank/` - Project context, patterns, and progress tracking
-- `DEPLOYMENT.md` - Deployment guide for assessors
-- `docs/` - Additional documentation
+- `memory-bank/` — Project context, patterns, and progress tracking
+- `DEPLOYMENT.md` — Deployment guide for assessors
+- `docs/architecture-diagram.md` — System architecture (detailed and simplified)
+- `docs/presentation-slides.md` — Presentation slides and Q&A prep
+- `docs/demo-script.md` — Demo flow
+- `docs/PRD.md` — Product requirements; `docs/demo-data-verification.md` — Demo data notes
 
 ## License
 

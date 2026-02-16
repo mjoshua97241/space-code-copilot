@@ -123,3 +123,5 @@ secret-replacements.txt
 
 # PDFs
 backend/app/data/uploads/
+
+.cursor/plans/
