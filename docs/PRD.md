@@ -210,23 +210,58 @@ AI-assisted web app that helps architects and designers check early space planni
      - Wrapper over OpenAI (configurable provider).
      - LLM response caching (in-memory or SQLite)
 
-8. **Chat endpoint**
+8. **Chat endpoint** (Conversational with Blueprint Context)
 
    - `POST /api/chat`
    - Input:
-     - `query: str` (single query string, not full message history)
+     - `query: str` (user's question)
+     - `conversation_id: Optional[str]` (for maintaining conversation history)
+     - `blueprint_context: Optional[List[Room]]` (extracted rooms from uploaded blueprint)
    - Behavior:
+     - Generates new `conversation_id` if not provided
+     - Retrieves conversation history if `conversation_id` exists
+     - Includes blueprint context (extracted rooms) in prompt if provided
      - Uses **BM25 retrieval** for code-related questions
-     - Retrieves relevant code snippets from PDFs
+     - Retrieves relevant code snippets from PDFs (pre-loaded + uploaded)
      - Calls LLM with:
        - System prompt: "code-aware space planning assistant"
+       - Conversation history (previous messages)
+       - Blueprint context (extracted rooms with areas)
        - Context: retrieved snippets with citations
+     - Stores new messages in conversation history
      - Returns:
        - `answer`: Natural language response
        - `citations`: Array of citation objects with `source`, `page`, `section`, `text`
-   - Includes project context in responses when relevant.
+       - `conversation_id`: Always returned (newly generated or existing)
+   - Features:
+     - Maintains conversation history per conversation ID (in-memory for MVP)
+     - Supports follow-up questions (e.g., "What about bathrooms?" after asking about bedrooms)
+     - Integrates with extracted blueprint data for context-aware responses
+     - Can reference specific rooms from uploaded blueprints
 
-9. **HTML UI + static file serving**
+9. **PDF Upload endpoint** (Building Codes)
+
+   - `POST /api/codes/upload/`
+   - Input:
+     - `file: UploadFile` (PDF file)
+   - Behavior:
+     - Validates file type (PDF only)
+     - Ingests and chunks PDF using `ingest_pdf()`
+     - Adds chunks to vector store for RAG queries
+     - Saves PDF to persistent storage (`app/data/uploads/`) for compliance checking
+     - Fixes source metadata to use actual filename (not temp filename)
+     - Handles duplicate filenames (appends `_1`, `_2`, etc.)
+   - Returns:
+     - `success: bool`
+     - `filename: str` (actual saved filename)
+     - `chunks: int` (number of chunks indexed)
+     - `message: str`
+   - Integration:
+     - Uploaded PDFs immediately available for RAG queries in chat
+     - Uploaded PDFs automatically included in rule extraction via `get_all_rules()`
+     - Enables multi-jurisdiction support and custom code sets
+
+10. **HTML UI + static file serving**
    - Use FastAPI `StaticFiles` for:
      - `/static/plan.png`
      - `/static/styles.css`
@@ -242,9 +277,11 @@ AI-assisted web app that helps architects and designers check early space planni
 
    - Template: `app/templates/index.html`
    - Layout:
-     - Left: plan viewer.
-     - Bottom of left: issues list.
-     - Right: chat panel.
+     - Left: plan viewer (floor plan with overlays).
+     - Right: Tabbed panel with three tabs:
+       - "💬 Q&A Chat" (default) - Conversational chat with blueprint context
+       - "🔍 Blueprint Extraction" - Upload and extract rooms from blueprint images
+       - "📚 Upload Building Codes" - Upload custom building code PDFs
    - CSS in `app/static/styles.css`.
 
 2. **Plan viewer**
@@ -266,15 +303,42 @@ AI-assisted web app that helps architects and designers check early space planni
    - On click:
      - Saves selected `element_id` and triggers highlight in plan viewer.
 
-4. **Chat panel**
+4. **Chat panel** (Conversational with Blueprint Context)
 
    - Simple `<textarea>` + `<button>` inside a `<form>`.
+   - Maintains `conversationId` JavaScript variable for conversation tracking.
    - On submit:
      - Prevent default.
-     - `fetch('/api/chat')` with `query` string (single message, not history).
+     - Generate `conversationId` if null (using `crypto.randomUUID()` or timestamp).
+     - Prepare `blueprint_context` from `extractedRooms` array (if available).
+     - `fetch('/api/chat')` with:
+       - `query`: User's question
+       - `conversation_id`: Current conversation ID
+       - `blueprint_context`: Extracted rooms from blueprint (if available)
+     - Store `conversation_id` from response for next message.
    - Renders messages as a vertical list:
      - "You: …"
      - "AI: …" (with citations displayed when available)
+   - Features:
+     - Conversation history maintained across messages
+     - Follow-up questions work with context
+     - Blueprint context integration (extracted rooms passed to chat)
+
+5. **PDF Upload panel** (Building Codes)
+
+   - File upload UI with drag-and-drop support.
+   - Upload zone with visual feedback (file selected, uploading, success/error).
+   - Status messages with proper styling (`status-success`, `status-error`, `status-info`).
+   - Uploaded codes list showing:
+     - Filename
+     - Chunk count
+     - Upload timestamp
+   - On upload:
+     - Validates PDF file type
+     - Shows "Uploading and indexing PDF..." status
+     - Displays success message with chunk count
+     - Adds uploaded PDF to list
+     - PDF immediately available for chat queries and compliance checking
 
 5. **No build toolchain**
    - No `npm install`, no `package.json`, no Vite, no React.
@@ -292,6 +356,19 @@ AI-assisted web app that helps architects and designers check early space planni
 - No full code-completeness of building codes (only small subset used).
 - No React, no SPA framework, no Node/npm-based build tooling.
 - No websocket-based live updates (simple request/response only).
+
+## 6.1 Deferred Features (Future Work)
+
+**Backend Complete, Frontend Deferred:**
+- ⏸️ **VLM Label Overlays Frontend Rendering**: Backend generates VLM label bounding boxes alongside extracted rooms, but frontend rendering in plan viewer is deferred to future. Overlays are generated and returned in API responses but not yet displayed in the UI.
+
+**Evaluation Deferred:**
+- ⏸️ **Hugging Face VLM Evaluation**: HF VLM evaluation is deferred because it requires CUDA-capable GPU (uses Unsloth). Evaluation code exists (`evaluation/hf_vlm_wrapper.py`, `evaluation/vlm_evaluation_colab.py`) but requires GPU environment. Current VLM evaluation uses GPT-4o and Gemini 2.0 Flash (selected as default model).
+
+**Future Recommendations:**
+- Frontend overlay rendering: Integrate VLM overlays with existing overlay rendering system
+- Visual highlighting: Display VLM-generated overlays on uploaded blueprint images
+- HF VLM evaluation: Run in Colab or GPU environment when available
 
 ---
 

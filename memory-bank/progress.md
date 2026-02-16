@@ -433,6 +433,31 @@ Foundation is working. Domain models, CSV loaders, seeded rules, compliance chec
    - **Confidence scoring**: Add confidence scores to VLM bboxes (when model is uncertain, use OCR fallback)
    - **Post-processing**: Refine VLM bboxes using image analysis (detect actual text boundaries, not just approximate boxes)
 
+### Blueprint Data Storage & Embedding
+
+**Current State:**
+- Blueprint extraction results (extracted rooms) are passed directly in chat requests as `blueprint_context`
+- No vector store embedding or persistent storage of blueprint data
+- Single-blueprint session focus (one blueprint at a time)
+
+**Future Considerations:**
+- **Multi-Blueprint Search**: Embed structured room data (name, type, area, level) for semantic search across multiple blueprints
+- **Use Cases**:
+  - "Find all bedrooms larger than 20m² across all projects"
+  - Cross-project room similarity search ("Find rooms similar to this office layout")
+  - Historical blueprint analysis and comparison
+  - Cross-project compliance patterns
+- **Technical Considerations**:
+  - Different embedding strategy needed (structured data vs. unstructured text documents)
+  - Current vector store optimized for building code PDFs (text documents) with BM25 retrieval
+  - Consider separate structured data store (database) vs. vector store depending on use case
+  - Would require different retrieval approach than BM25 (which works well for text documents)
+
+**Recommendation:**
+- Current direct pass-through approach is simpler and sufficient for MVP
+- Consider blueprint embedding/storage when multi-blueprint search becomes a requirement
+- Evaluate whether structured data store (database) or vector store is more appropriate for structured room data
+
 ### Conversational Chat with Blueprint Context
 
 **Goal**: Enable conversational chat with access to extracted room areas from uploaded blueprints for seamless, context-aware conversations.
