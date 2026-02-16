@@ -164,36 +164,36 @@
 
 ## Slide 7: Demo
 
-### Live Demo: Compliance Checking + RAG Chat
+### Live Demo: Three Highlights of the Solution
 
 **Demo Flow:**
 
-1. **Context**: Explain MVP is proof-of-concept Add-In
-   - CSV files represent data exported from AutoCAD/Revit
-   - Web UI demonstrates functionality that would embed in CAD software
+1. **Context**
+   - MVP is proof-of-concept Add-In for CAD (AutoCAD/Revit)
+   - CSV and standalone web UI = proxy for CAD data and embedded UI
 
-2. **Show Compliance Issues**
-   - List of violations (room area, door width)
-   - Click issue → red highlight on floor plan overlay
+2. **Highlight 1: VLM-Based Blueprint Extraction & Compliance**
+   - Go to "Blueprint Extraction" tab
+   - Upload a blueprint image or PDF
+   - VLM extracts rooms (name, type, area); show results with editable area fields
+   - Optionally correct an area, then run "Check Compliance" on extracted data
+   - Show issues list with code references (deterministic check, rules from seeded + LLM-extracted PDFs)
+   - Emphasize: no manual CSV; extraction + compliance in one flow
 
-3. **Conversational Chat**
-   - Ask: "What is the minimum bedroom area?"
-   - RAG response with citations from building code PDFs
-   - Ask follow-up: "What about bathrooms?"
-   - System maintains conversation context
-   - Ask: "Tell me about ramp width from [uploaded PDF]"
-   - Demonstrates uploaded PDF integration
+3. **Highlight 2: Conversational RAG-Based Code Q&A**
+   - Go to "Q&A Chat" tab
+   - Ask: "What is the minimum bedroom area?" — RAG response with citations from building code PDFs
+   - Follow-up: "What about bathrooms?" — system maintains conversation context
+   - If blueprint was extracted: ask with blueprint context (e.g. "Is bedroom 1 compliant?") — shows context-aware answer using extracted room data
+   - Ask about a requirement from an uploaded PDF (bridges to Highlight 3)
 
-4. **PDF Upload**
+4. **Highlight 3: PDF Upload for Custom Building Codes**
    - Switch to "Upload Building Codes" tab
-   - Upload a building code PDF
-   - Show success message and indexing status
-   - Demonstrate uploaded PDF is immediately searchable
+   - Upload a building code PDF (e.g. local or alternate jurisdiction)
+   - Show success message; explain PDF is indexed for RAG and for rule extraction
+   - Return to Chat; ask a question that requires the newly uploaded PDF — demonstrates immediate searchability and multi-jurisdiction support
 
-5. **Visual Highlighting**
-   - Select issue from list
-   - Corresponding overlay highlights in red on plan
-   - Shows exact location of violation
+*Note:* Visual issue highlighting on plan (click issue → red overlay) is deferred; backend/overlays ready, frontend rendering later. Demo focuses on issues list and the three core features above.
 
 **Key Features Demonstrated:**
 - Automated compliance checking
@@ -294,3 +294,139 @@
 - **Technical**: BM25 retrieval, project context filtering, caching strategy
 - **Scalability**: Multi-jurisdiction support, performance optimizations
 - **Future**: CAD integration, user-provided API keys, advanced features
+
+---
+
+## Possible Q&A: Questions and Answers
+
+*Structure: each answer has a short **hook**, then **2–3 talking points** you can memorize.*
+
+---
+
+### Technical & Architecture
+
+**Q: Why BM25 instead of pure semantic/dense retrieval for building codes?**
+
+**A:**  
+- **Hook:** We validated retrieval with RAGAS; BM25 won.  
+- **1.** Building codes rely on exact terms (section numbers, legal phrases); BM25 matches those well.  
+- **2.** Our RAGAS run showed BM25-only had the best composite score (0.422) vs hybrid or dense-only.  
+- **3.** So we use BM25-only for RAG; embeddings still back the vector store for future flexibility.
+
+---
+
+**Q: How do you keep compliance checking auditable and predictable?**
+
+**A:**  
+- **Hook:** Compliance is deterministic; LLMs only interpret codes to produce the rule set.  
+- **1.** **Rule set** = seeded rules + LLM-extracted rules from PDFs (rule extraction runs once / on upload).  
+- **2.** **Check step** = numeric only (e.g. room area vs rule min); no LLM at check time.  
+- **3.** **Violations** = fixed message template + code_ref from the rule; same inputs → same issues.
+
+---
+
+**Q: What’s the difference between the Vision LLM and the Text LLM in this system?**
+
+**A:**  
+- **Hook:** VLM reads images; Text LLM reads text and answers.  
+- **1.** **VLM (e.g. Gemini 2.0 Flash):** blueprint image/PDF → structured rooms (name, type, area). No CSV needed.  
+- **2.** **Text LLM (e.g. OpenAI):** RAG over building code PDFs (chat, Q&A with citations) and rule extraction from PDFs.  
+- **3.** Blueprint data is passed as context into chat so the Text LLM can answer questions about “your” plan.
+
+---
+
+### Compliance & Blueprint Extraction
+
+**Q: Can users correct the VLM extraction before compliance runs?**
+
+**A:**  
+- **Hook:** Yes; we treat extraction as editable input.  
+- **1.** Extracted rooms are shown with **editable area fields** in the UI.  
+- **2.** User can change area (or keep it), then run “Check Compliance” on that data.  
+- **3.** Compliance and chat use the corrected room list, so the system stays auditable.
+
+---
+
+**Q: Where do the compliance rules come from?**
+
+**A:**  
+- **Hook:** Two sources: seeded rules and LLM-extracted rules from PDFs.  
+- **1.** **Seeded:** hardcoded rules (e.g. min bedroom area, door width) for known codes.  
+- **2.** **Extracted:** rule extractor uses RAG + LLM on building code PDFs (app/data and uploads) to add rules with code_ref.  
+- **3.** Compliance always runs against this combined set; no LLM at violation time.
+
+---
+
+### RAG, Chat & PDF Upload
+
+**Q: How does conversation context work in chat?**
+
+**A:**  
+- **Hook:** We keep history per conversation and optionally pass blueprint context.  
+- **1.** Each chat has a **conversation_id**; we store messages in memory per ID.  
+- **2.** Follow-ups (e.g. “What about bathrooms?”) get previous messages so the model keeps context.  
+- **3.** If the user extracted a blueprint, we can send **blueprint_context** (room list) so answers reference their plan.
+
+---
+
+**Q: What happens when I upload a new building code PDF?**
+
+**A:**  
+- **Hook:** It’s ingested once, then used for both RAG and rules.  
+- **1.** PDF is chunked and **indexed into the vector store** → immediately available for RAG chat.  
+- **2.** **Rule extractor** runs on it (with others) so new rules from that PDF can be used in compliance.  
+- **3.** File is stored under app/data/uploads so it persists across restarts; supports multi-jurisdiction.
+
+---
+
+### Scope, Limitations & Future
+
+**Q: Why is visual issue highlighting on the plan deferred?**
+
+**A:**  
+- **Hook:** Backend and overlays are ready; we deferred frontend rendering.  
+- **1.** We return overlay data (e.g. VLM label bboxes) from the API.  
+- **2.** Drawing them in the plan viewer (e.g. click issue → red highlight) is not yet implemented in the UI.  
+- **3.** It’s the next logical step for UX; issues list and code refs are already there.
+
+---
+
+**Q: Is this only for one jurisdiction or one code?**
+
+**A:**  
+- **Hook:** No; the design supports multiple jurisdictions and custom codes.  
+- **1.** **Pre-loaded** PDFs (e.g. NBC, fire code) plus **Upload Building Codes** for other documents.  
+- **2.** Uploaded PDFs are indexed and used for both **RAG** and **rule extraction**.  
+- **3.** Project context (building type, occupancy, etc.) filters which rules apply, so you can mix codes.
+
+---
+
+**Q: How would this plug into real CAD (AutoCAD/Revit)?**
+
+**A:**  
+- **Hook:** This MVP is a proxy for an Add-In; integration is the next step.  
+- **1.** **Today:** CSV = export from CAD; web UI = stand-in for the Add-In panel.  
+- **2.** **Later:** Add-In would call CAD APIs for live design data (no CSV export) and embed this UI in the CAD window.  
+- **3.** Same backend (compliance, RAG, blueprint extraction) would drive the Add-In; we’d swap data source and host UI.
+
+---
+
+**Q: Why not put blueprint PDFs in the vector store?**
+
+**A:**  
+- **Hook:** The vector store is for building code text; blueprints are images.  
+- **1.** **Current store:** text chunks from building code PDFs for RAG and rule extraction.  
+- **2.** **Blueprint uploads:** we use the VLM to extract **structured room data**; that’s passed as context (e.g. blueprint_context), not as searchable document chunks.  
+- **3.** **Future:** if we add multi-blueprint search, we’d consider a separate store (e.g. structured room data or image embeddings), not the same index as code text.
+
+---
+
+### Metrics & Validation
+
+**Q: How did you choose the VLM (e.g. Gemini 2.0 Flash)?**
+
+**A:**  
+- **Hook:** We evaluated VLMs on extraction quality; Gemini 2.0 Flash performed best in our setup.  
+- **1.** We ran **evaluation** (e.g. composite score, recall) on GPT-4o and Gemini 2.0 Flash.  
+- **2.** Gemini 2.0 Flash had better composite score (e.g. 0.753 vs 0.743), better recall, and lower latency/cost.  
+- **3.** HF/VLM evaluation (e.g. Colab, GPU) is deferred; if another model surpasses this, we’ll integrate it.
