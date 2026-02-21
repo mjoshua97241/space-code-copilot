@@ -17,8 +17,11 @@
 This MVP delivers three main capabilities:
 
 1. **VLM-based blueprint extraction and integrated compliance** — Extract structured room data from blueprint images using a Vision LLM (Gemini 2.0 Flash default). Editable area fields let users correct results; deterministic compliance checks run against a rule set (seeded + LLM-extracted from building code PDFs).
+![VLM-based](docs/screenshots/VLM-based.png)
 2. **Conversational RAG over building codes** — Pre-loaded and user-uploaded PDFs are chunked, embedded, and stored; chat provides Q&A with citations and optional blueprint context (conversation history and extracted rooms).
+![Q&A-RAG](docs/screenshots/Q&A-RAG.png)
 3. **PDF upload for custom building codes** — Users can upload building code PDFs; they are indexed immediately for RAG and included in rule extraction for compliance (multi-jurisdiction support).
+![pdf-upload-codes](docs/screenshots/pdf-upload-codes.png)
 
 ## Tech Stack
 
