@@ -1,18 +1,27 @@
 # Code-Aware Space Planning Copilot
 
-A tool to help architects and designers check early space planning (rooms, doors, corridors) against building codes and internal standards, without relying on full BIM.
+**AI-powered building code compliance for AEC.** This project helps architects and designers check early space planning (rooms, doors, corridors) against building codes and internal standards, without relying on full BIM. It combines **Vision LLMs** (blueprint extraction), **RAG** (building code Q&A with citations), and **deterministic compliance checking** in a single proof-of-concept aimed at future CAD Add-In integration (AutoCAD/Revit).
 
-**Proof-of-concept CAD Add-In:** This MVP uses CSV files and a standalone web UI as proxies for CAD data and an embedded Add-In UI (e.g. AutoCAD/Revit).
+- **Watch the presentation:** [YouTube](https://youtu.be/Gm1t-kPv15Q)
+- **Full architecture and slides:** [Canva Slides](https://www.canva.com/design/DAHAK-zQZo4/Bf9FJV1Vd4NpEQHfbraE_w/view?utm_content=DAHAK-zQZo4&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9854f73c16)
+
+## Highlights (for recruiters and hiring managers)
+
+- **End-to-end AI/LLM product:** RAG over building code PDFs (BM25 retrieval validated with RAGAS), Vision LLM for blueprint room extraction (Gemini 2.0 Flash selected via evaluation), conversational chat with blueprint context, and deterministic compliance with LLM-extracted rules.
+- **Production-minded:** 16/16 end-to-end tests passing, deployed to Railway, structured APIs (FastAPI), Pydantic models, and clear separation (api / services / models / core).
+- **Evaluated choices:** BM25-only retrieval chosen over hybrid/dense (RAGAS composite 0.422); Gemini 2.0 Flash chosen over GPT-4o for VLM (composite 0.753, better recall and latency). No black-box prompts—compliance logic is auditable (rules from seed + PDF extraction; numeric checks are deterministic).
+- **Scope:** Single-page UI (HTML/CSS/JS), three tabs (Q&A Chat, Blueprint Extraction, Upload Building Codes). CSV and standalone UI are proxies for future CAD data and embedded Add-In UI.
 
 ## Overview
 
 This MVP delivers three main capabilities:
 
 1. **VLM-based blueprint extraction and integrated compliance** — Extract structured room data from blueprint images using a Vision LLM (Gemini 2.0 Flash default). Editable area fields let users correct results; deterministic compliance checks run against a rule set (seeded + LLM-extracted from building code PDFs).
+![VLM-based](docs/screenshots/VLM-based.png)
 2. **Conversational RAG over building codes** — Pre-loaded and user-uploaded PDFs are chunked, embedded, and stored; chat provides Q&A with citations and optional blueprint context (conversation history and extracted rooms).
+![Q&A-RAG](docs/screenshots/Q&A-RAG.png)
 3. **PDF upload for custom building codes** — Users can upload building code PDFs; they are indexed immediately for RAG and included in rule extraction for compliance (multi-jurisdiction support).
-
-You can also watch the presentation of this project in this [YouTube link](https://youtu.be/Gm1t-kPv15Q).
+![pdf-upload-codes](docs/screenshots/pdf-upload-codes.png)
 
 ## Tech Stack
 
@@ -27,6 +36,70 @@ You can also watch the presentation of this project in this [YouTube link](https
 - Plain HTML + CSS + vanilla JavaScript
 - Single-page UI served directly by FastAPI
 - No Node/npm, no React, no build toolchain
+
+## Architecture
+
+High-level flow: data (CSV + PDFs) is ingested into a vector store and used by compliance and RAG; the frontend talks to Chat, Codes, Blueprint, and Issues APIs; Text LLM and Vision LLM handle RAG/rule extraction and blueprint extraction respectively. Legend: **D** = data/indexing, **P** = prompts, **Q** = query, **R** = response, **BC** = blueprint context.
+
+<p align="center">
+  <img src="docs/screenshots/System_Architecture.jpg" alt="System Architecture (Canva slides)" width="100%" />
+</p>
+
+**Simplified diagram (Mermaid):**
+
+```mermaid
+flowchart LR
+  DATA["Data\n(CSV + PDFs)"]
+  INGEST["Ingest\n(Design Loader +\nPDF Ingest)"]
+  VDB2["Vector Store\n(BM25 + Qdrant)"]
+  RULES2["Rules"]
+  COMP2["Compliance"]
+  RULEX2["Rule Extractor"]
+  CHATAPI2["Chat API"]
+  CODESAPI2["Codes API"]
+  BLUEPRINTAPI2["Blueprint API"]
+  ISSUESAPI2["Issues API"]
+  FRONT2["Frontend"]
+  LLM2["Text LLM"]
+  VLM2["Vision LLM"]
+  CACHE2["LLM Cache"]
+  DATA -.->|D| INGEST
+  INGEST -.->|D| VDB2
+  INGEST -.->|D| COMP2
+  VDB2 -.->|D| RULEX2
+  VDB2 -.->|D| CHATAPI2
+  RULEX2 -.->|D| RULES2
+  RULES2 -.->|D| COMP2
+  CODESAPI2 -.->|D| INGEST
+  BLUEPRINTAPI2 -.->|D| COMP2
+  BLUEPRINTAPI2 -.->|D| RULES2
+  RULEX2 -->|P| LLM2
+  CHATAPI2 -->|P| LLM2
+  BLUEPRINTAPI2 -->|P| VLM2
+  LLM2 -->|R| CHATAPI2
+  LLM2 -->|R| RULEX2
+  VLM2 -->|R| BLUEPRINTAPI2
+  CHATAPI2 -->|Q| VDB2
+  RULEX2 -->|Q| VDB2
+  VDB2 -->|R| CHATAPI2
+  VDB2 -->|R| RULEX2
+  COMP2 -->|R| ISSUESAPI2
+  FRONT2 -->|Q| CHATAPI2
+  FRONT2 -->|Q| CODESAPI2
+  FRONT2 -->|Q| BLUEPRINTAPI2
+  FRONT2 -->|Q| ISSUESAPI2
+  COMP2 -->|Q| ISSUESAPI2
+  ISSUESAPI2 -->|R| FRONT2
+  CHATAPI2 -->|R| FRONT2
+  CODESAPI2 -->|R| FRONT2
+  BLUEPRINTAPI2 -->|R| FRONT2
+  BLUEPRINTAPI2 -.->|BC| CHATAPI2
+  LLM2 -.->|D| CACHE2
+  LLM2 -->|Q| CACHE2
+  CACHE2 -->|R| LLM2
+```
+
+For the detailed diagram (all nodes and legend), see [docs/architecture-diagram.md](docs/architecture-diagram.md).
 
 ## Quick Start
 
