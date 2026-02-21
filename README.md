@@ -45,60 +45,6 @@ High-level flow: data (CSV + PDFs) is ingested into a vector store and used by c
   <img src="docs/screenshots/System_Architecture.jpg" alt="System Architecture (Canva slides)" width="100%" />
 </p>
 
-**Simplified diagram (Mermaid):**
-
-```mermaid
-flowchart LR
-  DATA["Data\n(CSV + PDFs)"]
-  INGEST["Ingest\n(Design Loader +\nPDF Ingest)"]
-  VDB2["Vector Store\n(BM25 + Qdrant)"]
-  RULES2["Rules"]
-  COMP2["Compliance"]
-  RULEX2["Rule Extractor"]
-  CHATAPI2["Chat API"]
-  CODESAPI2["Codes API"]
-  BLUEPRINTAPI2["Blueprint API"]
-  ISSUESAPI2["Issues API"]
-  FRONT2["Frontend"]
-  LLM2["Text LLM"]
-  VLM2["Vision LLM"]
-  CACHE2["LLM Cache"]
-  DATA -.->|D| INGEST
-  INGEST -.->|D| VDB2
-  INGEST -.->|D| COMP2
-  VDB2 -.->|D| RULEX2
-  VDB2 -.->|D| CHATAPI2
-  RULEX2 -.->|D| RULES2
-  RULES2 -.->|D| COMP2
-  CODESAPI2 -.->|D| INGEST
-  BLUEPRINTAPI2 -.->|D| COMP2
-  BLUEPRINTAPI2 -.->|D| RULES2
-  RULEX2 -->|P| LLM2
-  CHATAPI2 -->|P| LLM2
-  BLUEPRINTAPI2 -->|P| VLM2
-  LLM2 -->|R| CHATAPI2
-  LLM2 -->|R| RULEX2
-  VLM2 -->|R| BLUEPRINTAPI2
-  CHATAPI2 -->|Q| VDB2
-  RULEX2 -->|Q| VDB2
-  VDB2 -->|R| CHATAPI2
-  VDB2 -->|R| RULEX2
-  COMP2 -->|R| ISSUESAPI2
-  FRONT2 -->|Q| CHATAPI2
-  FRONT2 -->|Q| CODESAPI2
-  FRONT2 -->|Q| BLUEPRINTAPI2
-  FRONT2 -->|Q| ISSUESAPI2
-  COMP2 -->|Q| ISSUESAPI2
-  ISSUESAPI2 -->|R| FRONT2
-  CHATAPI2 -->|R| FRONT2
-  CODESAPI2 -->|R| FRONT2
-  BLUEPRINTAPI2 -->|R| FRONT2
-  BLUEPRINTAPI2 -.->|BC| CHATAPI2
-  LLM2 -.->|D| CACHE2
-  LLM2 -->|Q| CACHE2
-  CACHE2 -->|R| LLM2
-```
-
 For the detailed diagram (all nodes and legend), see [docs/architecture-diagram.md](docs/architecture-diagram.md).
 
 ## Quick Start
