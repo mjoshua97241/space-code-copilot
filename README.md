@@ -12,6 +12,8 @@ This MVP delivers three main capabilities:
 2. **Conversational RAG over building codes** — Pre-loaded and user-uploaded PDFs are chunked, embedded, and stored; chat provides Q&A with citations and optional blueprint context (conversation history and extracted rooms).
 3. **PDF upload for custom building codes** — Users can upload building code PDFs; they are indexed immediately for RAG and included in rule extraction for compliance (multi-jurisdiction support).
 
+You can also watch the presentation of this project in this ![YouTube link](https://youtu.be/Gm1t-kPv15Q).
+
 ## Tech Stack
 
 **Backend:**
