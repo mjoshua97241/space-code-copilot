@@ -4,11 +4,14 @@
 
 ## 🎥 Watch the 7-Minute Demo
 
+## 🎥 7-Minute System Walkthrough
+
 <p align="center">
   <a href="https://youtu.be/Gm1t-kPv15Q">
-    <img src="https://img.youtube.com/vi/Gm1t-kPv15Q/maxresdefault.jpg" alt="Watch the Demo Video" width="800"/>
+    <img src="https://img.youtube.com/vi/Gm1t-kPv15Q/maxresdefault.jpg" width="800">
   </a>
 </p>
+
 - **Full architecture and slides:** [Canva Slides](https://www.canva.com/design/DAHAK-zQZo4/Bf9FJV1Vd4NpEQHfbraE_w/view?utm_content=DAHAK-zQZo4&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9854f73c16)
 
 ## Highlights (for recruiters and hiring managers)
