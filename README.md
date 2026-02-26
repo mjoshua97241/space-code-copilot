@@ -2,7 +2,13 @@
 
 **AI-powered building code compliance for AEC.** This project helps architects and designers check early space planning (rooms, doors, corridors) against building codes and internal standards, without relying on full BIM. It combines **Vision LLMs** (blueprint extraction), **RAG** (building code Q&A with citations), and **deterministic compliance checking** in a single proof-of-concept aimed at future CAD Add-In integration (AutoCAD/Revit).
 
-- **Watch the presentation:** [YouTube](https://youtu.be/Gm1t-kPv15Q)
+## 🎥 Watch the 7-Minute Demo
+
+<p align="center">
+  <a href="https://youtu.be/Gm1t-kPv15Q">
+    <img src="https://img.youtube.com/vi/Gm1t-kPv15Q/maxresdefault.jpg" alt="Watch the Demo Video" width="800"/>
+  </a>
+</p>
 - **Full architecture and slides:** [Canva Slides](https://www.canva.com/design/DAHAK-zQZo4/Bf9FJV1Vd4NpEQHfbraE_w/view?utm_content=DAHAK-zQZo4&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9854f73c16)
 
 ## Highlights (for recruiters and hiring managers)
